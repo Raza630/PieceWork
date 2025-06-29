@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "307995814223",
+    "project_id": "workman-9c212",
+    "storage_bucket": "workman-9c212.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:307995814223:android:0880d8b56f24477cf73d3a",
+        "android_client_info": {
+          "package_name": "com.example.workman"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEGbbOF-ZAs3wVmdUhRonGJGJ78oqH4Us"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

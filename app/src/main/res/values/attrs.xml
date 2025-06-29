@@ -1,0 +1,5 @@
+<resources>
+    <declare-styleable name="YourCustomView">
+        <attr name="imageUrl" format="string" />
+    </declare-styleable>
+</resources>

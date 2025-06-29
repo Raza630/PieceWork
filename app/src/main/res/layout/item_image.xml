@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:imageLoader = "http://schemas.android.com/apk/res-auto"
+    android:id="@+id/image_container"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        xmlns:imageLoader = "http://schemas.android.com/apk/res-auto"
+        android:id="@+id/ivImageThumbnail"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType = "centerCrop"
+        imageLoader:imageUrl = "@{image.url}" />
+</FrameLayout>
+
+
+
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<ImageView-->
+<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:id="@+id/ivImageThumbnail"-->
+<!--    android:layout_width="100dp"-->
+<!--    android:layout_height="100dp"-->
+<!--    android:scaleType="centerCrop"-->
+<!--    android:layout_margin="4dp"/>-->
+
+
+<!--&lt;!&ndash;<ImageView xmlns:android="http://schemas.android.com/apk/res/android"&ndash;&gt;-->
+<!--&lt;!&ndash;    android:id="@+id/imageView"&ndash;&gt;-->
+<!--&lt;!&ndash;    android:layout_width="100dp"&ndash;&gt;-->
+<!--&lt;!&ndash;    android:layout_height="100dp"&ndash;&gt;-->
+<!--&lt;!&ndash;    android:scaleType="centerCrop" />&ndash;&gt;-->
