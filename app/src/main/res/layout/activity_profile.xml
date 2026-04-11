@@ -101,7 +101,7 @@ tools:context=".Profile">
 <ScrollView
     android:layout_width="match_parent"
     android:layout_height="0sp"
-    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
     app:layout_constraintTop_toBottomOf="@+id/header">
@@ -110,7 +110,7 @@ tools:context=".Profile">
         android:id="@+id/information_bottom"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/header">
@@ -396,7 +396,7 @@ tools:context=".Profile">
                 android:id="@+id/accept"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="I accept to receive Yatri Notifications on my Phone/Email"
+                android:text="I accept to receive Notifications on my Phone/Email"
                 android:textColor="#2E3033"
                 android:textSize="12sp">
 
@@ -447,6 +447,17 @@ tools:context=".Profile">
         </Button>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:menu="@menu/menu"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

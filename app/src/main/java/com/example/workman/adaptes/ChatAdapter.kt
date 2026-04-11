@@ -3,6 +3,7 @@ package com.example.workman.adaptes
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.recyclerview.widget.DiffUtil
@@ -15,26 +16,44 @@ import java.util.Date
 import java.util.Locale
 
 
+
 class ChatAdapter(
-    private val currentUserId: String // Only keep this one parameter
+    private val currentUserId: String
 ) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
 
     private val messages = mutableListOf<ChatMessage>()
     private val dateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
+    // Callback for long press (select message for reply)
+    var onMessageLongClick: ((ChatMessage) -> Unit)? = null
+
     inner class MessageViewHolder(private val binding: ItemMessageBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
+        init {
+            // Long press to trigger reply
+            binding.root.setOnLongClickListener {
+                onMessageLongClick?.invoke(messages[adapterPosition])
+                true
+            }
+        }
+
         fun bind(message: ChatMessage) {
             with(binding) {
+                // Main message text
                 messageText.text = message.messageText
-                // Debug logging to verify IDs
-                Log.d("ChatAdapter", "Current: $currentUserId, Sender: ${message.senderId}")
-
                 senderName.text = if (message.senderId == currentUserId) "You" else "Other User"
                 messageTime.text = dateFormat.format(Date(message.timestamp))
 
-                // Align messages based on sender
+                // Handle reply
+                if (!message.replyToMessageText.isNullOrEmpty()) {
+                    replyLayout.visibility = View.VISIBLE
+                    textRepliedMessage.text = message.replyToMessageText
+                } else {
+                    replyLayout.visibility = View.GONE
+                }
+
+                // Align bubble
                 val params = messageLayout.layoutParams as LinearLayout.LayoutParams
                 if (message.senderId == currentUserId) {
                     params.gravity = Gravity.END
@@ -79,11 +98,6 @@ class ChatAdapter(
         diffResult.dispatchUpdatesTo(this)
     }
 
-    companion object {
-        private const val VIEW_TYPE_SENT = 1
-        private const val VIEW_TYPE_RECEIVED = 2
-    }
-
     override fun getItemViewType(position: Int): Int {
         return if (messages[position].senderId == currentUserId) {
             VIEW_TYPE_SENT
@@ -91,7 +105,137 @@ class ChatAdapter(
             VIEW_TYPE_RECEIVED
         }
     }
+
+    companion object {
+        private const val VIEW_TYPE_SENT = 1
+        private const val VIEW_TYPE_RECEIVED = 2
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+//class ChatAdapter(
+//    private val currentUserId: String // Only keep this one parameter
+//) : RecyclerView.Adapter<ChatAdapter.MessageViewHolder>() {
+//
+//    private val messages = mutableListOf<ChatMessage>()
+//    private val dateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+//
+//    inner class MessageViewHolder(private val binding: ItemMessageBinding) :
+//        RecyclerView.ViewHolder(binding.root) {
+//
+//        fun bind(message: ChatMessage) {
+//            with(binding) {
+//                messageText.text = message.messageText
+//                senderName.text = if (message.senderId == currentUserId) "You" else "Other User"
+//                messageTime.text = dateFormat.format(Date(message.timestamp))
+//
+//                // Handle reply preview
+//                if (message.replyTo != null) {
+//                    replyLayout.visibility = View.VISIBLE
+//                    val repliedMessage = messages.find { it.messageId == message.replyTo }
+//                    textRepliedMessage.text = repliedMessage?.messageText ?: "Message not found"
+//                } else {
+//                    replyLayout.visibility = View.GONE
+//                }
+//
+//                // Align bubble
+//                val params = messageLayout.layoutParams as LinearLayout.LayoutParams
+//                if (message.senderId == currentUserId) {
+//                    params.gravity = Gravity.END
+//                    messageLayout.setBackgroundResource(R.drawable.bg_sent_message)
+//                } else {
+//                    params.gravity = Gravity.START
+//                    messageLayout.setBackgroundResource(R.drawable.bg_received_message)
+//                }
+//                messageLayout.layoutParams = params
+//            }
+//        }
+//    }
+//
+//
+//
+////    inner class MessageViewHolder(private val binding: ItemMessageBinding) :
+////        RecyclerView.ViewHolder(binding.root) {
+////
+////        fun bind(message: ChatMessage) {
+////            with(binding) {
+////                messageText.text = message.messageText
+////                // Debug logging to verify IDs
+////                Log.d("ChatAdapter", "Current: $currentUserId, Sender: ${message.senderId}")
+////
+////                senderName.text = if (message.senderId == currentUserId) "You" else "Other User"
+////                messageTime.text = dateFormat.format(Date(message.timestamp))
+////
+////                // Align messages based on sender
+////                val params = messageLayout.layoutParams as LinearLayout.LayoutParams
+////                if (message.senderId == currentUserId) {
+////                    params.gravity = Gravity.END
+////                    messageLayout.setBackgroundResource(R.drawable.bg_sent_message)
+////                } else {
+////                    params.gravity = Gravity.START
+////                    messageLayout.setBackgroundResource(R.drawable.bg_received_message)
+////                }
+////                messageLayout.layoutParams = params
+////            }
+////        }
+////    }
+//
+//
+//
+//
+//    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
+//        val binding = ItemMessageBinding.inflate(
+//            LayoutInflater.from(parent.context),
+//            parent,
+//            false
+//        )
+//        return MessageViewHolder(binding)
+//    }
+//
+//    override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
+//        holder.bind(messages[position])
+//    }
+//
+//    override fun getItemCount() = messages.size
+//
+//    fun submitList(newMessages: List<ChatMessage>) {
+//        val diffCallback = object : DiffUtil.Callback() {
+//            override fun getOldListSize() = messages.size
+//            override fun getNewListSize() = newMessages.size
+//            override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+//                messages[oldPos].messageId == newMessages[newPos].messageId
+//            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+//                messages[oldPos] == newMessages[newPos]
+//        }
+//
+//        val diffResult = DiffUtil.calculateDiff(diffCallback)
+//        messages.clear()
+//        messages.addAll(newMessages)
+//        diffResult.dispatchUpdatesTo(this)
+//    }
+//
+//    companion object {
+//        private const val VIEW_TYPE_SENT = 1
+//        private const val VIEW_TYPE_RECEIVED = 2
+//    }
+//
+//    override fun getItemViewType(position: Int): Int {
+//        return if (messages[position].senderId == currentUserId) {
+//            VIEW_TYPE_SENT
+//        } else {
+//            VIEW_TYPE_RECEIVED
+//        }
+//    }
+//}
 
 
 

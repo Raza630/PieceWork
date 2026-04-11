@@ -39,9 +39,11 @@
             android:exported="false" />
         <activity
             android:name=".ChatActivity"
+            android:launchMode="singleTop"
             android:exported="false" />
         <activity
             android:name=".Profile"
+            android:launchMode="singleTop"
             android:exported="false" />
         <activity
             android:name=".MainActivity"

@@ -2,6 +2,7 @@ package com.example.workman
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,12 +18,13 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.toObject
 
-class ChatActivity : AppCompatActivity() {
+class ChatActivity : BaseBottomNavigationActivity() {
 
     private lateinit var binding: ActivityChatBinding
     private lateinit var chatAdapter: ChatAdapter
     private val messagesList = mutableListOf<ChatMessage>()
     private var messagesListener: ListenerRegistration? = null
+    private var currentReplyMessage: ChatMessage? = null  // Stores message being replied to
 
     private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
     private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
@@ -41,6 +43,11 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        ProfanityFilter.loadProfanityList(this)
+
+        setupBottomNavigation()
+        updateBottomNavigationSelection(binding.bottomNavigation, R.id.nav_Chat)
+
 
         chatId = intent.getStringExtra("CHAT_ID") ?: run {
             showToast("Chat room not specified")
@@ -52,23 +59,32 @@ class ChatActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupClickListeners()
+        setupReplyPreview()
         loadMessages()
     }
 
+    private fun setupBottomNavigation() {
+        setupBottomNavigation(binding.bottomNavigation)
+    }
+
     private fun setupRecyclerView() {
-        // Initialize adapter with just currentUserId (remove messagesList parameter)
         chatAdapter = ChatAdapter(currentUserId)
+
+        // Long press callback to select message for reply
+        chatAdapter.onMessageLongClick = { message ->
+            currentReplyMessage = message
+            showReplyPreview(message)
+        }
 
         binding.recyclerChat.apply {
             layoutManager = LinearLayoutManager(this@ChatActivity).apply {
-                stackFromEnd = true  // New messages appear at bottom
+                stackFromEnd = true
                 reverseLayout = false
             }
             adapter = chatAdapter
             setHasFixedSize(true)
             itemAnimator = DefaultItemAnimator()
 
-            // Smooth scroll to bottom when keyboard appears
             addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
                 if (bottom < oldBottom) {
                     postDelayed({
@@ -81,27 +97,6 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-//    private fun setupRecyclerView() {
-//        chatAdapter = ChatAdapter(messagesList, currentUserId)
-//
-//        binding.recyclerChat.apply {
-//            layoutManager = LinearLayoutManager(this@ChatActivity).apply {
-//                stackFromEnd = true
-//                reverseLayout = false
-//            }
-//            adapter = chatAdapter
-//            setHasFixedSize(true)
-//            itemAnimator = DefaultItemAnimator()
-//
-//            // Smooth scroll to bottom when keyboard appears
-//            addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
-//                if (bottom < oldBottom) {
-//                    postDelayed({ smoothScrollToPosition(messagesList.size - 1) }, 100)
-//                }
-//            }
-//        }
-//    }
-
     private fun setupClickListeners() {
         binding.buttonSend.setOnClickListener { sendMessage() }
 
@@ -113,6 +108,27 @@ class ChatActivity : AppCompatActivity() {
                 false
             }
         }
+
+        binding.replyCancel.setOnClickListener {
+            hideReplyPreview()
+        }
+    }
+
+    private fun setupReplyPreview() {
+        // Add a small layout at bottom to show reply (in XML you can create binding.replyLayout)
+        binding.replyLayout.visibility = View.GONE
+    }
+
+    private fun showReplyPreview(message: ChatMessage) {
+        binding.replyLayout.visibility = View.VISIBLE
+        binding.replySenderName.text =
+            if (message.senderId == currentUserId) "You replied to:" else "Other User replied to:"
+        binding.replyMessageText.text = message.messageText
+    }
+
+    private fun hideReplyPreview() {
+        currentReplyMessage = null
+        binding.replyLayout.visibility = View.GONE
     }
 
     private fun loadMessages() {
@@ -138,11 +154,10 @@ class ChatActivity : AppCompatActivity() {
                             doc.toObject<ChatMessage>()?.copy(messageId = doc.id)
                         }
 
-                        // Only update if messages actually changed
                         if (newMessages != messagesList) {
                             messagesList.clear()
                             messagesList.addAll(newMessages)
-                            chatAdapter.submitList(newMessages.toList()) // Create new list instance
+                            chatAdapter.submitList(newMessages.toList())
                         }
 
                         scrollToBottomIfNeeded()
@@ -151,58 +166,26 @@ class ChatActivity : AppCompatActivity() {
             }
     }
 
-
-//    private fun loadMessages() {
-//        messagesListener = firestore.collection("chats")
-//            .document(chatId)
-//            .collection("messages")
-//            .orderBy("timestamp", Query.Direction.ASCENDING)
-//            .addSnapshotListener { snapshots, error ->
-//                when {
-//                    error != null -> {
-//                        Log.e("ChatActivity", "Listen failed", error)
-//                        showToast("Error loading messages")
-//                        return@addSnapshotListener
-//                    }
-//                    snapshots == null -> {
-//                        Log.w("ChatActivity", "Messages snapshot is null")
-//                        return@addSnapshotListener
-//                    }
-//
-//                    else -> {
-//                        val newMessages = snapshots.documents.mapNotNull { doc ->
-//                            doc.toObject<ChatMessage>()?.copy(messageId = doc.id)
-//                        }
-//
-//
-//                        messagesList.apply {
-//                            clear()
-//                            addAll(newMessages)
-//                        }
-//
-//                        chatAdapter.notifyDataSetChanged()
-//                        chatAdapter.submitList(newMessages)
-//                        scrollToBottomIfNeeded()
-//
-//                    }
-//                }
-//            }
-//    }
-
     private fun sendMessage() {
-        val messageText = binding.editTextMessage.text.toString().trim()
-        if (messageText.isEmpty()) {
+        val originalMessage = binding.editTextMessage.text.toString().trim()
+        if (originalMessage.isEmpty()) {
             binding.editTextMessage.error = "Message cannot be empty"
             return
         }
+
+        val finalMessage = if (ProfanityFilter.containsProfanity(originalMessage)) {
+            ProfanityFilter.cleanMessage(originalMessage)
+        } else originalMessage
 
         binding.buttonSend.isEnabled = false
 
         val newMessage = hashMapOf(
             "senderId" to currentUserId,
-            "messageText" to messageText,
+            "messageText" to finalMessage,
             "timestamp" to System.currentTimeMillis(),
-            "isRead" to false
+            "isRead" to false,
+            "replyToMessageId" to currentReplyMessage?.messageId,
+            "replyToMessageText" to currentReplyMessage?.messageText
         )
 
         firestore.collection("chats")
@@ -211,10 +194,10 @@ class ChatActivity : AppCompatActivity() {
             .add(newMessage)
             .addOnCompleteListener { task ->
                 binding.buttonSend.isEnabled = true
-
                 if (task.isSuccessful) {
                     binding.editTextMessage.text?.clear()
                     updateLastActivityTime()
+                    hideReplyPreview() // Reset reply after sending
                 } else {
                     showToast("Failed to send message")
                     Log.e("ChatActivity", "Send failed", task.exception)
@@ -233,7 +216,7 @@ class ChatActivity : AppCompatActivity() {
     private fun isLastItemVisible(): Boolean {
         val layoutManager = binding.recyclerChat.layoutManager as LinearLayoutManager
         val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
-        return lastVisiblePosition >= messagesList.size - 2 // -2 for better UX
+        return lastVisiblePosition >= messagesList.size - 2
     }
 
     private fun updateLastActivityTime() {
@@ -253,7 +236,333 @@ class ChatActivity : AppCompatActivity() {
         messagesListener?.remove()
         super.onDestroy()
     }
+    override fun onResume() {
+        super.onResume()
+        updateBottomNavigationSelection(binding.bottomNavigation, R.id.nav_Chat)
+    }
 }
+
+
+
+
+
+
+//class ChatActivity : AppCompatActivity() {
+//
+//    private lateinit var binding: ActivityChatBinding
+//    private lateinit var chatAdapter: ChatAdapter
+//    private val messagesList = mutableListOf<ChatMessage>()
+//    private var messagesListener: ListenerRegistration? = null
+//    private var currentReplyMessage: ChatMessage? = null
+//
+//    private val firestore: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+//    private val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
+//
+//    private lateinit var chatId: String
+//    private val currentUserId: String by lazy {
+//        intent.getStringExtra("USER_ID") ?: auth.currentUser?.uid
+//        ?: run {
+//            showToast("User not authenticated")
+//            finish()
+//            ""
+//        }
+//    }
+//
+//    override fun onCreate(savedInstanceState: Bundle?) {
+//        super.onCreate(savedInstanceState)
+//        binding = ActivityChatBinding.inflate(layoutInflater)
+//        setContentView(binding.root)
+//        ProfanityFilter.loadProfanityList(this)
+//
+//        chatId = intent.getStringExtra("CHAT_ID") ?: run {
+//            showToast("Chat room not specified")
+//            finish()
+//            return
+//        }
+//
+//        if (currentUserId.isEmpty()) return
+//
+//        setupRecyclerView()
+//        setupClickListeners()
+//        loadMessages()
+//    }
+//
+//    private fun setupRecyclerView() {
+//        // Initialize adapter with just currentUserId (remove messagesList parameter)
+//        chatAdapter = ChatAdapter(currentUserId)
+//
+//        binding.recyclerChat.apply {
+//            layoutManager = LinearLayoutManager(this@ChatActivity).apply {
+//                stackFromEnd = true  // New messages appear at bottom
+//                reverseLayout = false
+//            }
+//            adapter = chatAdapter
+//            setHasFixedSize(true)
+//            itemAnimator = DefaultItemAnimator()
+//
+//            // Smooth scroll to bottom when keyboard appears
+//            addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+//                if (bottom < oldBottom) {
+//                    postDelayed({
+//                        if (chatAdapter.itemCount > 0) {
+//                            smoothScrollToPosition(chatAdapter.itemCount - 1)
+//                        }
+//                    }, 100)
+//                }
+//            }
+//        }
+//    }
+//
+////    private fun setupRecyclerView() {
+////        chatAdapter = ChatAdapter(messagesList, currentUserId)
+////
+////        binding.recyclerChat.apply {
+////            layoutManager = LinearLayoutManager(this@ChatActivity).apply {
+////                stackFromEnd = true
+////                reverseLayout = false
+////            }
+////            adapter = chatAdapter
+////            setHasFixedSize(true)
+////            itemAnimator = DefaultItemAnimator()
+////
+////            // Smooth scroll to bottom when keyboard appears
+////            addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+////                if (bottom < oldBottom) {
+////                    postDelayed({ smoothScrollToPosition(messagesList.size - 1) }, 100)
+////                }
+////            }
+////        }
+////    }
+//
+//    private fun setupClickListeners() {
+//        binding.buttonSend.setOnClickListener { sendMessage() }
+//
+//        binding.editTextMessage.setOnEditorActionListener { _, actionId, _ ->
+//            if (actionId == EditorInfo.IME_ACTION_SEND) {
+//                sendMessage()
+//                true
+//            } else {
+//                false
+//            }
+//        }
+//    }
+//
+//    private fun loadMessages() {
+//        messagesListener = firestore.collection("chats")
+//            .document(chatId)
+//            .collection("messages")
+//            .orderBy("timestamp", Query.Direction.ASCENDING)
+//            .addSnapshotListener { snapshots, error ->
+//                when {
+//                    error != null -> {
+//                        Log.e("ChatActivity", "Listen failed", error)
+//                        showToast("Error loading messages")
+//                        return@addSnapshotListener
+//                    }
+//
+//                    snapshots == null -> {
+//                        Log.w("ChatActivity", "Messages snapshot is null")
+//                        return@addSnapshotListener
+//                    }
+//
+//                    else -> {
+//                        val newMessages = snapshots.documents.mapNotNull { doc ->
+//                            doc.toObject<ChatMessage>()?.copy(messageId = doc.id)
+//                        }
+//
+//                        // Only update if messages actually changed
+//                        if (newMessages != messagesList) {
+//                            messagesList.clear()
+//                            messagesList.addAll(newMessages)
+//                            chatAdapter.submitList(newMessages.toList()) // Create new list instance
+//                        }
+//
+//                        scrollToBottomIfNeeded()
+//                    }
+//                }
+//            }
+//    }
+//
+//
+////    private fun loadMessages() {
+////        messagesListener = firestore.collection("chats")
+////            .document(chatId)
+////            .collection("messages")
+////            .orderBy("timestamp", Query.Direction.ASCENDING)
+////            .addSnapshotListener { snapshots, error ->
+////                when {
+////                    error != null -> {
+////                        Log.e("ChatActivity", "Listen failed", error)
+////                        showToast("Error loading messages")
+////                        return@addSnapshotListener
+////                    }
+////                    snapshots == null -> {
+////                        Log.w("ChatActivity", "Messages snapshot is null")
+////                        return@addSnapshotListener
+////                    }
+////
+////                    else -> {
+////                        val newMessages = snapshots.documents.mapNotNull { doc ->
+////                            doc.toObject<ChatMessage>()?.copy(messageId = doc.id)
+////                        }
+////
+////
+////                        messagesList.apply {
+////                            clear()
+////                            addAll(newMessages)
+////                        }
+////
+////                        chatAdapter.notifyDataSetChanged()
+////                        chatAdapter.submitList(newMessages)
+////                        scrollToBottomIfNeeded()
+////
+////                    }
+////                }
+////            }
+////    }
+//
+//    private fun sendMessage() {
+//        val originalMessage = binding.editTextMessage.text.toString().trim()
+//        if (originalMessage.isEmpty()) {
+//            binding.editTextMessage.error = "Message cannot be empty"
+//            return
+//        }
+//
+//        // Check and clean profanity
+//        val finalMessage = if (ProfanityFilter.containsProfanity(originalMessage)) {
+//            ProfanityFilter.cleanMessage(originalMessage)
+//        } else {
+//            originalMessage
+//        }
+//
+//        binding.buttonSend.isEnabled = false
+//
+//        val newMessage = hashMapOf(
+//            "senderId" to currentUserId,
+//            "messageText" to finalMessage,
+//            "timestamp" to System.currentTimeMillis(),
+//            "isRead" to false,
+//            "replyTo" to currentReplyMessage?.messageId  // 🔹 added
+//        )
+//
+//        firestore.collection("chats")
+//            .document(chatId)
+//            .collection("messages")
+//            .add(newMessage)
+//            .addOnCompleteListener { task ->
+//                binding.buttonSend.isEnabled = true
+//
+//                if (task.isSuccessful) {
+//                    binding.editTextMessage.text?.clear()
+//                    updateLastActivityTime()
+//                    currentReplyMessage = null
+//                } else {
+//                    showToast("Failed to send message")
+//                    Log.e("ChatActivity", "Send failed", task.exception)
+//                }
+//            }
+//    }
+//
+//
+////    private fun sendMessage() {
+////        val messageText = binding.editTextMessage.text.toString().trim()
+////        if (messageText.isEmpty()) return
+////
+////        val newMessage = hashMapOf(
+////            "senderId" to currentUserId,
+////            "messageText" to messageText,
+////            "timestamp" to System.currentTimeMillis(),
+////            "isRead" to false,
+////            "replyTo" to currentReplyMessage?.messageId  // 🔹 added
+////        )
+////
+////        firestore.collection("chats")
+////            .document(chatId)
+////            .collection("messages")
+////            .add(newMessage)
+////            .addOnSuccessListener {
+////                binding.editTextMessage.text?.clear()
+////                currentReplyMessage = null // reset reply after sending
+////            }
+////    }
+//
+//
+////    private fun sendMessage() {
+////        val messageText = binding.editTextMessage.text.toString().trim()
+////        if (messageText.isEmpty()) {
+////            binding.editTextMessage.error = "Message cannot be empty"
+////            return
+////        }
+////
+////        binding.buttonSend.isEnabled = false
+////
+////        val newMessage = hashMapOf(
+////            "senderId" to currentUserId,
+////            "messageText" to messageText,
+////            "timestamp" to System.currentTimeMillis(),
+////            "isRead" to false
+////        )
+////
+////        firestore.collection("chats")
+////            .document(chatId)
+////            .collection("messages")
+////            .add(newMessage)
+////            .addOnCompleteListener { task ->
+////                binding.buttonSend.isEnabled = true
+////
+////                if (task.isSuccessful) {
+////                    binding.editTextMessage.text?.clear()
+////                    updateLastActivityTime()
+////                } else {
+////                    showToast("Failed to send message")
+////                    Log.e("ChatActivity", "Send failed", task.exception)
+////                }
+////            }
+////    }
+//
+//    private fun scrollToBottomIfNeeded() {
+//        if (messagesList.isNotEmpty() && isLastItemVisible()) {
+//            binding.recyclerChat.post {
+//                binding.recyclerChat.smoothScrollToPosition(messagesList.size - 1)
+//            }
+//        }
+//    }
+//
+//    private fun isLastItemVisible(): Boolean {
+//        val layoutManager = binding.recyclerChat.layoutManager as LinearLayoutManager
+//        val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
+//        return lastVisiblePosition >= messagesList.size - 2 // -2 for better UX
+//    }
+//
+//    private fun updateLastActivityTime() {
+//        firestore.collection("chats")
+//            .document(chatId)
+//            .update("lastActivity", FieldValue.serverTimestamp())
+//            .addOnFailureListener { e ->
+//                Log.w("ChatActivity", "Failed to update last activity", e)
+//            }
+//    }
+//
+//    private fun showToast(message: String) {
+//        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+//    }
+//
+//    override fun onDestroy() {
+//        messagesListener?.remove()
+//        super.onDestroy()
+//    }
+//}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

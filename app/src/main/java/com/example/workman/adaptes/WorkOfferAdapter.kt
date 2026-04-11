@@ -114,71 +114,6 @@ class WorkOfferAdapter(
             }
     }
 
-    /**
-     * Sends a notification to the boss when the work is accepted.
-     */
-//    private fun sendNotificationToBoss(workOffer: WorkOffer) {
-//        // Get the boss's FCM token from Firestore
-//        db.collection("workOffers")
-//            .document(workOffer.id)
-//            .get()
-//            .addOnSuccessListener { document ->
-//                val fcmToken = document.getString("fcmToken") // Assuming the FCM token is stored in the 'fcmToken' field
-//
-//                Log.e("WorkOfferAdapter", "No FCM token found for work offer ID: ${workOffer.id}")
-//                if (fcmToken != null) {
-//                    // Create a notification payload
-//
-//                    val notification = mapOf(
-//                        "to" to fcmToken,
-//                        "notification" to mapOf(
-//                            "title" to "Work Accepted",
-//                            "body" to "Your work offer has been accepted by a worker."
-//                        )
-//                    )
-//
-//                    // Send the notification (using FCM)
-//                    sendFCMNotification(notification)
-//                }
-//            }
-//    }
-//
-//    /**
-//     * Sends the notification via Firebase Cloud Messaging (FCM).
-//     */
-//    private fun sendFCMNotification(notification: Map<String, Any>) {
-//        // FCM Server URL and API Key for authorization
-//        val fcmUrl = "https://fcm.googleapis.com/fcm/send"
-////        val apiKey = "AIzaSyCEGbbOF-ZAs3wVmdUhRonGJGJ78oqH4Us"
-//        val apiKey = BuildConfig.FCM_API_KEY// Replace with your actual Firebase Server Key
-//
-//
-//        val json = JSONObject(notification)
-//
-//        // Create the JSON Object Request for sending the FCM notification
-//        val request = object : JsonObjectRequest(
-//            Method.POST, // HTTP method (POST)
-//            fcmUrl, // URL
-//            json, // JSON object as body
-//            Response.Listener { response ->
-//                Log.d("FCM", "Notification sent successfully: $response")
-//            },
-//            Response.ErrorListener { error ->
-//                Log.e("FCM", "Failed to send notification: ${error.message}")
-//            }) {
-//
-//            // Set headers, including the authorization key
-//            @Throws(AuthFailureError::class)
-//            override fun getHeaders(): MutableMap<String, String> {
-//                val headers = mutableMapOf<String, String>()
-//                headers["Authorization"] = "key=$apiKey"
-//                return headers
-//            }
-//        }
-//
-//        // Add the request to the Volley request queue
-//        Volley.newRequestQueue(context).add(request)
-//    }
 
 
     private fun sendNotificationToBoss(workOffer: WorkOffer, workerId: String) {
@@ -897,6 +832,88 @@ class WorkOfferAdapter(
 //        return view
 //    }
 //}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * Sends a notification to the boss when the work is accepted.
+ */
+//    private fun sendNotificationToBoss(workOffer: WorkOffer) {
+//        // Get the boss's FCM token from Firestore
+//        db.collection("workOffers")
+//            .document(workOffer.id)
+//            .get()
+//            .addOnSuccessListener { document ->
+//                val fcmToken = document.getString("fcmToken") // Assuming the FCM token is stored in the 'fcmToken' field
+//
+//                Log.e("WorkOfferAdapter", "No FCM token found for work offer ID: ${workOffer.id}")
+//                if (fcmToken != null) {
+//                    // Create a notification payload
+//
+//                    val notification = mapOf(
+//                        "to" to fcmToken,
+//                        "notification" to mapOf(
+//                            "title" to "Work Accepted",
+//                            "body" to "Your work offer has been accepted by a worker."
+//                        )
+//                    )
+//
+//                    // Send the notification (using FCM)
+//                    sendFCMNotification(notification)
+//                }
+//            }
+//    }
+//
+//    /**
+//     * Sends the notification via Firebase Cloud Messaging (FCM).
+//     */
+//    private fun sendFCMNotification(notification: Map<String, Any>) {
+//        // FCM Server URL and API Key for authorization
+//        val fcmUrl = "https://fcm.googleapis.com/fcm/send"
+////        val apiKey = "AIzaSyCEGbbOF-ZAs3wVmdUhRonGJGJ78oqH4Us"
+//        val apiKey = BuildConfig.FCM_API_KEY// Replace with your actual Firebase Server Key
+//
+//
+//        val json = JSONObject(notification)
+//
+//        // Create the JSON Object Request for sending the FCM notification
+//        val request = object : JsonObjectRequest(
+//            Method.POST, // HTTP method (POST)
+//            fcmUrl, // URL
+//            json, // JSON object as body
+//            Response.Listener { response ->
+//                Log.d("FCM", "Notification sent successfully: $response")
+//            },
+//            Response.ErrorListener { error ->
+//                Log.e("FCM", "Failed to send notification: ${error.message}")
+//            }) {
+//
+//            // Set headers, including the authorization key
+//            @Throws(AuthFailureError::class)
+//            override fun getHeaders(): MutableMap<String, String> {
+//                val headers = mutableMapOf<String, String>()
+//                headers["Authorization"] = "key=$apiKey"
+//                return headers
+//            }
+//        }
+//
+//        // Add the request to the Volley request queue
+//        Volley.newRequestQueue(context).add(request)
+//    }
 
 
 

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/nav_create_work"
-        android:title="Create Work"
-        android:icon="@drawable/ic_create_work" />
+        android:id="@+id/nav_home"
+        android:title="Home"
+        android:icon="@drawable/ic_home" />
     <item
         android:id="@+id/nav_profile"
         android:title="Profile"
@@ -12,4 +12,5 @@
         android:id="@+id/nav_Chat"
         android:title="Chat"
         android:icon="@drawable/ic_vector_calander" />
+
 </menu>

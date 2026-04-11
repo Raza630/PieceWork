@@ -24,6 +24,7 @@ class WorkerAdapter(private var workers: List<Workerlist>, private val onItemCli
 
     override fun onBindViewHolder(holder: WorkerViewHolder, position: Int) {
         val worker = workers[position]
+//        holder.workerName.text = worker.name // Changed from worker.email to worker.name
         holder.workerName.text = worker.email
 //        holder.workerImage.setImageResource(worker.imageResId)
 //        holder.starRatingBar.setRating(worker.starRating) // Use the starRating property

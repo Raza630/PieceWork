@@ -9,26 +9,50 @@
         android:id="@+id/messageLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="80dp"
+        android:maxWidth="250dp"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="12dp"
+        android:background="@drawable/bg_received_message">
 
+        <!-- Sender name -->
         <TextView
             android:id="@+id/senderName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/black"
             android:textSize="12sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold" />
 
+        <!-- 🔹 Reply Preview Layout (initially hidden) -->
+        <LinearLayout
+            android:id="@+id/replyLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#EEEEEE"
+            android:padding="6dp"
+            android:layout_marginTop="4dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textRepliedMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#555"
+                android:textStyle="italic"
+                android:text="Replied message" />
+        </LinearLayout>
+
+        <!-- Actual message text -->
         <TextView
             android:id="@+id/messageText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textColor="@color/black"
-            android:textSize="16sp"/>
+            android:textSize="16sp" />
 
+        <!-- Timestamp -->
         <TextView
             android:id="@+id/messageTime"
             android:layout_width="wrap_content"
@@ -36,6 +60,52 @@
             android:layout_gravity="end"
             android:layout_marginTop="4dp"
             android:textColor="#3B3B3B"
-            android:textSize="10sp"/>
+            android:textSize="10sp" />
     </LinearLayout>
 </LinearLayout>
+
+
+
+
+
+    <!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="wrap_content"-->
+<!--    android:orientation="vertical"-->
+<!--    android:padding="8dp">-->
+
+<!--    <LinearLayout-->
+<!--        android:id="@+id/messageLayout"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:maxWidth="80dp"-->
+<!--        android:orientation="vertical"-->
+<!--        android:padding="12dp">-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/senderName"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:textColor="@color/black"-->
+<!--            android:textSize="12sp"-->
+<!--            android:textStyle="bold"/>-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/messageText"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="4dp"-->
+<!--            android:textColor="@color/black"-->
+<!--            android:textSize="16sp"/>-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/messageTime"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_gravity="end"-->
+<!--            android:layout_marginTop="4dp"-->
+<!--            android:textColor="#3B3B3B"-->
+<!--            android:textSize="10sp"/>-->
+<!--    </LinearLayout>-->
+<!--</LinearLayout>-->

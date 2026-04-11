@@ -1,31 +1,15 @@
 package com.example.workman.notificationsModel
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
-import android.util.Log
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import com.example.workman.HomeBossDashboardActivity
-import com.example.workman.HomeBossDashboardActivity.Companion.CHANNEL_ID
-import com.example.workman.HomeBossDashboardActivity.Companion.NOTIFICATION_ID
-import com.example.workman.HomeBossDashboardActivity.Companion.REQUEST_NOTIFICATION_PERMISSION
 import com.example.workman.R
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-
 
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {

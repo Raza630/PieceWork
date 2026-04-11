@@ -64,6 +64,8 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.6")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation(platform("androidx.compose:compose-bom:2023.08.00")) // Use latest BOM version
     implementation("androidx.compose.ui:ui")
@@ -88,7 +90,8 @@ dependencies {
     implementation("com.google.android.datatransport:transport-api:3.0.0")
     implementation("androidx.activity:activity:1.9.0")
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
-//    implementation("com.google.firebase:firebase-messaging-ktx:24.1.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.2.1")
+    implementation("androidx.cardview:cardview:1.0.0")
 
     // Testing Libraries
     testImplementation("junit:junit:4.13.2")
@@ -98,18 +101,16 @@ dependencies {
     // Material Design Components
     implementation ("com.google.android.material:material:1.12.0") // Use latest version
 
-    // Glide for image loading
-    implementation ("com.github.bumptech.glide:glide:4.16.0")
+    // Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // Glide for image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
 
-
-
-//    implementation ("com.paulrybitskyi.persistentsearchview:persistentsearchview:1.1.4")
-//    implementation ("com.arlib:PersistentSearchView:1.1.0")
-//    implementation ("org.cryse.widget:persistentsearchview:1.0.4@aar")
-
+    implementation("com.google.android.play:review:2.0.2")
+    implementation("com.google.android.play:review-ktx:2.0.2")
 }
