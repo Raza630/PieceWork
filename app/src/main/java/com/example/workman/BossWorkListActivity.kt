@@ -1,12 +1,10 @@
 package com.example.workman
 
-import android.annotation.SuppressLint
 import android.os.Bundle
-import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.workman.adaptes.WorkOfferAdapter
 import com.example.workman.dataClass.WorkOffer
 import com.google.firebase.auth.FirebaseAuth
@@ -18,21 +16,22 @@ import java.util.Locale
 class BossWorkListActivity : AppCompatActivity() {
 
     private lateinit var db: FirebaseFirestore
-    private lateinit var workListView: ListView
-    private lateinit var workOfferAdapter: WorkOfferAdapter // Or a dedicated adapter for listing created works
+    private lateinit var workRecyclerView: RecyclerView
+
+    private lateinit var workOfferAdapter: WorkOfferAdapter 
     private val workOffers = mutableListOf<WorkOffer>()
 
-
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_boss_work_list) // Create this layout with a ListView (or RecyclerView)
+        setContentView(R.layout.activity_boss_work_list)
 
         db = FirebaseFirestore.getInstance()
-        workListView = findViewById(R.id.workListView)
+        workRecyclerView = findViewById(R.id.workRecyclerView)
 
+        // Set up RecyclerView
+        workRecyclerView.layoutManager = LinearLayoutManager(this)
         workOfferAdapter = WorkOfferAdapter(this, workOffers, db)
-        workListView.adapter = workOfferAdapter
+        workRecyclerView.adapter = workOfferAdapter
 
         loadBossWorkOffers()
     }
@@ -50,7 +49,7 @@ class BossWorkListActivity : AppCompatActivity() {
                     return@addSnapshotListener
                 }
 
-                workOffers.clear()
+                val newList = mutableListOf<WorkOffer>()
                 snapshots?.forEach { document ->
                     val title = document.getString("title") ?: "Untitled"
                     val description = document.getString("description") ?: "No description"
@@ -60,18 +59,18 @@ class BossWorkListActivity : AppCompatActivity() {
                     val isAccepted = document.getBoolean("isAccepted") ?: false
 
                     val workOffer = WorkOffer(
-                        title,
-                        description,
-                        date,
-                        createdAt?.let { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it) } ?: "No date available",
-                        document.get("images") as? List<String> ?: emptyList(),
-                        document.id,
-                        acceptedBy,
-                        isAccepted
+                        title = title,
+                        description = description,
+                        date = date,
+                        createdAt = createdAt?.let { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it) } ?: "No date available",
+                        images = document.get("images") as? List<String> ?: emptyList(),
+                        id = document.id,
+                        acceptedBy = acceptedBy,
+                        isAccepted = isAccepted
                     )
-                    workOffers.add(workOffer)
+                    newList.add(workOffer)
                 }
-                workOfferAdapter.notifyDataSetChanged()
+                workOfferAdapter.updateList(newList)
             }
     }
 }

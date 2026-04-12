@@ -12,13 +12,11 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Optionally add a Toolbar if needed -->
-
-        <ListView
-            android:id="@+id/workListView"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/workRecyclerView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            tools:listitem="@layout/work_offer_item"/>
     </LinearLayout>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

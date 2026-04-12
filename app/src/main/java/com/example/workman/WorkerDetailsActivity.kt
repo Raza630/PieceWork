@@ -1,59 +1,89 @@
 package com.example.workman
 
-import android.annotation.SuppressLint
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.net.Uri
 import android.os.Bundle
-import androidx.appcompat.widget.Toolbar
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.example.workman.adaptes.PreviousWorkAdaper
-import com.example.workman.adaptes.WorkerAdapter
-import com.example.workman.dataClass.Workers
+import android.view.View
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
+import com.example.workman.databinding.ActivityWorkerDetailsBinding
+import com.google.firebase.firestore.FirebaseFirestore
 
 class WorkerDetailsActivity : AppCompatActivity() {
-    private lateinit var toolbar: Toolbar
-    private lateinit var workers: List<Workers>
-    private lateinit var previousWorkAdaper: PreviousWorkAdaper
+    
+    private lateinit var binding: ActivityWorkerDetailsBinding
+    private val db = FirebaseFirestore.getInstance()
 
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_worker_details)
-        val periviosworkrecyclerView: RecyclerView = findViewById(R.id.periviosworkrecyclerView)
+        binding = ActivityWorkerDetailsBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
+        val workerId = intent.getStringExtra("worker_id")
+        if (workerId != null) {
+            fetchWorkerDetails(workerId)
+        } else {
+            Toast.makeText(this, "Worker ID missing", Toast.LENGTH_SHORT).show()
+            finish()
+        }
+    }
 
-        workers = listOf(
-            Workers("John Doe", R.drawable.ic_icon__profile, "Professionals",2.0f),
-            Workers("Jane Smith", R.drawable.ic_icon__profile, "Associate Professionals",4.5f),
-            Workers("Mike Johnson", R.drawable.ic_icon__profile, "Clerks",5.0f),
-            Workers("John Doe", R.drawable.ic_icon__profile, "Professionals",3.5f),
-            Workers("Jane Smith", R.drawable.ic_icon__profile, "Associate Professionals",4.5f),
-            Workers("Mike Johnson", R.drawable.ic_icon__profile, "Clerks",3.5f),
-            Workers("John Doe", R.drawable.ic_icon__profile, "Professionals",2.5f),
-            Workers("Jane Smith", R.drawable.ic_icon__profile, "Associate Professionals",3.5f),
-            Workers("Mike Johnson", R.drawable.ic_icon__profile, "Clerks",4.1f),
-            Workers("John Doe", R.drawable.ic_icon__profile, "Professionals",1.5f),
-            Workers("Jane Smith", R.drawable.ic_icon__profile, "Associate Professionals",4.5f),
-            Workers("Mike Johnson", R.drawable.ic_icon__profile, "Clerks",3.5f),
-            Workers("John Doe", R.drawable.ic_icon__profile, "Professionals",3.3f),
-            Workers("Jane Smith", R.drawable.ic_icon__profile, "Associate Professionals",4.5f),
-            Workers("Mike Johnson", R.drawable.ic_icon__profile, "Clerks",2.1f),
-            Workers("John Doe", R.drawable.ic_icon__profile, "Professionals",2.3f),
-            Workers("Jane Smith", R.drawable.ic_icon__profile, "Associate Professionals",2.4f),
-            Workers("Mike Johnson", R.drawable.ic_icon__profile, "Clerks",5.0f)
-            // Add more workers as needed
-        )
+    private fun fetchWorkerDetails(workerId: String) {
+        binding.progressBar.visibility = View.VISIBLE
+        db.collection("users").document(workerId).get()
+            .addOnSuccessListener { document ->
+                binding.progressBar.visibility = View.GONE
+                if (document.exists()) {
+                    val name = document.getString("name") ?: "Unknown"
+                    val email = document.getString("email") ?: "N/A"
+                    val dob = document.getString("dob") ?: "N/A"
+                    val gender = document.getString("gender") ?: "N/A"
+                    val phone = document.getString("phone") ?: ""
+                    val photoUrl = document.getString("photoUrl") ?: ""
 
+                    // Update UI
+                    binding.textViewShowWelcome.text = name
+                    binding.textViewShowFullName.text = name
+                    binding.textViewShowEmail.text = email
+                    binding.textViewShowDob.text = dob
+                    binding.textViewShowGender.text = gender
+                    binding.textViewShowMobile.text = phone
 
-        previousWorkAdaper = PreviousWorkAdaper(workers) {
-            val intent = Intent(this, WorkerDetailsActivity::class.java)
+                    if (photoUrl.isNotEmpty()) {
+                        Glide.with(this)
+                            .load(photoUrl)
+                            .placeholder(R.drawable.ic_profile)
+                            .into(binding.imageViewProfileDp)
+                    }
 
+                    setupContactActions(phone, workerId)
+                }
+            }
+            .addOnFailureListener {
+                binding.progressBar.visibility = View.GONE
+                Toast.makeText(this, "Failed to load details", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun setupContactActions(phone: String, workerId: String) {
+        // Chat within the app
+        binding.iconChat.setOnClickListener {
+            val intent = Intent(this, ChatActivity::class.java)
+            intent.putExtra("receiver_id", workerId)
             startActivity(intent)
         }
 
-        periviosworkrecyclerView.layoutManager = LinearLayoutManager(this)
-        periviosworkrecyclerView.adapter = previousWorkAdaper
-
+        // WhatsApp action
+        binding.showWhatsappIcon.setOnClickListener {
+            if (phone.isNotEmpty()) {
+                val url = "https://api.whatsapp.com/send?phone=+91$phone"
+                val i = Intent(Intent.ACTION_VIEW)
+                i.data = Uri.parse(url)
+                startActivity(i)
+            } else {
+                Toast.makeText(this, "Phone number not available", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

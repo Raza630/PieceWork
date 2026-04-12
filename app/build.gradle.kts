@@ -92,6 +92,7 @@ dependencies {
     implementation("com.google.firebase:firebase-database-ktx:21.0.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.1")
     implementation("androidx.cardview:cardview:1.0.0")
+    implementation("androidx.ink:ink-geometry:1.0.0")
 
     // Testing Libraries
     testImplementation("junit:junit:4.13.2")
