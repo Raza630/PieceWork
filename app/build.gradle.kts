@@ -86,6 +86,9 @@ dependencies {
     // RecyclerView
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
+    // SwipeRefreshLayout
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
     implementation("com.android.volley:volley:1.2.1")
     implementation("com.google.android.datatransport:transport-api:3.0.0")
     implementation("androidx.activity:activity:1.9.0")

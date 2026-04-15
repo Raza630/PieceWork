@@ -26,6 +26,10 @@
             android:name=".chatModel.ChatMainActivity"
             android:exported="false" />
         <activity
+            android:name=".MyJobOffersActivity"
+            android:exported="false"
+            android:parentActivityName=".HomeBossDashboardActivity" />
+        <activity
             android:name=".BossWorkListActivity"
             android:exported="false" />
         <activity

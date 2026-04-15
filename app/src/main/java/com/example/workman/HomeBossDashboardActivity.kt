@@ -22,7 +22,7 @@ class HomeBossDashboardActivity : AppCompatActivity() {
                         startActivity(intent)
                     },
                     onViewOffers = {
-                        startActivity(Intent(this, BossWorkListActivity::class.java))
+                        startActivity(Intent(this, MyJobOffersActivity::class.java))
                     },
                     onCreateWork = {
                         startActivity(Intent(this, CreateWorkActivity::class.java))

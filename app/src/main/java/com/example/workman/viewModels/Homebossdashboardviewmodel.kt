@@ -2,8 +2,12 @@ package com.example.workman.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.workman.dataClass.BookingStatus
+import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -19,8 +23,14 @@ sealed class WorkerListState {
 data class DashboardUiState(
     val workerListState: WorkerListState = WorkerListState.Loading,
     val searchQuery: String = "",
+    val serviceSearchQuery: String = "",
     val selectedCategory: String = "All",
-    val filteredWorkers: List<WorkerUiModel> = emptyList()
+    val filteredWorkers: List<WorkerUiModel> = emptyList(),
+    val popularServices: List<WorkerUiModel> = emptyList(),
+    val bookings: List<BookingUiModel> = emptyList(),
+    val selectedBookingTab: Int = 0, // 0: Pending, 1: Active, 2: History
+    val bookingToRate: BookingUiModel? = null,
+    val showRatingDialog: Boolean = false
 )
 
 // ─── Firestore Worker Document Model ──────────────────────────────────────────
@@ -42,6 +52,8 @@ data class WorkerDocument(
 class HomeBossDashboardViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
+    private var bookingsListener: ListenerRegistration? = null
 
     // Raw fetched list — never modified after fetch
     private var allWorkers: List<WorkerUiModel> = emptyList()
@@ -51,6 +63,91 @@ class HomeBossDashboardViewModel : ViewModel() {
 
     init {
         fetchWorkers()
+        observeBookings()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        bookingsListener?.remove()
+    }
+
+    // ── Real-time Bookings ──────────────────────────────────────────────────
+
+    private fun observeBookings() {
+        val currentUserId = auth.currentUser?.uid ?: return
+        
+        bookingsListener = db.collection("bookings")
+            .whereEqualTo("bossId", currentUserId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                
+                val bookingList = snapshot?.documents?.mapNotNull { doc ->
+                    val statusStr = doc.getString("status") ?: "PENDING"
+                    BookingUiModel(
+                        id = doc.id,
+                        workerId = doc.getString("workerId") ?: "",
+                        workerName = doc.getString("workerName") ?: "Worker",
+                        workerPhotoUrl = doc.getString("workerPhotoUrl") ?: "",
+                        serviceName = doc.getString("serviceName") ?: "Service",
+                        agreedRate = doc.getString("agreedRate") ?: "0",
+                        status = BookingStatus.valueOf(statusStr),
+                        date = doc.getDate("date") ?: java.util.Date(),
+                        bossId = doc.getString("bossId") ?: ""
+                    )
+                } ?: emptyList()
+                
+                _uiState.update { it.copy(bookings = bookingList) }
+            }
+    }
+
+    fun onBookingTabSelected(index: Int) {
+        _uiState.update { it.copy(selectedBookingTab = index) }
+    }
+
+    fun updateBookingStatus(bookingId: String, newStatus: BookingStatus) {
+        viewModelScope.launch {
+            try {
+                db.collection("bookings").document(bookingId)
+                    .update("status", newStatus.name)
+                    .await()
+                
+                if (newStatus == BookingStatus.COMPLETED) {
+                    val booking = _uiState.value.bookings.find { it.id == bookingId }
+                    _uiState.update { it.copy(bookingToRate = booking, showRatingDialog = true) }
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun submitRating(rating: Float, review: String) {
+        val booking = _uiState.value.bookingToRate ?: return
+        viewModelScope.launch {
+            try {
+                // 1. Add review to 'reviews' collection
+                val reviewData = hashMapOf(
+                    "workerId" to booking.workerId,
+                    "bossId" to booking.bossId,
+                    "bookingId" to booking.id,
+                    "rating" to rating,
+                    "review" to review,
+                    "timestamp" to com.google.firebase.Timestamp.now()
+                )
+                db.collection("reviews").add(reviewData).await()
+
+                // 2. Update worker's average rating (simplified logic for now)
+                // In a real app, you'd use a Cloud Function or a transaction to update avg rating
+                
+                _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun dismissRatingDialog() {
+        _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
     }
 
     // ── Firestore Fetch ────────────────────────────────────────────────────────
@@ -88,7 +185,8 @@ class HomeBossDashboardViewModel : ViewModel() {
                             workers  = allWorkers,
                             query    = state.searchQuery,
                             category = state.selectedCategory
-                        )
+                        ),
+                        popularServices = allWorkers.sortedByDescending { it.rating }.take(5)
                     )
                 }
 
@@ -109,6 +207,10 @@ class HomeBossDashboardViewModel : ViewModel() {
                 filteredWorkers = applyFilters(allWorkers, query, state.selectedCategory)
             )
         }
+    }
+
+    fun onServiceSearchQueryChange(query: String) {
+        _uiState.update { it.copy(serviceSearchQuery = query) }
     }
 
     // ── Category Filter ───────────────────────────────────────────────────────
