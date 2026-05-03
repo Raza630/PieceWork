@@ -2,15 +2,22 @@ package com.example.workman.viewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
+import android.location.Geocoder
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.Locale
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 
 // ─── UI State ──────────────────────────────────────────────────────────────────
 
@@ -30,7 +37,9 @@ data class DashboardUiState(
     val bookings: List<BookingUiModel> = emptyList(),
     val selectedBookingTab: Int = 0, // 0: Pending, 1: Active, 2: History
     val bookingToRate: BookingUiModel? = null,
-    val showRatingDialog: Boolean = false
+    val showRatingDialog: Boolean = false,
+    val userName: String = "Boss",
+    val userLocation: String = "Detecting location..."
 )
 
 // ─── Firestore Worker Document Model ──────────────────────────────────────────
@@ -62,8 +71,60 @@ class HomeBossDashboardViewModel : ViewModel() {
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
 
     init {
+        loadUserData()
         fetchWorkers()
         observeBookings()
+    }
+
+    private fun loadUserData() {
+        val user = auth.currentUser ?: return
+        viewModelScope.launch {
+            try {
+                val doc = db.collection("users").document(user.uid).get().await()
+                _uiState.update { it.copy(
+                    userName = doc.getString("name") ?: "Boss",
+                    userLocation = doc.getString("location") ?: "Not set"
+                ) }
+            } catch (e: Exception) { }
+        }
+    }
+
+    fun updateLocation(context: Context) {
+        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+        
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            _uiState.update { it.copy(userLocation = "Permission denied") }
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(userLocation = "Detecting...") }
+                val location = fusedLocationClient.lastLocation.await()
+                if (location != null) {
+                    val geocoder = Geocoder(context, Locale.getDefault())
+                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val address = addresses[0]
+                        val area = address.subLocality ?: address.locality ?: address.subAdminArea ?: "Unknown Area"
+                        val city = address.locality ?: ""
+                        val locationString = if (city.isNotEmpty() && area != city) "$area, $city" else area
+                        
+                        _uiState.update { it.copy(userLocation = locationString) }
+                        auth.currentUser?.uid?.let { uid ->
+                            db.collection("users").document(uid).update("location", locationString)
+                        }
+                    } else {
+                        _uiState.update { it.copy(userLocation = "Area unknown") }
+                    }
+                } else {
+                    _uiState.update { it.copy(userLocation = "Location unavailable") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(userLocation = "Error getting location") }
+            }
+        }
     }
 
     override fun onCleared() {

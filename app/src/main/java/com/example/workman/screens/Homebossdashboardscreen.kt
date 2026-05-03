@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
@@ -235,11 +236,19 @@ private fun HomeContent(
     onWorkerClick: (WorkerUiModel) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-
+    
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
+        // ── Header Section with User Info & Location
+        item {
+            BossHeader(
+                name = uiState.userName,
+                location = uiState.userLocation
+            )
+        }
+
         // ── Search bar
         item {
             DashboardSearchBar(
@@ -491,6 +500,53 @@ private fun PopularServiceCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Star, null, tint = Orange, modifier = Modifier.size(10.dp))
                     Text(" ${worker.rating}", fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BossHeader(
+    name: String,
+    location: String
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                brush = Brush.verticalGradient(listOf(Orange, Color(0xFFFFB74D))),
+                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+            )
+            .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .border(2.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Text(
+                    "Hello, $name!",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, null, tint = Color.White.copy(alpha = 0.8f), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text(location, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
                 }
             }
         }

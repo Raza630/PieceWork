@@ -1,0 +1,98 @@
+package com.example.workman.utils
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import com.example.workman.*
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.firebase.auth.FirebaseAuth
+
+object NavigationUtils {
+
+    fun navigateToHome(context: Context) {
+        val role = SharedPreferencesHelper(context).getUserChoice()
+        val targetClass = if (role == "Hiring") {
+            HomeBossDashboardActivity::class.java
+        } else {
+            HomeWorkerDashboardActivity::class.java
+        }
+        
+        if (context.javaClass == targetClass) return
+
+        val intent = Intent(context, targetClass).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        context.startActivity(intent)
+        if (context is Activity) context.overridePendingTransition(0, 0)
+    }
+
+    fun navigateToChat(context: Context) {
+        if (context is ChatActivity) return
+
+        val chatId = "G8iV5Ci38lTbj8rt8dw3" // Standardized test chat ID
+        val intent = Intent(context, ChatActivity::class.java).apply {
+            putExtra("CHAT_ID", chatId)
+            putExtra("USER_ID", FirebaseAuth.getInstance().currentUser?.uid)
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        context.startActivity(intent)
+        if (context is Activity) context.overridePendingTransition(0, 0)
+    }
+
+    fun navigateToProfile(context: Context) {
+        if (context is Profile) return
+
+        val intent = Intent(context, Profile::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        context.startActivity(intent)
+        if (context is Activity) context.overridePendingTransition(0, 0)
+    }
+
+    fun navigateToMyJobs(context: Context) {
+        val role = SharedPreferencesHelper(context).getUserChoice()
+        val targetClass = if (role == "Hiring") {
+            MyJobOffersActivity::class.java
+        } else {
+            WorkerJobsActivity::class.java
+        }
+        
+        val intent = Intent(context, targetClass).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        context.startActivity(intent)
+        if (context is Activity) context.overridePendingTransition(0, 0)
+    }
+
+    fun navigateToOfferDetails(context: Context, offerId: String) {
+        val intent = Intent(context, WorkOfferDetailsActivity::class.java).apply {
+            putExtra("OFFER_ID", offerId)
+        }
+        context.startActivity(intent)
+    }
+
+    fun setupBottomNavigation(activity: Activity, bottomNavigation: BottomNavigationView) {
+        bottomNavigation.setOnItemSelectedListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.nav_home -> {
+                    navigateToHome(activity)
+                    true
+                }
+                R.id.nav_Chat -> {
+                    navigateToChat(activity)
+                    true
+                }
+                R.id.nav_profile -> {
+                    navigateToProfile(activity)
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+    
+    fun updateBottomNavigationSelection(bottomNavigation: BottomNavigationView, selectedItemId: Int) {
+        bottomNavigation.selectedItemId = selectedItemId
+    }
+}
