@@ -1,30 +1,120 @@
 package com.example.workman.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.shape.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.*
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
+import com.example.workman.utils.LocationHelper
 import com.example.workman.viewModels.HomeBossDashboardViewModel
 import com.example.workman.viewModels.WorkerListState
 import java.text.SimpleDateFormat
@@ -163,7 +253,9 @@ fun RatingDialog(
                 AsyncImage(
                     model = booking.workerPhotoUrl.ifBlank { "https://ui-avatars.com/api/?name=${booking.workerName.replace(" ", "+")}" },
                     contentDescription = null,
-                    modifier = Modifier.size(80.dp).clip(CircleShape),
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(Modifier.height(12.dp))
@@ -204,7 +296,9 @@ fun RatingDialog(
                     value = review,
                     onValueChange = { review = it },
                     placeholder = { Text("Write a review (optional)", color = TextMuted) },
-                    modifier = Modifier.fillMaxWidth().height(120.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Orange,
@@ -230,6 +324,7 @@ fun RatingDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeContent(
     viewModel: HomeBossDashboardViewModel,
@@ -268,16 +363,49 @@ private fun HomeContent(
             Spacer(Modifier.height(16.dp))
         }
 
-        // ── Section header
+        // ── Section header with nearby count and radius filter
         item {
-            Text(
-                text     = "Workers",
-                style    = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color      = TextDark
-                ),
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-            )
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Workers",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = TextDark
+                        )
+                    )
+                    if (uiState.isLocationAvailable) {
+                        Text(
+                            "${uiState.nearbyWorkerCount} nearby",
+                            fontSize = 12.sp,
+                            color = Orange,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                // Radius filter chips
+                if (uiState.isLocationAvailable) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(10.0, 25.0, 50.0, 100.0).forEach { radius ->
+                            FilterChip(
+                                selected = uiState.searchRadiusKm == radius,
+                                onClick = { viewModel.updateSearchRadius(radius) },
+                                label = { Text("${radius.toInt()} km", fontSize = 12.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Orange,
+                                    selectedLabelColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(8.dp))
         }
 
@@ -619,7 +747,9 @@ private fun WorkerCardSkeleton() {
 @Composable
 private fun WorkerListError(message: String, onRetry: () -> Unit) {
     Column(
-        modifier            = Modifier.fillMaxWidth().padding(48.dp),
+        modifier            = Modifier
+            .fillMaxWidth()
+            .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Default.Warning, contentDescription = null, tint = Orange, modifier = Modifier.size(48.dp))
@@ -644,7 +774,9 @@ private fun WorkerListError(message: String, onRetry: () -> Unit) {
 @Composable
 private fun WorkerListEmpty(query: String) {
     Column(
-        modifier            = Modifier.fillMaxWidth().padding(48.dp),
+        modifier            = Modifier
+            .fillMaxWidth()
+            .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Default.Search, contentDescription = null, tint = OrangeLight, modifier = Modifier.size(48.dp))
@@ -771,7 +903,9 @@ private fun WorkerCard(
                     },
                     contentDescription = worker.name,
                     contentScale       = ContentScale.Crop,
-                    modifier           = Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp))
+                    modifier           = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(14.dp))
                 )
                 Box(
                     modifier = Modifier
@@ -815,6 +949,25 @@ private fun WorkerCard(
                 Text(worker.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Spacer(Modifier.height(2.dp))
                 Text("${worker.yearsOfExperience} years of experience", fontSize = 12.sp, color = TextMuted)
+                // Distance badge
+                if (worker.distanceKm >= 0) {
+                    Spacer(Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            null,
+                            tint = Orange,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            LocationHelper.formatDistance(worker.distanceKm),
+                            fontSize = 11.sp,
+                            color = Orange,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -1048,7 +1201,9 @@ private fun BookingCard(
                 AsyncImage(
                     model = booking.workerPhotoUrl.ifBlank { "https://ui-avatars.com/api/?name=${booking.workerName.replace(" ", "+")}" },
                     contentDescription = null,
-                    modifier = Modifier.size(50.dp).clip(CircleShape),
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape),
                     contentScale = ContentScale.Crop
                 )
                 Spacer(Modifier.width(12.dp))
@@ -1118,7 +1273,10 @@ private fun StatusBadge(status: BookingStatus) {
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+            Box(Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(color))
             Spacer(Modifier.width(6.dp))
             Text(text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }

@@ -1,23 +1,23 @@
 package com.example.workman.viewModels
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.content.Context
-import android.location.Geocoder
 import com.example.workman.dataClass.Banner
 import com.example.workman.dataClass.WorkOffer
-import com.google.android.gms.location.LocationServices
+import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Locale
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 
 sealed class WorkOfferListState {
     object Loading : WorkOfferListState()
@@ -33,7 +33,11 @@ data class WorkerDashboardUiState(
     val userLocation: String = "Detecting location...",
     val filteredOffers: List<WorkOffer> = emptyList(),
     val isRefreshing: Boolean = false,
-    val acceptingOfferIds: Set<String> = emptySet()
+    val acceptingOfferIds: Set<String> = emptySet(),
+    // Location-based filtering
+    val searchRadiusKm: Double = LocationHelper.DEFAULT_RADIUS_KM,
+    val isLocationAvailable: Boolean = false,
+    val nearbyOfferCount: Int = 0
 )
 
 class HomeWorkerDashboardViewModel : ViewModel() {
@@ -43,8 +47,16 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     
     private var allOffers: List<WorkOffer> = emptyList()
 
+    // Current user's location
+    private var userLatitude: Double = 0.0
+    private var userLongitude: Double = 0.0
+
     private val _uiState = MutableStateFlow(WorkerDashboardUiState())
     val uiState: StateFlow<WorkerDashboardUiState> = _uiState.asStateFlow()
+
+    companion object {
+        private const val TAG = "WorkerDashboardVM"
+    }
 
     init {
         loadUserData()
@@ -57,12 +69,18 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val doc = db.collection("users").document(user.uid).get().await()
+                val lat = doc.getDouble("latitude") ?: 0.0
+                val lng = doc.getDouble("longitude") ?: 0.0
+                userLatitude = lat
+                userLongitude = lng
+
                 _uiState.update { it.copy(
                     userName = doc.getString("name") ?: "Worker",
-                    userLocation = doc.getString("location") ?: "Not set"
+                    userLocation = doc.getString("location") ?: "Not set",
+                    isLocationAvailable = lat != 0.0 && lng != 0.0
                 ) }
             } catch (e: Exception) {
-                // Ignore user data errors
+                Log.e(TAG, "Failed to load user data", e)
             }
         }
     }
@@ -85,8 +103,6 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(offerListState = WorkOfferListState.Loading, isRefreshing = true) }
             try {
-                // In a real app, we might use a listener, but for now we fetch once
-                // or use a Flow-based listener if needed.
                 val snapshot = db.collection("workOffers")
                     .orderBy("createdAt", Query.Direction.DESCENDING)
                     .get()
@@ -96,6 +112,19 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                     val acceptedBy = doc.getString("acceptedBy")
                     // Show if open OR accepted by me
                     if (acceptedBy == null || acceptedBy == currentUserId) {
+                        val offerLat = doc.getDouble("latitude") ?: 0.0
+                        val offerLng = doc.getDouble("longitude") ?: 0.0
+
+                        // Calculate distance if both locations available
+                        val distance = if (userLatitude != 0.0 && userLongitude != 0.0 &&
+                            offerLat != 0.0 && offerLng != 0.0
+                        ) {
+                            LocationHelper.calculateDistance(
+                                userLatitude, userLongitude,
+                                offerLat, offerLng
+                            )
+                        } else -1.0
+
                         WorkOffer(
                             title = doc.getString("title") ?: "Untitled",
                             description = doc.getString("description") ?: "",
@@ -106,18 +135,18 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                             images = doc.get("images") as? List<String> ?: emptyList(),
                             id = doc.id,
                             acceptedBy = acceptedBy,
-                            isAccepted = doc.getBoolean("isAccepted") ?: false
+                            isAccepted = doc.getBoolean("isAccepted") ?: false,
+                            latitude = offerLat,
+                            longitude = offerLng,
+                            geohash = doc.getString("geohash") ?: "",
+                            locationName = doc.getString("locationName") ?: "",
+                            distanceKm = distance
                         )
                     } else null
                 }
 
-                _uiState.update { state ->
-                    state.copy(
-                        offerListState = WorkOfferListState.Success(allOffers),
-                        filteredOffers = applyFilters(allOffers, state.searchQuery),
-                        isRefreshing = false
-                    )
-                }
+                refilterOffers()
+
             } catch (e: Exception) {
                 _uiState.update { it.copy(
                     offerListState = WorkOfferListState.Error(e.message ?: "Unknown error"),
@@ -128,65 +157,102 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     }
 
     fun updateLocation(context: Context) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            _uiState.update { it.copy(userLocation = "Permission denied") }
-            return
-        }
-
         viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(userLocation = "Detecting...") }
-                val location = fusedLocationClient.lastLocation.await()
-                if (location != null) {
-                    val geocoder = Geocoder(context, Locale.getDefault())
-                    // Use a more robust check for SDK version if needed, but for now we'll stick to basic
-                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    if (!addresses.isNullOrEmpty()) {
-                        val address = addresses[0]
-                        val area = address.subLocality ?: address.locality ?: address.subAdminArea ?: "Unknown Area"
-                        val city = address.locality ?: ""
-                        val locationString = if (city.isNotEmpty() && area != city) "$area, $city" else area
-                        
-                        _uiState.update { it.copy(userLocation = locationString) }
-                        
-                        // Sync with Firebase
-                        auth.currentUser?.uid?.let { uid ->
-                            db.collection("users").document(uid).update("location", locationString)
-                        }
-                    } else {
-                        _uiState.update { it.copy(userLocation = "Location found, but area unknown") }
-                    }
-                } else {
-                    _uiState.update { it.copy(userLocation = "Location unavailable") }
+            _uiState.update { it.copy(userLocation = "Detecting...") }
+
+            val locationResult = LocationHelper.syncLocationToFirebase(context)
+            if (locationResult != null) {
+                userLatitude = locationResult.latitude
+                userLongitude = locationResult.longitude
+
+                _uiState.update {
+                    it.copy(
+                        userLocation = locationResult.locationName,
+                        isLocationAvailable = true
+                    )
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(userLocation = "Error getting location") }
+
+                // Re-apply location filter with new coordinates
+                refilterOffers()
+            } else {
+                _uiState.update { it.copy(userLocation = "Location unavailable") }
             }
         }
+    }
+
+    /**
+     * Change the search radius and re-filter offers.
+     */
+    fun updateSearchRadius(radiusKm: Double) {
+        val clamped = radiusKm.coerceIn(LocationHelper.MIN_RADIUS_KM, LocationHelper.MAX_RADIUS_KM)
+        _uiState.update { it.copy(searchRadiusKm = clamped) }
+        refilterOffers()
     }
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { state ->
             state.copy(
                 searchQuery = query,
-                filteredOffers = applyFilters(allOffers, query)
+                filteredOffers = applyFilters(allOffers, query, state.searchRadiusKm)
             )
         }
     }
 
-    private fun applyFilters(offers: List<WorkOffer>, query: String): List<WorkOffer> {
-        if (query.isBlank()) return offers
-        return offers.filter {
-            it.title.contains(query, ignoreCase = true) ||
-            it.description.contains(query, ignoreCase = true)
+    private fun refilterOffers() {
+        // Recalculate distances if location just became available
+        if (userLatitude != 0.0 && userLongitude != 0.0) {
+            allOffers = allOffers.map { offer ->
+                if (offer.latitude != 0.0 && offer.longitude != 0.0) {
+                    val dist = LocationHelper.calculateDistance(
+                        userLatitude, userLongitude,
+                        offer.latitude, offer.longitude
+                    )
+                    offer.copy(distanceKm = dist)
+                } else offer
+            }
         }
+
+        val state = _uiState.value
+        val filtered = applyFilters(allOffers, state.searchQuery, state.searchRadiusKm)
+
+        _uiState.update {
+            it.copy(
+                offerListState = WorkOfferListState.Success(allOffers),
+                filteredOffers = filtered,
+                isRefreshing = false,
+                nearbyOfferCount = filtered.size
+            )
+        }
+    }
+
+    private fun applyFilters(
+        offers: List<WorkOffer>,
+        query: String,
+        radiusKm: Double
+    ): List<WorkOffer> {
+        return offers.filter { offer ->
+            val matchesSearch = query.isBlank() ||
+                    offer.title.contains(query, ignoreCase = true) ||
+                    offer.description.contains(query, ignoreCase = true)
+
+            // Location filter: show offers within radius, OR if no location data available
+            val matchesLocation = if (userLatitude == 0.0 || userLongitude == 0.0) {
+                true // No user location → show all
+            } else if (offer.latitude == 0.0 && offer.longitude == 0.0) {
+                true // Offer doesn't have location → still show (backward compatible)
+            } else {
+                offer.distanceKm <= radiusKm
+            }
+
+            matchesSearch && matchesLocation
+        }
+            .sortedBy { it.distanceKm.let { d -> if (d < 0) Double.MAX_VALUE else d } } // Nearest first
     }
 
     fun acceptWork(workOffer: WorkOffer, onResult: (Boolean, String) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
+        val userName = auth.currentUser?.displayName ?: "Worker"
+        val userPhoto = auth.currentUser?.photoUrl?.toString() ?: ""
 
         viewModelScope.launch {
             _uiState.update { it.copy(acceptingOfferIds = it.acceptingOfferIds + workOffer.id) }
@@ -196,6 +262,8 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                     .update(
                         mapOf(
                             "acceptedBy" to userId,
+                            "acceptedByName" to userName,
+                            "acceptedByPhoto" to userPhoto,
                             "status" to "accepted",
                             "isAccepted" to true
                         )
@@ -212,7 +280,11 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 _uiState.update { state ->
                     state.copy(
                         offerListState = WorkOfferListState.Success(allOffers),
-                        filteredOffers = applyFilters(allOffers, state.searchQuery),
+                        filteredOffers = applyFilters(
+                            allOffers,
+                            state.searchQuery,
+                            state.searchRadiusKm
+                        ),
                         acceptingOfferIds = state.acceptingOfferIds - workOffer.id
                     )
                 }

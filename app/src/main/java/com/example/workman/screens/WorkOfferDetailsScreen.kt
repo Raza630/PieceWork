@@ -1,15 +1,41 @@
 package com.example.workman.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import android.util.Log
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,9 +46,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.workman.dataClass.WorkOffer
-import com.example.workman.ui.theme.*
+import com.example.workman.ui.theme.BgColor
+import com.example.workman.ui.theme.PrimaryBlue
+import com.example.workman.ui.theme.TextDark
+import com.example.workman.ui.theme.TextMuted
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+
+private const val TAG = "WorkOfferDetailsScreen"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,11 +65,19 @@ fun WorkOfferDetailsScreen(
     var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(offerId) {
-        if (offerId.isNotEmpty()) {
-            val doc = FirebaseFirestore.getInstance().collection("workOffers").document(offerId).get().await()
-            offer = doc.toObject(WorkOffer::class.java)?.copy(id = doc.id)
+        try {
+            if (offerId.isNotEmpty()) {
+                val doc =
+                    FirebaseFirestore.getInstance().collection("workOffers").document(offerId).get()
+                        .await()
+                offer = doc.toObject(WorkOffer::class.java)?.copy(id = doc.id)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load work offer $offerId", e)
+            offer = null
+        } finally {
+            isLoading = false
         }
-        isLoading = false
     }
 
     Scaffold(
@@ -109,8 +148,20 @@ fun WorkOfferDetailsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "Posted on: ${offer!!.date}", color = TextMuted, fontSize = 14.sp)
+                        if (offer!!.locationName.isNotEmpty()) {
+                            Text(text = offer!!.locationName, color = TextMuted, fontSize = 14.sp)
+                        } else {
+                            Text(
+                                text = "Location not specified",
+                                color = TextMuted,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(text = "Posted on: ${offer!!.date}", color = TextMuted, fontSize = 13.sp)
 
                     Spacer(modifier = Modifier.height(24.dp))
                     
@@ -138,7 +189,9 @@ fun WorkOfferDetailsScreen(
 
                     Button(
                         onClick = { /* Accept logic is usually done in the list, but can be here too */ },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
                         enabled = !offer!!.isAccepted,
                         colors = ButtonDefaults.buttonColors(

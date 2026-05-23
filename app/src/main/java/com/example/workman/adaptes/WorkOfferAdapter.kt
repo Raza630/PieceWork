@@ -71,13 +71,18 @@ class WorkOfferAdapter(
     }
 
     private fun acceptWork(workOffer: WorkOffer, acceptButton: Button) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return
+        val userId = currentUser.uid
+        val userName = currentUser.displayName ?: "Worker"
+        val userPhoto = currentUser.photoUrl?.toString() ?: ""
 
         db.collection("workOffers")
             .document(workOffer.id)
             .update(
                 mapOf(
                     "acceptedBy" to userId,
+                    "acceptedByName" to userName,
+                    "acceptedByPhoto" to userPhoto,
                     "status" to "accepted",
                     "isAccepted" to true
                 )

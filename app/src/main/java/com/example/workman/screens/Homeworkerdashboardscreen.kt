@@ -1,30 +1,85 @@
 package com.example.workman.screens
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.*
-import androidx.compose.foundation.shape.*
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.draw.*
-import androidx.compose.ui.graphics.*
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.List
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.workman.dataClass.Banner
 import com.example.workman.dataClass.WorkOffer
+import com.example.workman.utils.LocationHelper
 import com.example.workman.viewModels.HomeWorkerDashboardViewModel
 import com.example.workman.viewModels.WorkOfferListState
 
@@ -102,28 +157,58 @@ fun HomeWorkerDashboardScreen(
                     }
                 }
 
-                // ── Main Section Header
+                // ── Main Section Header with Location Filter
                 item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Available Work",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextDark
+                    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    "Available Work",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextDark
+                                    )
+                                )
+                                if (uiState.isLocationAvailable) {
+                                    Text(
+                                        "${uiState.nearbyOfferCount} jobs within ${uiState.searchRadiusKm.toInt()} km",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextMuted
+                                    )
+                                }
+                            }
+                            Text(
+                                "View All",
+                                color = PrimaryBlue,
+                                style = MaterialTheme.typography.labelLarge,
+                                modifier = Modifier.clickable { onNavJobs() }
                             )
-                        )
-                        Text(
-                            "View All",
-                            color = PrimaryBlue,
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier.clickable { onNavJobs() }
-                        )
+                        }
+
+                        // Radius filter chips
+                        if (uiState.isLocationAvailable) {
+                            Spacer(Modifier.height(12.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(10.0, 25.0, 50.0, 100.0).forEach { radius ->
+                                    FilterChip(
+                                        selected = uiState.searchRadiusKm == radius,
+                                        onClick = { viewModel.updateSearchRadius(radius) },
+                                        label = { Text("${radius.toInt()} km", fontSize = 12.sp) },
+                                        colors = FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = PrimaryBlue,
+                                            selectedLabelColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(20.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -237,13 +322,17 @@ private fun WorkerSearchBar(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth().height(56.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(56.dp),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = CardBg),
         elevation = CardDefaults.cardElevation(8.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(Icons.Default.Search, null, tint = TextMuted)
@@ -271,7 +360,9 @@ private fun BannerRow(banners: List<Banner>) {
     ) {
         items(banners) { banner ->
             Card(
-                modifier = Modifier.width(280.dp).height(140.dp),
+                modifier = Modifier
+                    .width(280.dp)
+                    .height(140.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = PrimaryBlue)
             ) {
@@ -286,7 +377,9 @@ private fun BannerRow(banners: List<Banner>) {
                     AsyncImage(
                         model = banner.imageUrl,
                         contentDescription = null,
-                        modifier = Modifier.size(80.dp).clip(RoundedCornerShape(12.dp)),
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Crop
                     )
                 }
@@ -320,7 +413,9 @@ private fun WorkOfferCard(
                 AsyncImage(
                     model = if (offer.images.isNotEmpty()) offer.images[0] else placeholder,
                     contentDescription = null,
-                    modifier = Modifier.size(70.dp).clip(RoundedCornerShape(12.dp)),
+                    modifier = Modifier
+                        .size(70.dp)
+                        .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop
                 )
                 
@@ -354,10 +449,41 @@ private fun WorkOfferCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.DateRange, null, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(offer.date, fontSize = 12.sp, color = TextDark, fontWeight = FontWeight.Medium)
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.DateRange,
+                            null,
+                            tint = PrimaryBlue,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            offer.date,
+                            fontSize = 12.sp,
+                            color = TextDark,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    // Distance badge
+                    if (offer.distanceKm >= 0) {
+                        Spacer(Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                null,
+                                tint = PrimaryBlue,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                LocationHelper.formatDistance(offer.distanceKm),
+                                fontSize = 11.sp,
+                                color = PrimaryBlue,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
 
                 Button(
@@ -396,19 +522,33 @@ private fun WorkOfferSkeleton() {
         animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse)
     )
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = CardBg)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
-            Box(Modifier.size(70.dp).clip(RoundedCornerShape(12.dp)).background(Color.LightGray.copy(shimmerAlpha)))
+            Box(Modifier
+                .size(70.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.LightGray.copy(shimmerAlpha)))
             Spacer(Modifier.width(16.dp))
             Column {
-                Box(Modifier.width(150.dp).height(20.dp).background(Color.LightGray.copy(shimmerAlpha)))
+                Box(Modifier
+                    .width(150.dp)
+                    .height(20.dp)
+                    .background(Color.LightGray.copy(shimmerAlpha)))
                 Spacer(Modifier.height(8.dp))
-                Box(Modifier.fillMaxWidth().height(14.dp).background(Color.LightGray.copy(shimmerAlpha)))
+                Box(Modifier
+                    .fillMaxWidth()
+                    .height(14.dp)
+                    .background(Color.LightGray.copy(shimmerAlpha)))
                 Spacer(Modifier.height(4.dp))
-                Box(Modifier.fillMaxWidth(0.7f).height(14.dp).background(Color.LightGray.copy(shimmerAlpha)))
+                Box(Modifier
+                    .fillMaxWidth(0.7f)
+                    .height(14.dp)
+                    .background(Color.LightGray.copy(shimmerAlpha)))
             }
         }
     }
@@ -417,7 +557,9 @@ private fun WorkOfferSkeleton() {
 @Composable
 private fun WorkerEmptyState(query: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(48.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Default.Search, null, modifier = Modifier.size(64.dp), tint = SecondaryBlue)
@@ -433,7 +575,9 @@ private fun WorkerEmptyState(query: String) {
 @Composable
 private fun WorkerErrorState(message: String, onRetry: () -> Unit) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(48.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(48.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(Icons.Default.Warning, null, modifier = Modifier.size(48.dp), tint = Color.Red.copy(alpha = 0.6f))

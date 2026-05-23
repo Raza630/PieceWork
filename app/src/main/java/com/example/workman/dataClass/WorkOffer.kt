@@ -1,14 +1,39 @@
 package com.example.workman.dataClass
 
-import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.Exclude
+import com.google.firebase.firestore.IgnoreExtraProperties
 
+@IgnoreExtraProperties
 data class WorkOffer(
-    val title: String = "",
-    val description: String = "",
-    val date: String = "",
-    var createdAt: Any? = FieldValue.serverTimestamp(),
-    val images: List<String> = emptyList(),
-    val id: String = "",
-    val acceptedBy: String? = null,
-    val isAccepted: Boolean = false
-)
+    var title: String = "",
+    var description: String = "",
+    var date: String = "",
+    var createdAt: Any? = null,
+    var images: List<String> = emptyList(),
+    var id: String = "",
+    var acceptedBy: String? = null,
+    var isAccepted: Boolean = false,
+    // Location fields for geo-based filtering
+    var latitude: Double = 0.0,
+    var longitude: Double = 0.0,
+    var geohash: String = "",
+    var locationName: String = "",
+    // Transient field - not stored in Firestore, calculated at runtime
+    @get:Exclude var distanceKm: Double = -1.0
+) {
+    constructor() : this(
+        title = "",
+        description = "",
+        date = "",
+        createdAt = null,
+        images = emptyList(),
+        id = "",
+        acceptedBy = null,
+        isAccepted = false,
+        latitude = 0.0,
+        longitude = 0.0,
+        geohash = "",
+        locationName = "",
+        distanceKm = -1.0
+    )
+}

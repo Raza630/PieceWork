@@ -1,23 +1,22 @@
 package com.example.workman.viewModels
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.content.Context
-import android.location.Geocoder
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
-import com.google.android.gms.location.LocationServices
+import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.util.Locale
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 
 // ─── UI State ──────────────────────────────────────────────────────────────────
 
@@ -39,7 +38,11 @@ data class DashboardUiState(
     val bookingToRate: BookingUiModel? = null,
     val showRatingDialog: Boolean = false,
     val userName: String = "Boss",
-    val userLocation: String = "Detecting location..."
+    val userLocation: String = "Detecting location...",
+    // Location-based filtering
+    val searchRadiusKm: Double = LocationHelper.DEFAULT_RADIUS_KM,
+    val isLocationAvailable: Boolean = false,
+    val nearbyWorkerCount: Int = 0
 )
 
 // ─── Firestore Worker Document Model ──────────────────────────────────────────
@@ -53,7 +56,12 @@ data class WorkerDocument(
     val reviewCount: String = "0",
     val ratePerHour: Int = 0,
     val photoUrl: String = "",
-    val role: String = ""
+    val role: String = "",
+    // Location fields
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
+    val geohash: String = "",
+    val location: String = ""
 )
 
 // ─── ViewModel ─────────────────────────────────────────────────────────────────
@@ -67,8 +75,16 @@ class HomeBossDashboardViewModel : ViewModel() {
     // Raw fetched list — never modified after fetch
     private var allWorkers: List<WorkerUiModel> = emptyList()
 
+    // Current user's location
+    private var userLatitude: Double = 0.0
+    private var userLongitude: Double = 0.0
+
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+
+    companion object {
+        private const val TAG = "BossDashboardVM"
+    }
 
     init {
         loadUserData()
@@ -81,50 +97,53 @@ class HomeBossDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val doc = db.collection("users").document(user.uid).get().await()
+                val lat = doc.getDouble("latitude") ?: 0.0
+                val lng = doc.getDouble("longitude") ?: 0.0
+                userLatitude = lat
+                userLongitude = lng
+
                 _uiState.update { it.copy(
                     userName = doc.getString("name") ?: "Boss",
-                    userLocation = doc.getString("location") ?: "Not set"
+                    userLocation = doc.getString("location") ?: "Not set",
+                    isLocationAvailable = lat != 0.0 && lng != 0.0
                 ) }
-            } catch (e: Exception) { }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load user data", e)
+            }
         }
     }
 
     fun updateLocation(context: Context) {
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            _uiState.update { it.copy(userLocation = "Permission denied") }
-            return
-        }
-
         viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(userLocation = "Detecting...") }
-                val location = fusedLocationClient.lastLocation.await()
-                if (location != null) {
-                    val geocoder = Geocoder(context, Locale.getDefault())
-                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    if (!addresses.isNullOrEmpty()) {
-                        val address = addresses[0]
-                        val area = address.subLocality ?: address.locality ?: address.subAdminArea ?: "Unknown Area"
-                        val city = address.locality ?: ""
-                        val locationString = if (city.isNotEmpty() && area != city) "$area, $city" else area
-                        
-                        _uiState.update { it.copy(userLocation = locationString) }
-                        auth.currentUser?.uid?.let { uid ->
-                            db.collection("users").document(uid).update("location", locationString)
-                        }
-                    } else {
-                        _uiState.update { it.copy(userLocation = "Area unknown") }
-                    }
-                } else {
-                    _uiState.update { it.copy(userLocation = "Location unavailable") }
+            _uiState.update { it.copy(userLocation = "Detecting...") }
+
+            val locationResult = LocationHelper.syncLocationToFirebase(context)
+            if (locationResult != null) {
+                userLatitude = locationResult.latitude
+                userLongitude = locationResult.longitude
+
+                _uiState.update {
+                    it.copy(
+                        userLocation = locationResult.locationName,
+                        isLocationAvailable = true
+                    )
                 }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(userLocation = "Error getting location") }
+
+                // Re-apply location filter now that we have coordinates
+                refilterWorkers()
+            } else {
+                _uiState.update { it.copy(userLocation = "Location unavailable") }
             }
         }
+    }
+
+    /**
+     * Change the search radius and re-filter workers.
+     */
+    fun updateSearchRadius(radiusKm: Double) {
+        val clamped = radiusKm.coerceIn(LocationHelper.MIN_RADIUS_KM, LocationHelper.MAX_RADIUS_KM)
+        _uiState.update { it.copy(searchRadiusKm = clamped) }
+        refilterWorkers()
     }
 
     override fun onCleared() {
@@ -186,7 +205,6 @@ class HomeBossDashboardViewModel : ViewModel() {
         val booking = _uiState.value.bookingToRate ?: return
         viewModelScope.launch {
             try {
-                // 1. Add review to 'reviews' collection
                 val reviewData = hashMapOf(
                     "workerId" to booking.workerId,
                     "bossId" to booking.bossId,
@@ -196,10 +214,6 @@ class HomeBossDashboardViewModel : ViewModel() {
                     "timestamp" to com.google.firebase.Timestamp.now()
                 )
                 db.collection("reviews").add(reviewData).await()
-
-                // 2. Update worker's average rating (simplified logic for now)
-                // In a real app, you'd use a Cloud Function or a transaction to update avg rating
-                
                 _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
             } catch (e: Exception) {
                 // Handle error
@@ -218,8 +232,6 @@ class HomeBossDashboardViewModel : ViewModel() {
             _uiState.update { it.copy(workerListState = WorkerListState.Loading) }
 
             try {
-                // Fetch all workers. We will filter by role in code to be safer if needed,
-                // but your Firestore query uses role.
                 val snapshot = db.collection("users")
                     .whereEqualTo("role", "Worker")
                     .get()
@@ -227,6 +239,19 @@ class HomeBossDashboardViewModel : ViewModel() {
 
                 allWorkers = snapshot.documents.mapNotNull { doc ->
                     val raw = doc.toObject(WorkerDocument::class.java) ?: return@mapNotNull null
+                    val workerLat = raw.latitude
+                    val workerLng = raw.longitude
+
+                    // Calculate distance if we have both locations
+                    val distance = if (userLatitude != 0.0 && userLongitude != 0.0 &&
+                        workerLat != 0.0 && workerLng != 0.0
+                    ) {
+                        LocationHelper.calculateDistance(
+                            userLatitude, userLongitude,
+                            workerLat, workerLng
+                        )
+                    } else -1.0
+
                     WorkerUiModel(
                         id               = doc.id,
                         name             = raw.name,
@@ -235,21 +260,15 @@ class HomeBossDashboardViewModel : ViewModel() {
                         rating           = raw.rating,
                         reviewCount      = raw.reviewCount,
                         ratePerHour      = raw.ratePerHour,
-                        photoUrl         = raw.photoUrl
+                        photoUrl = raw.photoUrl,
+                        latitude = workerLat,
+                        longitude = workerLng,
+                        locationName = raw.location,
+                        distanceKm = distance
                     )
                 }
 
-                _uiState.update { state ->
-                    state.copy(
-                        workerListState  = WorkerListState.Success(allWorkers),
-                        filteredWorkers  = applyFilters(
-                            workers  = allWorkers,
-                            query    = state.searchQuery,
-                            category = state.selectedCategory
-                        ),
-                        popularServices = allWorkers.sortedByDescending { it.rating }.take(5)
-                    )
-                }
+                refilterWorkers()
 
             } catch (e: Exception) {
                 _uiState.update {
@@ -265,7 +284,12 @@ class HomeBossDashboardViewModel : ViewModel() {
         _uiState.update { state ->
             state.copy(
                 searchQuery     = query,
-                filteredWorkers = applyFilters(allWorkers, query, state.selectedCategory)
+                filteredWorkers = applyFilters(
+                    allWorkers,
+                    query,
+                    state.selectedCategory,
+                    state.searchRadiusKm
+                )
             )
         }
     }
@@ -281,35 +305,82 @@ class HomeBossDashboardViewModel : ViewModel() {
             val newCategory = if (state.selectedCategory == category) "All" else category
             state.copy(
                 selectedCategory = newCategory,
-                filteredWorkers  = applyFilters(allWorkers, state.searchQuery, newCategory)
+                filteredWorkers = applyFilters(
+                    allWorkers,
+                    state.searchQuery,
+                    newCategory,
+                    state.searchRadiusKm
+                )
             )
         }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    private fun refilterWorkers() {
+        // Recalculate distances if location just became available
+        if (userLatitude != 0.0 && userLongitude != 0.0) {
+            allWorkers = allWorkers.map { worker ->
+                if (worker.latitude != 0.0 && worker.longitude != 0.0) {
+                    val dist = LocationHelper.calculateDistance(
+                        userLatitude, userLongitude,
+                        worker.latitude, worker.longitude
+                    )
+                    worker.copy(distanceKm = dist)
+                } else worker
+            }
+        }
+
+        val state = _uiState.value
+        val filtered = applyFilters(
+            allWorkers,
+            state.searchQuery,
+            state.selectedCategory,
+            state.searchRadiusKm
+        )
+
+        _uiState.update {
+            it.copy(
+                workerListState = WorkerListState.Success(allWorkers),
+                filteredWorkers = filtered,
+                popularServices = allWorkers
+                    .filter { w -> w.distanceKm in 0.0..state.searchRadiusKm || w.distanceKm < 0 }
+                    .sortedByDescending { w -> w.rating }
+                    .take(5),
+                nearbyWorkerCount = filtered.size
+            )
+        }
+    }
+
     private fun applyFilters(
         workers: List<WorkerUiModel>,
         query: String,
-        category: String
+        category: String,
+        radiusKm: Double
     ): List<WorkerUiModel> {
         return workers.filter { worker ->
             val matchesSearch = query.isBlank() ||
                     worker.name.contains(query, ignoreCase = true) ||
                     worker.category.contains(query, ignoreCase = true)
 
-            // Make category matching more robust by using trim and partial matching if needed,
-            // or exact match for tabs.
             val matchesCategory = if (category == "All") {
                 true
             } else {
-                // Check if worker's category contains the selected category name (e.g. "Professionals" in "Professionals")
-                // Using trim to handle any stray spaces in Firestore data.
                 worker.category.trim().equals(category.trim(), ignoreCase = true) ||
                 worker.category.contains(category, ignoreCase = true)
             }
 
-            matchesSearch && matchesCategory
+            // Location filter: show workers within radius, OR if no location data available
+            val matchesLocation = if (userLatitude == 0.0 || userLongitude == 0.0) {
+                true // No user location → show all
+            } else if (worker.latitude == 0.0 && worker.longitude == 0.0) {
+                true // Worker hasn't set location → still show them (graceful fallback)
+            } else {
+                worker.distanceKm <= radiusKm
+            }
+
+            matchesSearch && matchesCategory && matchesLocation
         }
+            .sortedBy { it.distanceKm.let { d -> if (d < 0) Double.MAX_VALUE else d } } // Nearest first
     }
 }

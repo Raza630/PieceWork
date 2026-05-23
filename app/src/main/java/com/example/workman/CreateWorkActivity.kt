@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.workman.adaptes.ImageAdapterSelectedImage
+import com.example.workman.utils.LocationHelper
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
@@ -27,7 +28,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Calendar
+import java.util.Locale
 
 class CreateWorkActivity : AppCompatActivity() {
 
@@ -238,6 +240,29 @@ class CreateWorkActivity : AppCompatActivity() {
         val currentUser = auth.currentUser
         val jobId = db.collection("workOffers").document().id
 
+        // Get boss's current location from their user profile for geo-based matching
+        var latitude = 0.0
+        var longitude = 0.0
+        var geohash = ""
+        var locationName = ""
+
+        try {
+            currentUser?.uid?.let { uid ->
+                val userDoc = db.collection("users").document(uid).get().await()
+                latitude = userDoc.getDouble("latitude") ?: 0.0
+                longitude = userDoc.getDouble("longitude") ?: 0.0
+                geohash = userDoc.getString("geohash") ?: ""
+                locationName = userDoc.getString("location") ?: ""
+
+                // If no stored location, try to compute geohash from lat/lng
+                if (geohash.isEmpty() && latitude != 0.0 && longitude != 0.0) {
+                    geohash = LocationHelper.encode(latitude, longitude)
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch boss location for job", e)
+        }
+
         val workData = hashMapOf(
             "jobId" to jobId,
             "title" to title,
@@ -249,11 +274,16 @@ class CreateWorkActivity : AppCompatActivity() {
             "bossPhoto" to (currentUser?.photoUrl?.toString() ?: ""),
             "status" to "OPEN",
             "isAccepted" to false,
-            "createdAt" to FieldValue.serverTimestamp()
+            "createdAt" to FieldValue.serverTimestamp(),
+            // Location data for geo-based filtering
+            "latitude" to latitude,
+            "longitude" to longitude,
+            "geohash" to geohash,
+            "locationName" to locationName
         )
 
         db.collection("workOffers").document(jobId).set(workData).await()
-        Log.d(TAG, "Job saved: $jobId")
+        Log.d(TAG, "Job saved: $jobId with location ($latitude, $longitude)")
     }
 
     private fun setLoading(loading: Boolean) {
