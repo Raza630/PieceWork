@@ -1,6 +1,7 @@
 package com.example.workman.screens
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,12 +36,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,7 +53,9 @@ import com.example.workman.ui.theme.BgColor
 import com.example.workman.ui.theme.PrimaryBlue
 import com.example.workman.ui.theme.TextDark
 import com.example.workman.ui.theme.TextMuted
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "WorkOfferDetailsScreen"
@@ -63,20 +68,55 @@ fun WorkOfferDetailsScreen(
 ) {
     var offer by remember { mutableStateOf<WorkOffer?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+    var isAccepting by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+
+    fun fetchOfferDetails() {
+        scope.launch {
+            try {
+                if (offerId.isNotEmpty()) {
+                    val doc = db.collection("workOffers").document(offerId).get().await()
+                    offer = doc.toObject(WorkOffer::class.java)?.copy(id = doc.id)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load work offer $offerId", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     LaunchedEffect(offerId) {
-        try {
-            if (offerId.isNotEmpty()) {
-                val doc =
-                    FirebaseFirestore.getInstance().collection("workOffers").document(offerId).get()
-                        .await()
-                offer = doc.toObject(WorkOffer::class.java)?.copy(id = doc.id)
+        fetchOfferDetails()
+    }
+
+    fun handleAcceptJob() {
+        val user = auth.currentUser ?: return
+
+        isAccepting = true
+        scope.launch {
+            try {
+                db.collection("workOffers").document(offerId).update(
+                    mapOf(
+                        "acceptedBy" to user.uid,
+                        "acceptedByName" to (user.displayName ?: "Worker"),
+                        "acceptedByPhoto" to (user.photoUrl?.toString() ?: ""),
+                        "status" to "ASSIGNED",
+                        "isAccepted" to true
+                    )
+                ).await()
+
+                Toast.makeText(context, "Job accepted successfully!", Toast.LENGTH_SHORT).show()
+                fetchOfferDetails() // Refresh local state
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to accept job: ${e.message}", Toast.LENGTH_SHORT)
+                    .show()
+            } finally {
+                isAccepting = false
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load work offer $offerId", e)
-            offer = null
-        } finally {
-            isLoading = false
         }
     }
 
@@ -188,23 +228,33 @@ fun WorkOfferDetailsScreen(
                     Spacer(modifier = Modifier.height(40.dp))
 
                     Button(
-                        onClick = { /* Accept logic is usually done in the list, but can be here too */ },
+                        onClick = { if (!offer!!.isAccepted && !isAccepting) handleAcceptJob() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        enabled = !offer!!.isAccepted,
+                        enabled = !offer!!.isAccepted && !isAccepting,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (offer!!.isAccepted) Color(0xFF4CAF50) else PrimaryBlue,
-                            disabledContainerColor = Color(0xFF4CAF50)
+                            disabledContainerColor = if (offer!!.isAccepted) Color(0xFF4CAF50) else Color.Gray.copy(
+                                alpha = 0.5f
+                            )
                         )
                     ) {
-                        Text(
-                            text = if (offer!!.isAccepted) "Accepted" else "Accept this Job",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color.White
-                        )
+                        if (isAccepting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text(
+                                text = if (offer!!.isAccepted) "Accepted" else "Accept this Job",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))

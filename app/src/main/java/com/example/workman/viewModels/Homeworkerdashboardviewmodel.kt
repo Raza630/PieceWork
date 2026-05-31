@@ -1,15 +1,18 @@
 package com.example.workman.viewModels
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workman.dataClass.Banner
+import com.example.workman.dataClass.Report
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,13 +40,15 @@ data class WorkerDashboardUiState(
     // Location-based filtering
     val searchRadiusKm: Double = LocationHelper.DEFAULT_RADIUS_KM,
     val isLocationAvailable: Boolean = false,
-    val nearbyOfferCount: Int = 0
+    val nearbyOfferCount: Int = 0,
+    val isCompleting: Boolean = false
 )
 
 class HomeWorkerDashboardViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
+    private val storage = FirebaseStorage.getInstance()
     
     private var allOffers: List<WorkOffer> = emptyList()
 
@@ -249,6 +254,25 @@ class HomeWorkerDashboardViewModel : ViewModel() {
             .sortedBy { it.distanceKm.let { d -> if (d < 0) Double.MAX_VALUE else d } } // Nearest first
     }
 
+    fun submitReport(entityId: String, type: String, reason: String) {
+        val userId = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                val reportId = db.collection("reports").document().id
+                val report = Report(
+                    reportId = reportId,
+                    reporterId = userId,
+                    reportedEntityId = entityId,
+                    reportType = type,
+                    reason = reason
+                )
+                db.collection("reports").document(reportId).set(report).await()
+            } catch (e: Exception) {
+                Log.e(TAG, "Report failed", e)
+            }
+        }
+    }
+
     fun acceptWork(workOffer: WorkOffer, onResult: (Boolean, String) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
         val userName = auth.currentUser?.displayName ?: "Worker"
@@ -264,12 +288,12 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                             "acceptedBy" to userId,
                             "acceptedByName" to userName,
                             "acceptedByPhoto" to userPhoto,
-                            "status" to "accepted",
+                            "status" to "ASSIGNED",
                             "isAccepted" to true
                         )
                     )
                     .await()
-                
+
                 // Update local list instead of full refresh
                 allOffers = allOffers.map {
                     if (it.id == workOffer.id) {
@@ -292,6 +316,46 @@ class HomeWorkerDashboardViewModel : ViewModel() {
             } catch (e: Exception) {
                 _uiState.update { it.copy(acceptingOfferIds = it.acceptingOfferIds - workOffer.id) }
                 onResult(false, "Error: ${e.message}")
+            }
+        }
+    }
+
+    fun completeWork(
+        workOffer: WorkOffer,
+        images: List<Uri>,
+        note: String,
+        onResult: (Boolean, String) -> Unit
+    ) {
+        if (images.isEmpty()) {
+            onResult(false, "At least one 'After' photo is required.")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCompleting = true) }
+            try {
+                val imageUrls = mutableListOf<String>()
+                images.forEach { uri ->
+                    val ref =
+                        storage.reference.child("completion_images/${workOffer.id}/${System.currentTimeMillis()}")
+                    ref.putFile(uri).await()
+                    imageUrls.add(ref.downloadUrl.await().toString())
+                }
+
+                db.collection("workOffers").document(workOffer.id).update(
+                    mapOf(
+                        "status" to "COMPLETED",
+                        "completionImages" to imageUrls,
+                        "completionNote" to note
+                    )
+                ).await()
+
+                onResult(true, "Job completed successfully!")
+                fetchWorkOffers() // Refresh list
+            } catch (e: Exception) {
+                onResult(false, "Failed to complete job: ${e.message}")
+            } finally {
+                _uiState.update { it.copy(isCompleting = false) }
             }
         }
     }

@@ -5,5 +5,7 @@ data class Workerlist(
     val skills: String = "",
     val phone: String = "",
     val email: String = "",
-    val category: String = ""
+    val category: String = "",
+    val isVerified: Boolean = false
 )
+

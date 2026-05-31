@@ -14,4 +14,5 @@
     <color name="cream_bg">#FFF3E0</color>
     <color name="text_dark">#1A1A1A</color>
     <color name="text_muted">#888888</color>
+    <color name="PrimaryBlue">#2196F3</color>
 </resources>

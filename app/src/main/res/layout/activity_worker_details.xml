@@ -104,6 +104,17 @@
                         android:layout_marginStart="50dp"
                         android:text="Mr Sohail Shaikh"
                          />
+
+                    <ImageView
+                        android:id="@+id/verifiedBadgeDetails"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="8dp"
+                        android:layout_toEndOf="@id/textView_show_full_name"
+                        android:src="@drawable/ic_preview"
+                        android:visibility="gone"
+                        app:tint="@color/PrimaryBlue" />
                 </RelativeLayout>
 
                 <View

@@ -41,10 +41,13 @@ class WorkerDetailsActivity : AppCompatActivity() {
                     val gender = document.getString("gender") ?: "N/A"
                     val phone = document.getString("phone") ?: ""
                     val photoUrl = document.getString("photoUrl") ?: ""
+                    val isVerified = document.getBoolean("isVerified") ?: false
 
                     // Update UI
                     binding.textViewShowWelcome.text = name
                     binding.textViewShowFullName.text = name
+                    binding.verifiedBadgeDetails.visibility =
+                        if (isVerified) View.VISIBLE else View.GONE
                     binding.textViewShowEmail.text = email
                     binding.textViewShowDob.text = dob
                     binding.textViewShowGender.text = gender

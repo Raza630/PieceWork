@@ -9,6 +9,7 @@ data class WorkerUiModel(
     val reviewCount: String = "0",
     val ratePerHour: Int = 0,
     val photoUrl: String = "",
+    val isVerified: Boolean = false,
     // Location fields
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,

@@ -1262,6 +1262,7 @@ private fun StatusBadge(status: BookingStatus) {
     val (color, text) = when (status) {
         BookingStatus.PENDING -> Color(0xFFFFA000) to "Pending"
         BookingStatus.ACTIVE -> Color(0xFF2196F3) to "Active"
+        BookingStatus.IN_PROGRESS -> Color(0xFF9C27B0) to "In Progress"
         BookingStatus.COMPLETED -> Color(0xFF4CAF50) to "Completed"
         BookingStatus.CANCELLED -> Color(0xFFF44336) to "Cancelled"
     }

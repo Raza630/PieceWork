@@ -6,9 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
+import com.example.workman.dataClass.Report
+import com.example.workman.dataClass.Review
 import com.example.workman.dataClass.WorkerUiModel
 import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,7 +45,9 @@ data class DashboardUiState(
     // Location-based filtering
     val searchRadiusKm: Double = LocationHelper.DEFAULT_RADIUS_KM,
     val isLocationAvailable: Boolean = false,
-    val nearbyWorkerCount: Int = 0
+    val nearbyWorkerCount: Int = 0,
+    val showReportDialog: Boolean = false,
+    val entityToReport: String? = null // userId or jobId
 )
 
 // ─── Firestore Worker Document Model ──────────────────────────────────────────
@@ -57,6 +62,7 @@ data class WorkerDocument(
     val ratePerHour: Int = 0,
     val photoUrl: String = "",
     val role: String = "",
+    val isVerified: Boolean = false,
     // Location fields
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
@@ -201,24 +207,87 @@ class HomeBossDashboardViewModel : ViewModel() {
         }
     }
 
-    fun submitRating(rating: Float, review: String) {
+    fun submitRating(rating: Float, reviewComment: String) {
         val booking = _uiState.value.bookingToRate ?: return
+        val bossId = auth.currentUser?.uid ?: return
+        
         viewModelScope.launch {
             try {
-                val reviewData = hashMapOf(
-                    "workerId" to booking.workerId,
-                    "bossId" to booking.bossId,
-                    "bookingId" to booking.id,
-                    "rating" to rating,
-                    "review" to review,
-                    "timestamp" to com.google.firebase.Timestamp.now()
+                val reviewId = db.collection("reviews").document().id
+                val review = Review(
+                    reviewId = reviewId,
+                    jobId = booking.id,
+                    reviewerId = bossId,
+                    reviewerName = _uiState.value.userName,
+                    revieweeId = booking.workerId,
+                    rating = rating,
+                    comment = reviewComment,
+                    timestamp = FieldValue.serverTimestamp()
                 )
-                db.collection("reviews").add(reviewData).await()
+
+                db.collection("reviews").document(reviewId).set(review).await()
+
+                // Update worker's total rating in their profile
+                updateWorkerRating(booking.workerId, rating)
+                
                 _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
             } catch (e: Exception) {
-                // Handle error
+                Log.e(TAG, "Failed to submit rating", e)
             }
         }
+    }
+
+    private suspend fun updateWorkerRating(workerId: String, newRating: Float) {
+        try {
+            val workerRef = db.collection("users").document(workerId)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(workerRef)
+                val currentTotal = snapshot.getLong("totalRatings") ?: 0L
+                val currentAvg = snapshot.getDouble("averageRating") ?: 0.0
+
+                val newTotal = currentTotal + 1
+                val newAvg = ((currentAvg * currentTotal) + newRating) / newTotal
+
+                transaction.update(
+                    workerRef, mapOf(
+                        "totalRatings" to newTotal,
+                        "averageRating" to newAvg,
+                        "rating" to newAvg // Sync with old field if used
+                    )
+                )
+            }.await()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to update worker rating profile", e)
+        }
+    }
+
+    fun submitReport(entityId: String, type: String, reason: String) {
+        val userId = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                val reportId = db.collection("reports").document().id
+                val report = Report(
+                    reportId = reportId,
+                    reporterId = userId,
+                    reportedEntityId = entityId,
+                    reportType = type,
+                    reason = reason,
+                    timestamp = com.google.firebase.Timestamp.now()
+                )
+                db.collection("reports").document(reportId).set(report).await()
+                _uiState.update { it.copy(showReportDialog = false, entityToReport = null) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to submit report", e)
+            }
+        }
+    }
+
+    fun openReportDialog(entityId: String) {
+        _uiState.update { it.copy(showReportDialog = true, entityToReport = entityId) }
+    }
+
+    fun closeReportDialog() {
+        _uiState.update { it.copy(showReportDialog = false, entityToReport = null) }
     }
 
     fun dismissRatingDialog() {
@@ -261,6 +330,7 @@ class HomeBossDashboardViewModel : ViewModel() {
                         reviewCount      = raw.reviewCount,
                         ratePerHour      = raw.ratePerHour,
                         photoUrl = raw.photoUrl,
+                        isVerified = raw.isVerified,
                         latitude = workerLat,
                         longitude = workerLng,
                         locationName = raw.location,

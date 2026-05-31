@@ -2,7 +2,6 @@ package com.example.workman.viewModels
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.example.workman.SharedPreferencesHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.messaging.FirebaseMessaging
@@ -67,7 +66,11 @@ class AuthViewModel : ViewModel() {
     private fun saveUserToFirestore(uid: String, email: String, role: String) {
         val user = hashMapOf(
             "email" to email,
-            "role" to role
+            "role" to role,
+            "isVerified" to false,
+            "totalRatings" to 0,
+            "averageRating" to 0.0,
+            "portfolioImages" to emptyList<String>()
         )
         db.collection("users").document(uid).set(user)
             .addOnSuccessListener {

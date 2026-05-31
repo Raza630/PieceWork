@@ -1,21 +1,51 @@
 package com.example.workman.screens
 
-import androidx.compose.foundation.layout.*
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workman.dataClass.WorkOffer
+import com.example.workman.ui.theme.PrimaryBlue
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,18 +54,33 @@ fun WorkerJobsScreen(
 ) {
     var acceptedJobs by remember { mutableStateOf<List<WorkOffer>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var isCompleting by remember { mutableStateOf(false) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
+    val db = FirebaseFirestore.getInstance()
 
-    LaunchedEffect(userId) {
+    // Completion image picker
+    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    val imagePicker =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) {
+            selectedImages = it
+        }
+
+    fun fetchJobs() {
         if (userId != null) {
-            val snapshot = FirebaseFirestore.getInstance().collection("workOffers")
+            isLoading = true
+            db.collection("workOffers")
                 .whereEqualTo("acceptedBy", userId)
                 .get()
-                .await()
-            acceptedJobs = snapshot.documents.mapNotNull { it.toObject(WorkOffer::class.java)?.copy(id = it.id) }
+                .addOnSuccessListener { snapshot ->
+                    acceptedJobs = snapshot.documents.mapNotNull {
+                        it.toObject(WorkOffer::class.java)?.copy(id = it.id)
+                    }
+                    isLoading = false
+                }
         }
-        isLoading = false
     }
+
+    LaunchedEffect(userId) { fetchJobs() }
 
     Scaffold(
         topBar = {
@@ -59,7 +104,9 @@ fun WorkerJobsScreen(
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
@@ -76,6 +123,82 @@ fun WorkerJobsScreen(
                             Text(job.description, style = MaterialTheme.typography.bodySmall, maxLines = 2)
                             Spacer(Modifier.height(8.dp))
                             Text("Date: ${job.date}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+
+                            Spacer(Modifier.height(12.dp))
+
+                            if (job.status == "ASSIGNED") {
+                                Button(
+                                    onClick = {
+                                        db.collection("workOffers").document(job.id)
+                                            .update("status", "IN_PROGRESS")
+                                            .addOnSuccessListener { fetchJobs() }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                                ) {
+                                    Text("Start Working")
+                                }
+                            } else if (job.status == "IN_PROGRESS") {
+                                Column {
+                                    if (selectedImages.isNotEmpty()) {
+                                        Text(
+                                            "${selectedImages.size} images selected",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        OutlinedButton(
+                                            onClick = { imagePicker.launch("image/*") },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text("Add Proof Photos")
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                // Implementation for upload would typically be in a ViewModel, 
+                                                // but since we're using a simple screen, we'll simulate or call a helper
+                                                // For now, let's just trigger a status update if images exist
+                                                if (selectedImages.isNotEmpty()) {
+                                                    isCompleting = true
+                                                    // This is where Firebase Storage upload logic would go
+                                                    db.collection("workOffers").document(job.id)
+                                                        .update(
+                                                            mapOf(
+                                                                "status" to "COMPLETED",
+                                                                "completionNote" to "Completed by worker"
+                                                            )
+                                                        ).addOnSuccessListener {
+                                                        isCompleting = false
+                                                        fetchJobs()
+                                                    }
+                                                }
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            enabled = selectedImages.isNotEmpty() && !isCompleting,
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Color(
+                                                    0xFF4CAF50
+                                                )
+                                            )
+                                        ) {
+                                            if (isCompleting) CircularProgressIndicator(
+                                                modifier = Modifier.size(
+                                                    18.dp
+                                                ), color = Color.White, strokeWidth = 2.dp
+                                            )
+                                            else Text("Mark Completed")
+                                        }
+                                    }
+                                }
+                            } else {
+                                Text(
+                                    "Status: ${job.status}",
+                                    color = PrimaryBlue,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }

@@ -5,6 +5,7 @@ import java.util.Date
 enum class BookingStatus {
     PENDING,
     ACTIVE,
+    IN_PROGRESS,
     COMPLETED,
     CANCELLED
 }

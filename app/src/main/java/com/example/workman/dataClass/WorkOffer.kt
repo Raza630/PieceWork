@@ -13,6 +13,10 @@ data class WorkOffer(
     var id: String = "",
     var acceptedBy: String? = null,
     var isAccepted: Boolean = false,
+    var status: String = "OPEN", // OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, REVIEWED
+    var ratingSubmitted: Boolean = false,
+    var completionImages: List<String> = emptyList(),
+    var completionNote: String = "",
     // Location fields for geo-based filtering
     var latitude: Double = 0.0,
     var longitude: Double = 0.0,
@@ -30,6 +34,8 @@ data class WorkOffer(
         id = "",
         acceptedBy = null,
         isAccepted = false,
+        status = "OPEN",
+        ratingSubmitted = false,
         latitude = 0.0,
         longitude = 0.0,
         geohash = "",

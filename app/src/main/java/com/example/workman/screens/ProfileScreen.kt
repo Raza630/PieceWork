@@ -1,16 +1,66 @@
 package com.example.workman.screens
 
+import android.app.DatePickerDialog
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,13 +73,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.workman.R
-import com.example.workman.ui.theme.*
+import com.example.workman.ui.theme.BgColor
+import com.example.workman.ui.theme.CardBg
+import com.example.workman.ui.theme.PrimaryBlue
+import com.example.workman.ui.theme.TextDark
+import com.example.workman.ui.theme.TextMuted
 import com.example.workman.viewModels.ProfileViewModel
-import android.app.DatePickerDialog
-import android.widget.Toast
-import java.util.*
-
-import androidx.compose.material.icons.filled.ArrowBack
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +94,12 @@ fun ProfileScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let { viewModel.saveProfile(it) }
+    }
+
+    val portfolioLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) viewModel.uploadPortfolioImages(uris)
     }
 
     LaunchedEffect(uiState.message) {
@@ -228,7 +284,9 @@ fun ProfileScreen(
 
                         Button(
                             onClick = { viewModel.saveProfile() },
-                            modifier = Modifier.fillMaxWidth().height(50.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                             enabled = !uiState.isSaving
@@ -239,6 +297,78 @@ fun ProfileScreen(
                                 Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                         }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Portfolio Section
+                PortfolioSection(
+                    images = uiState.portfolioImages,
+                    isUploading = uiState.isUploadingPortfolio,
+                    onAddImages = { portfolioLauncher.launch("image/*") }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PortfolioSection(
+    images: List<String>,
+    isUploading: Boolean,
+    onAddImages: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CardBg)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Work Portfolio",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextDark
+                )
+                if (isUploading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    IconButton(onClick = onAddImages) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Add Portfolio Images",
+                            tint = PrimaryBlue
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (images.isEmpty()) {
+                Text("No portfolio images added yet.", fontSize = 14.sp, color = TextMuted)
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.heightIn(max = 300.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(images) { imageUrl ->
+                        AsyncImage(
+                            model = imageUrl,
+                            contentDescription = "Portfolio Image",
+                            modifier = Modifier
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
                     }
                 }
             }
@@ -330,7 +460,9 @@ fun ProfileCheckbox(
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().clickable { onCheckedChange(!checked) }
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
     ) {
         Checkbox(
             checked = checked,

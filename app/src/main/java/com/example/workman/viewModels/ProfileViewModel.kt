@@ -2,15 +2,13 @@ package com.example.workman.viewModels
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import java.util.*
+import java.util.UUID
 
 data class ProfileUiState(
     val firstName: String = "",
@@ -23,6 +21,8 @@ data class ProfileUiState(
     val speciallyAbled: String = "No",
     val acceptNotifications: String = "No",
     val photoUrl: String = "",
+    val portfolioImages: List<String> = emptyList(),
+    val isUploadingPortfolio: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val message: String? = null
@@ -57,6 +57,8 @@ class ProfileViewModel : ViewModel() {
                         speciallyAbled = document.getString("speciallyAbled") ?: "No",
                         acceptNotifications = document.getString("acceptNotifications") ?: "No",
                         photoUrl = document.getString("photoUrl") ?: "",
+                        portfolioImages = document.get("portfolioImages") as? List<String>
+                            ?: emptyList(),
                         isLoading = false
                     )
                 } else {
@@ -140,5 +142,55 @@ class ProfileViewModel : ViewModel() {
 
     fun clearMessage() {
         _uiState.value = _uiState.value.copy(message = null)
+    }
+
+    fun uploadPortfolioImages(uris: List<Uri>) {
+        val userId = auth.currentUser?.uid ?: return
+        if (uris.isEmpty()) return
+
+        _uiState.value = _uiState.value.copy(isUploadingPortfolio = true)
+        val uploadedUrls = mutableListOf<String>()
+        var uploadCount = 0
+
+        uris.forEach { uri ->
+            val ref = storage.reference.child("portfolio_images/$userId/${UUID.randomUUID()}")
+            ref.putFile(uri)
+                .addOnSuccessListener {
+                    ref.downloadUrl.addOnSuccessListener { downloadUri ->
+                        uploadedUrls.add(downloadUri.toString())
+                        uploadCount++
+                        if (uploadCount == uris.size) {
+                            savePortfolioToFirestore(userId, uploadedUrls)
+                        }
+                    }
+                }
+                .addOnFailureListener {
+                    uploadCount++
+                    if (uploadCount == uris.size) {
+                        savePortfolioToFirestore(userId, uploadedUrls)
+                    }
+                }
+        }
+    }
+
+    private fun savePortfolioToFirestore(userId: String, newUrls: List<String>) {
+        val currentPortfolio = _uiState.value.portfolioImages
+        val updatedPortfolio = currentPortfolio + newUrls
+
+        db.collection("users").document(userId)
+            .update("portfolioImages", updatedPortfolio)
+            .addOnSuccessListener {
+                _uiState.value = _uiState.value.copy(
+                    isUploadingPortfolio = false,
+                    portfolioImages = updatedPortfolio,
+                    message = "Portfolio updated successfully"
+                )
+            }
+            .addOnFailureListener {
+                _uiState.value = _uiState.value.copy(
+                    isUploadingPortfolio = false,
+                    message = "Failed to update portfolio"
+                )
+            }
     }
 }

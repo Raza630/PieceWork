@@ -1,7 +1,6 @@
 package com.example.workman.adaptes
 
 
-import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.workman.CustomStarRatingBar
 import com.example.workman.R
 import com.example.workman.dataClass.Workerlist
-import com.example.workman.dataClass.Workers
 
 
 class WorkerAdapter(private var workers: List<Workerlist>, private val onItemClickListener: (Workerlist) -> Unit) :
@@ -26,6 +24,12 @@ class WorkerAdapter(private var workers: List<Workerlist>, private val onItemCli
         val worker = workers[position]
 //        holder.workerName.text = worker.name // Changed from worker.email to worker.name
         holder.workerName.text = worker.email
+
+        if (worker.isVerified) {
+            holder.verifiedBadge.visibility = View.VISIBLE
+        } else {
+            holder.verifiedBadge.visibility = View.GONE
+        }
 //        holder.workerImage.setImageResource(worker.imageResId)
 //        holder.starRatingBar.setRating(worker.starRating) // Use the starRating property
 //        holder.ratingValueTextView.text = worker.starRating.toString() // Set the rating value
@@ -45,8 +49,8 @@ class WorkerAdapter(private var workers: List<Workerlist>, private val onItemCli
     class WorkerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val workerImage: ImageView = itemView.findViewById(R.id.workerImage)
         val workerName: TextView = itemView.findViewById(R.id.workerName)
+        val verifiedBadge: ImageView = itemView.findViewById(R.id.verifiedBadge)
         val starRatingBar: CustomStarRatingBar = itemView.findViewById(R.id.starRatingBar)
         val ratingValueTextView: TextView = itemView.findViewById(R.id.ratingCountTextView)
-
     }
 }
