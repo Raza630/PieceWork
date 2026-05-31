@@ -13,6 +13,7 @@ data class WorkOffer(
     var id: String = "",
     var acceptedBy: String? = null,
     var isAccepted: Boolean = false,
+    var category: String = "",  // Job category for smart matching
     var status: String = "OPEN", // OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, REVIEWED
     var ratingSubmitted: Boolean = false,
     var completionImages: List<String> = emptyList(),
@@ -34,6 +35,7 @@ data class WorkOffer(
         id = "",
         acceptedBy = null,
         isAccepted = false,
+        category = "",
         status = "OPEN",
         ratingSubmitted = false,
         latitude = 0.0,

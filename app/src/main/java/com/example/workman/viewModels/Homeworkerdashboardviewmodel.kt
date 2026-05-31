@@ -6,8 +6,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workman.dataClass.Banner
-import com.example.workman.dataClass.Report
 import com.example.workman.dataClass.WorkOffer
+import com.example.workman.utils.JobMatchingEngine
 import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -41,7 +41,12 @@ data class WorkerDashboardUiState(
     val searchRadiusKm: Double = LocationHelper.DEFAULT_RADIUS_KM,
     val isLocationAvailable: Boolean = false,
     val nearbyOfferCount: Int = 0,
-    val isCompleting: Boolean = false
+    val isCompleting: Boolean = false,
+    // Smart matching
+    val recommendedOffers: List<JobMatchingEngine.ScoredOffer> = emptyList(),
+    val otherOffers: List<JobMatchingEngine.ScoredOffer> = emptyList(),
+    /** Map of offerId → ScoredOffer for quick lookup in UI */
+    val offerScores: Map<String, JobMatchingEngine.ScoredOffer> = emptyMap()
 )
 
 class HomeWorkerDashboardViewModel : ViewModel() {
@@ -55,6 +60,9 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     // Current user's location
     private var userLatitude: Double = 0.0
     private var userLongitude: Double = 0.0
+
+    // Worker profile for matching
+    private var workerProfile = JobMatchingEngine.WorkerProfile()
 
     private val _uiState = MutableStateFlow(WorkerDashboardUiState())
     val uiState: StateFlow<WorkerDashboardUiState> = _uiState.asStateFlow()
@@ -79,14 +87,63 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 userLatitude = lat
                 userLongitude = lng
 
+                val workerCategory = doc.getString("category") ?: ""
+
                 _uiState.update { it.copy(
                     userName = doc.getString("name") ?: "Worker",
                     userLocation = doc.getString("location") ?: "Not set",
                     isLocationAvailable = lat != 0.0 && lng != 0.0
                 ) }
+
+                // Build worker profile for matching
+                workerProfile = workerProfile.copy(
+                    category = workerCategory,
+                    latitude = lat,
+                    longitude = lng
+                )
+
+                // Load acceptance history for smart matching
+                loadAcceptanceHistory(user.uid)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load user data", e)
             }
+        }
+    }
+
+    /**
+     * Load the worker's past accepted jobs to build category history for matching.
+     */
+    private suspend fun loadAcceptanceHistory(userId: String) {
+        try {
+            val snapshot = db.collection("workOffers")
+                .whereEqualTo("acceptedBy", userId)
+                .get()
+                .await()
+
+            val categoryCount = mutableMapOf<String, Int>()
+            for (doc in snapshot.documents) {
+                val cat = doc.getString("category") ?: ""
+                if (cat.isNotBlank()) {
+                    categoryCount[cat] = (categoryCount[cat] ?: 0) + 1
+                }
+            }
+
+            workerProfile = workerProfile.copy(
+                acceptedCategoryHistory = categoryCount,
+                totalAcceptedJobs = snapshot.size()
+            )
+
+            Log.d(
+                TAG,
+                "Loaded acceptance history: ${snapshot.size()} jobs, categories: $categoryCount"
+            )
+
+            // Re-score offers if they're already loaded
+            if (allOffers.isNotEmpty()) {
+                refilterOffers()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load acceptance history", e)
         }
     }
 
@@ -141,6 +198,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                             id = doc.id,
                             acceptedBy = acceptedBy,
                             isAccepted = doc.getBoolean("isAccepted") ?: false,
+                            category = doc.getString("category") ?: "",
                             latitude = offerLat,
                             longitude = offerLng,
                             geohash = doc.getString("geohash") ?: "",
@@ -170,6 +228,11 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 userLatitude = locationResult.latitude
                 userLongitude = locationResult.longitude
 
+                workerProfile = workerProfile.copy(
+                    latitude = locationResult.latitude,
+                    longitude = locationResult.longitude
+                )
+
                 _uiState.update {
                     it.copy(
                         userLocation = locationResult.locationName,
@@ -195,12 +258,8 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     }
 
     fun onSearchQueryChange(query: String) {
-        _uiState.update { state ->
-            state.copy(
-                searchQuery = query,
-                filteredOffers = applyFilters(allOffers, query, state.searchRadiusKm)
-            )
-        }
+        _uiState.update { it.copy(searchQuery = query) }
+        refilterOffers()
     }
 
     private fun refilterOffers() {
@@ -220,12 +279,25 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         val state = _uiState.value
         val filtered = applyFilters(allOffers, state.searchQuery, state.searchRadiusKm)
 
+        // Score and partition offers using the matching engine
+        val scoredOffers = JobMatchingEngine.scoreOffers(filtered, workerProfile)
+        val (recommended, other) = JobMatchingEngine.partitionOffers(scoredOffers)
+
+        // Build score lookup map
+        val scoreMap = scoredOffers.associateBy { it.offer.id }
+
+        // For the flat filteredOffers list, use scored order (recommended first, then other)
+        val sortedOffers = (recommended + other).map { it.offer }
+
         _uiState.update {
             it.copy(
                 offerListState = WorkOfferListState.Success(allOffers),
-                filteredOffers = filtered,
+                filteredOffers = sortedOffers,
                 isRefreshing = false,
-                nearbyOfferCount = filtered.size
+                nearbyOfferCount = filtered.size,
+                recommendedOffers = recommended,
+                otherOffers = other,
+                offerScores = scoreMap
             )
         }
     }
@@ -238,7 +310,8 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         return offers.filter { offer ->
             val matchesSearch = query.isBlank() ||
                     offer.title.contains(query, ignoreCase = true) ||
-                    offer.description.contains(query, ignoreCase = true)
+                    offer.description.contains(query, ignoreCase = true) ||
+                    offer.category.contains(query, ignoreCase = true)
 
             // Location filter: show offers within radius, OR if no location data available
             val matchesLocation = if (userLatitude == 0.0 || userLongitude == 0.0) {
@@ -251,7 +324,6 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
             matchesSearch && matchesLocation
         }
-            .sortedBy { it.distanceKm.let { d -> if (d < 0) Double.MAX_VALUE else d } } // Nearest first
     }
 
     fun submitReport(entityId: String, type: String, reason: String) {
@@ -259,7 +331,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val reportId = db.collection("reports").document().id
-                val report = Report(
+                val report = com.example.workman.dataClass.Report(
                     reportId = reportId,
                     reporterId = userId,
                     reportedEntityId = entityId,
@@ -303,15 +375,10 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
                 _uiState.update { state ->
                     state.copy(
-                        offerListState = WorkOfferListState.Success(allOffers),
-                        filteredOffers = applyFilters(
-                            allOffers,
-                            state.searchQuery,
-                            state.searchRadiusKm
-                        ),
                         acceptingOfferIds = state.acceptingOfferIds - workOffer.id
                     )
                 }
+                refilterOffers()
                 onResult(true, "Work accepted successfully!")
             } catch (e: Exception) {
                 _uiState.update { it.copy(acceptingOfferIds = it.acceptingOfferIds - workOffer.id) }

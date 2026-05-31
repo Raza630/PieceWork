@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.workman.components.MapLocationView
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.ui.theme.BgColor
 import com.example.workman.ui.theme.PrimaryBlue
@@ -130,7 +131,7 @@ fun WorkOfferDetailsScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextDark)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BgColor)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         }
     ) { padding ->
@@ -225,20 +226,53 @@ fun WorkOfferDetailsScreen(
                         lineHeight = 24.sp
                     )
 
+                    // Map showing job location
+                    if (offer!!.latitude != 0.0 && offer!!.longitude != 0.0) {
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        Text(
+                            text = "Job Location",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextDark
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        MapLocationView(
+                            latitude = offer!!.latitude,
+                            longitude = offer!!.longitude,
+                            locationName = offer!!.locationName,
+                            zoom = 15.0
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(40.dp))
 
+                    // Determine acceptance state: check both isAccepted flag AND acceptedBy field
+                    val currentUserId = auth.currentUser?.uid ?: ""
+                    val isJobTaken = offer!!.isAccepted || !offer!!.acceptedBy.isNullOrEmpty()
+                    val isAcceptedByMe = isJobTaken && offer!!.acceptedBy == currentUserId
+                    val isAcceptedByOther = isJobTaken && !isAcceptedByMe
+
                     Button(
-                        onClick = { if (!offer!!.isAccepted && !isAccepting) handleAcceptJob() },
+                        onClick = { if (!isJobTaken && !isAccepting) handleAcceptJob() },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp),
                         shape = RoundedCornerShape(16.dp),
-                        enabled = !offer!!.isAccepted && !isAccepting,
+                        enabled = !isJobTaken && !isAccepting,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (offer!!.isAccepted) Color(0xFF4CAF50) else PrimaryBlue,
-                            disabledContainerColor = if (offer!!.isAccepted) Color(0xFF4CAF50) else Color.Gray.copy(
-                                alpha = 0.5f
-                            )
+                            containerColor = when {
+                                isAcceptedByMe -> Color(0xFF4CAF50)
+                                isAcceptedByOther -> Color(0xFFFF9800)
+                                else -> PrimaryBlue
+                            },
+                            disabledContainerColor = when {
+                                isAcceptedByMe -> Color(0xFF4CAF50)
+                                isAcceptedByOther -> Color(0xFFFF9800)
+                                else -> Color.Gray.copy(alpha = 0.5f)
+                            }
                         )
                     ) {
                         if (isAccepting) {
@@ -249,7 +283,11 @@ fun WorkOfferDetailsScreen(
                             )
                         } else {
                             Text(
-                                text = if (offer!!.isAccepted) "Accepted" else "Accept this Job",
+                                text = when {
+                                    isAcceptedByMe -> "✓ Accepted by You"
+                                    isAcceptedByOther -> "Already Taken"
+                                    else -> "Accept this Job"
+                                },
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
                                 color = Color.White

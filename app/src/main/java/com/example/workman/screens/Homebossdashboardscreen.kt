@@ -149,17 +149,8 @@ private val serviceCategories = listOf(
     ServiceCategory("Appliance", Icons.Outlined.Refresh, Color(0xFFFF5722), "AC, Fridge, TV repair", "₹399")
 )
 
-private val dashboardCategories = listOf(
-    "All",
-    "Professionals",
-    "Associate Professionals",
-    "Clerks",
-    "Service Workers",
-    "Skilled Agricultural",
-    "Craft & Trades",
-    "Machine Operators",
-    "Elementary"
-)
+private val dashboardCategories: List<String>
+    get() = com.example.workman.utils.CategoryRepository.getCategoriesForFilter()
 
 // ─── Root Screen ───────────────────────────────────────────────────────────────
 

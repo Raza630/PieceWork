@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
+        android:name=".WorkManApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -25,8 +26,9 @@
         android:theme="@style/Theme.WorkMan"
         tools:targetApi="31">
         <activity
-            android:name=".chatModel.ChatMainActivity"
-            android:exported="false" />
+            android:name=".MapPickerActivity"
+            android:exported="false"
+            android:parentActivityName=".CreateWorkActivity" />
         <activity
             android:name=".MyJobOffersActivity"
             android:exported="false"
@@ -60,9 +62,7 @@
         <activity
             android:name=".SignUp"
             android:exported="false" />
-        <activity
-            android:name=".WorkerDashboardActivity"
-            android:exported="false" />
+
         <activity
             android:name=".HomeWorkerDashboardActivity"
             android:exported="false" />

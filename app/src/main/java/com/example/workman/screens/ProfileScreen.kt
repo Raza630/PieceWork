@@ -85,7 +85,8 @@ import java.util.Calendar
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -253,11 +254,7 @@ fun ProfileScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             ProfileDropdown(
-                                options = listOf(
-                                    "Professionals", "Associate Professionals", "Clerks",
-                                    "Service Workers", "Skilled Agricultural", "Craft & Trades",
-                                    "Machine Operators", "Elementary"
-                                ),
+                                options = com.example.workman.utils.CategoryRepository.getCategoriesForSelection(),
                                 selectedOption = uiState.category,
                                 onOptionSelected = { viewModel.onCategoryChange(it) },
                                 label = "Occupation",
@@ -308,6 +305,29 @@ fun ProfileScreen(
                     isUploading = uiState.isUploadingPortfolio,
                     onAddImages = { portfolioLauncher.launch("image/*") }
                 )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // Logout Button
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF3B30)
+                    )
+                ) {
+                    Text(
+                        "Logout",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

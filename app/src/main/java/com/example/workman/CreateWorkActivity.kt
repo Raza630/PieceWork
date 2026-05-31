@@ -1,12 +1,16 @@
 package com.example.workman
 
 import android.app.DatePickerDialog
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +45,7 @@ class CreateWorkActivity : AppCompatActivity() {
     private lateinit var btnSelectImages: MaterialButton
     private lateinit var toolbar: Toolbar
     private lateinit var rvSelectedImages: RecyclerView
+    private lateinit var actvCategory: AutoCompleteTextView
     private var progressBar: ProgressBar? = null
     private var loadingOverlay: View? = null
 
@@ -54,6 +59,17 @@ class CreateWorkActivity : AppCompatActivity() {
     private lateinit var imageAdapter: ImageAdapterSelectedImage
     private val calendar = Calendar.getInstance()
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private var selectedCategory: String = ""
+
+    // Map-picked location (overrides user profile location)
+    private var pickedLatitude: Double = 0.0
+    private var pickedLongitude: Double = 0.0
+    private var pickedLocationName: String = ""
+    private var hasPickedLocation: Boolean = false
+
+    // Job categories — loaded dynamically from CategoryRepository
+    private val jobCategories: List<String>
+        get() = com.example.workman.utils.CategoryRepository.getCategoriesForSelection()
 
     private val defaultImageUrl = "android.resource://com.example.workman/drawable/notification_img"
 
@@ -81,6 +97,29 @@ class CreateWorkActivity : AppCompatActivity() {
         }
     }
 
+    // Map location picker
+    private val mapPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.let { data ->
+                pickedLatitude = data.getDoubleExtra("latitude", 0.0)
+                pickedLongitude = data.getDoubleExtra("longitude", 0.0)
+                pickedLocationName = data.getStringExtra("locationName") ?: ""
+                hasPickedLocation = true
+
+                // Update the location label in UI
+                val tvLocation = findViewById<TextView>(R.id.tvSelectedLocation)
+                tvLocation?.text = if (pickedLocationName.isNotEmpty()) {
+                    "📍 $pickedLocationName"
+                } else {
+                    "📍 %.4f, %.4f".format(pickedLatitude, pickedLongitude)
+                }
+                tvLocation?.visibility = View.VISIBLE
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_work)
@@ -102,6 +141,15 @@ class CreateWorkActivity : AppCompatActivity() {
         // Loading overlay for upload state
         loadingOverlay = findViewById(R.id.loadingOverlay)
         progressBar = findViewById(R.id.progressBar)
+
+        // Category dropdown
+        actvCategory = findViewById(R.id.actvCategory)
+        val categoryAdapter =
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, jobCategories)
+        actvCategory.setAdapter(categoryAdapter)
+        actvCategory.setOnItemClickListener { _, _, position, _ ->
+            selectedCategory = jobCategories[position]
+        }
     }
 
     private fun setupToolbar() {
@@ -124,6 +172,16 @@ class CreateWorkActivity : AppCompatActivity() {
         etWorkDate.setOnClickListener { showDatePicker() }
         btnSelectImages.setOnClickListener { pickImages() }
         btnSubmitWork.setOnClickListener { validateAndSubmit() }
+
+        // Map picker button
+        findViewById<MaterialButton>(R.id.btnPickLocation)?.setOnClickListener {
+            val intent = Intent(this, MapPickerActivity::class.java)
+            if (hasPickedLocation) {
+                intent.putExtra("initial_lat", pickedLatitude)
+                intent.putExtra("initial_lng", pickedLongitude)
+            }
+            mapPickerLauncher.launch(intent)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -240,27 +298,35 @@ class CreateWorkActivity : AppCompatActivity() {
         val currentUser = auth.currentUser
         val jobId = db.collection("workOffers").document().id
 
-        // Get boss's current location from their user profile for geo-based matching
+        // Get location: prefer map-picked location, fallback to boss's profile location
         var latitude = 0.0
         var longitude = 0.0
         var geohash = ""
         var locationName = ""
 
-        try {
-            currentUser?.uid?.let { uid ->
-                val userDoc = db.collection("users").document(uid).get().await()
-                latitude = userDoc.getDouble("latitude") ?: 0.0
-                longitude = userDoc.getDouble("longitude") ?: 0.0
-                geohash = userDoc.getString("geohash") ?: ""
-                locationName = userDoc.getString("location") ?: ""
+        if (hasPickedLocation && pickedLatitude != 0.0) {
+            // Use the map-picked location
+            latitude = pickedLatitude
+            longitude = pickedLongitude
+            geohash = LocationHelper.encode(latitude, longitude)
+            locationName = pickedLocationName
+        } else {
+            // Fallback: use boss's stored profile location
+            try {
+                currentUser?.uid?.let { uid ->
+                    val userDoc = db.collection("users").document(uid).get().await()
+                    latitude = userDoc.getDouble("latitude") ?: 0.0
+                    longitude = userDoc.getDouble("longitude") ?: 0.0
+                    geohash = userDoc.getString("geohash") ?: ""
+                    locationName = userDoc.getString("location") ?: ""
 
-                // If no stored location, try to compute geohash from lat/lng
-                if (geohash.isEmpty() && latitude != 0.0 && longitude != 0.0) {
-                    geohash = LocationHelper.encode(latitude, longitude)
+                    if (geohash.isEmpty() && latitude != 0.0 && longitude != 0.0) {
+                        geohash = LocationHelper.encode(latitude, longitude)
+                    }
                 }
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not fetch boss location for job", e)
             }
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not fetch boss location for job", e)
         }
 
         val workData = hashMapOf(
@@ -274,6 +340,7 @@ class CreateWorkActivity : AppCompatActivity() {
             "bossPhoto" to (currentUser?.photoUrl?.toString() ?: ""),
             "status" to "OPEN",
             "isAccepted" to false,
+            "category" to selectedCategory,
             "createdAt" to FieldValue.serverTimestamp(),
             // Location data for geo-based filtering
             "latitude" to latitude,

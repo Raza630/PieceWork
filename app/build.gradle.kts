@@ -118,4 +118,7 @@ dependencies {
 
     implementation("com.google.android.play:review:2.0.2")
     implementation("com.google.android.play:review-ktx:2.0.2")
+
+    // OSMDroid - Free OpenStreetMap (no API key required)
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 }
