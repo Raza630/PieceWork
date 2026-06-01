@@ -34,6 +34,7 @@ data class DashboardUiState(
     val searchQuery: String = "",
     val serviceSearchQuery: String = "",
     val selectedCategory: String = "All",
+    val selectedCategories: Set<String> = emptySet(), // Multi-select filter
     val filteredWorkers: List<WorkerUiModel> = emptyList(),
     val popularServices: List<WorkerUiModel> = emptyList(),
     val bookings: List<BookingUiModel> = emptyList(),
@@ -47,7 +48,8 @@ data class DashboardUiState(
     val isLocationAvailable: Boolean = false,
     val nearbyWorkerCount: Int = 0,
     val showReportDialog: Boolean = false,
-    val entityToReport: String? = null // userId or jobId
+    val entityToReport: String? = null, // userId or jobId
+    val showFilterSheet: Boolean = false
 )
 
 // ─── Firestore Worker Document Model ──────────────────────────────────────────
@@ -379,10 +381,51 @@ class HomeBossDashboardViewModel : ViewModel() {
                     allWorkers,
                     state.searchQuery,
                     newCategory,
-                    state.searchRadiusKm
+                    state.searchRadiusKm,
+                    state.selectedCategories
                 )
             )
         }
+    }
+
+    /**
+     * Toggle a category in multi-select filter.
+     */
+    fun toggleCategoryFilter(category: String) {
+        _uiState.update { state ->
+            val newSet = if (state.selectedCategories.contains(category)) {
+                state.selectedCategories - category
+            } else {
+                state.selectedCategories + category
+            }
+            state.copy(selectedCategories = newSet)
+        }
+    }
+
+    /**
+     * Apply the filter selections from the bottom sheet.
+     */
+    fun applyFilterSheet() {
+        _uiState.update { it.copy(showFilterSheet = false) }
+        refilterWorkers()
+    }
+
+    /**
+     * Clear all filter selections.
+     */
+    fun clearFilters() {
+        _uiState.update {
+            it.copy(
+                selectedCategories = emptySet(),
+                searchRadiusKm = LocationHelper.DEFAULT_RADIUS_KM,
+                selectedCategory = "All"
+            )
+        }
+        refilterWorkers()
+    }
+
+    fun toggleFilterSheet() {
+        _uiState.update { it.copy(showFilterSheet = !it.showFilterSheet) }
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────
@@ -406,7 +449,8 @@ class HomeBossDashboardViewModel : ViewModel() {
             allWorkers,
             state.searchQuery,
             state.selectedCategory,
-            state.searchRadiusKm
+            state.searchRadiusKm,
+            state.selectedCategories
         )
 
         _uiState.update {
@@ -426,14 +470,21 @@ class HomeBossDashboardViewModel : ViewModel() {
         workers: List<WorkerUiModel>,
         query: String,
         category: String,
-        radiusKm: Double
+        radiusKm: Double,
+        selectedCategories: Set<String> = emptySet()
     ): List<WorkerUiModel> {
         return workers.filter { worker ->
             val matchesSearch = query.isBlank() ||
                     worker.name.contains(query, ignoreCase = true) ||
                     worker.category.contains(query, ignoreCase = true)
 
-            val matchesCategory = if (category == "All") {
+            val matchesCategory = if (selectedCategories.isNotEmpty()) {
+                // Multi-select: match any of the selected categories
+                selectedCategories.any { selectedCat ->
+                    worker.category.trim().equals(selectedCat.trim(), ignoreCase = true) ||
+                            worker.category.contains(selectedCat, ignoreCase = true)
+                }
+            } else if (category == "All") {
                 true
             } else {
                 worker.category.trim().equals(category.trim(), ignoreCase = true) ||

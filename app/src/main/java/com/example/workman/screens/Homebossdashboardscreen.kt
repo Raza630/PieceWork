@@ -35,9 +35,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
@@ -173,13 +175,14 @@ fun HomeBossDashboardScreen(
             HomeBossBottomNav(
                 selectedIndex = selectedNavItem,
                 onSelect = { idx ->
-                    if (idx < 3) {
-                        selectedNavItem = idx
-                    } else {
-                        when (idx) {
-                            3 -> onNavChat()
-                            4 -> onNavProfile()
-                        }
+                    when (idx) {
+                        0 -> selectedNavItem = 0  // Home
+                        1 -> {
+                            selectedNavItem = 1
+                        } // Bookings
+                        2 -> onViewOffers()       // My Jobs
+                        3 -> onNavChat()          // Chat
+                        4 -> onNavProfile()       // Profile
                     }
                 }
             )
@@ -200,15 +203,8 @@ fun HomeBossDashboardScreen(
         ) { page ->
             when (page) {
                 0 -> HomeContent(viewModel, onWorkerClick)
-                1 -> ServicesContent(
-                    viewModel = viewModel,
-                    onCategoryClick = { category ->
-                        viewModel.onCategorySelected(category)
-                        selectedNavItem = 0 // Navigate back to home/list view
-                    },
-                    onWorkerClick = onWorkerClick
-                )
-                2 -> BookingContent(viewModel)
+                1 -> BookingContent(viewModel)
+                2 -> BookingContent(viewModel) // placeholder, won't reach due to nav handling
                 else -> HomeContent(viewModel, onWorkerClick)
             }
         }
@@ -322,43 +318,50 @@ private fun HomeContent(
     onWorkerClick: (WorkerUiModel) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp)
-    ) {
-        // ── Header Section with User Info & Location
-        item {
-            BossHeader(
-                name = uiState.userName,
-                location = uiState.userLocation
-            )
-        }
 
-        // ── Search bar
-        item {
-            DashboardSearchBar(
-                query         = uiState.searchQuery,
-                onQueryChange = viewModel::onSearchQueryChange,
-                modifier      = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
-            )
-        }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 24.dp)
+        ) {
+            // ── Header Section with User Info & Location
+            item {
+                BossHeader(
+                    name = uiState.userName,
+                    location = uiState.userLocation
+                )
+            }
 
-        // ── Category chips
-        item {
-            CategoryChipRow(
-                categories = dashboardCategories,
-                selected   = uiState.selectedCategory,
-                onSelect   = viewModel::onCategorySelected
-            )
-            Spacer(Modifier.height(16.dp))
-        }
+            // ── Search bar with filter button
+            item {
+                DashboardSearchBar(
+                    query = uiState.searchQuery,
+                    onQueryChange = viewModel::onSearchQueryChange,
+                    onFilterClick = { viewModel.toggleFilterSheet() },
+                    activeFilterCount = uiState.selectedCategories.size +
+                            (if (uiState.searchRadiusKm != LocationHelper.DEFAULT_RADIUS_KM) 1 else 0),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                )
+            }
 
-        // ── Section header with nearby count and radius filter
-        item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)) {
+            // ── Active filters summary (shown when filters are applied)
+            if (uiState.selectedCategories.isNotEmpty() || uiState.searchRadiusKm != LocationHelper.DEFAULT_RADIUS_KM) {
+                item {
+                    ActiveFilterBar(
+                        selectedCategories = uiState.selectedCategories,
+                        radiusKm = uiState.searchRadiusKm,
+                        defaultRadius = LocationHelper.DEFAULT_RADIUS_KM,
+                        onClearAll = { viewModel.clearFilters() }
+                    )
+                }
+            }
+
+            // ── Section header with result count
+            item {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -369,24 +372,203 @@ private fun HomeContent(
                             color = TextDark
                         )
                     )
-                    if (uiState.isLocationAvailable) {
-                        Text(
-                            "${uiState.nearbyWorkerCount} nearby",
-                            fontSize = 12.sp,
-                            color = Orange,
-                            fontWeight = FontWeight.Medium
+                    Text(
+                        "${uiState.filteredWorkers.size} found",
+                        fontSize = 12.sp,
+                        color = Orange,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+
+            // ── Content: Loading / Error / Empty / List
+            when (val state = uiState.workerListState) {
+                is WorkerListState.Loading -> {
+                    item { WorkerListLoading() }
+                }
+
+                is WorkerListState.Error -> {
+                    item {
+                        WorkerListError(
+                            message = state.message,
+                            onRetry = viewModel::fetchWorkers
                         )
                     }
                 }
-                // Radius filter chips
-                if (uiState.isLocationAvailable) {
-                    Spacer(Modifier.height(8.dp))
+
+                is WorkerListState.Success -> {
+                    if (uiState.filteredWorkers.isEmpty()) {
+                        item { WorkerListEmpty(query = uiState.searchQuery) }
+                    } else {
+                        items(uiState.filteredWorkers, key = { it.id }) { worker ->
+                            WorkerCard(
+                                worker = worker,
+                                onClick = { onWorkerClick(worker) },
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Filter Bottom Sheet overlay
+        if (uiState.showFilterSheet) {
+            FilterBottomSheet(
+                selectedCategories = uiState.selectedCategories,
+                selectedRadius = uiState.searchRadiusKm,
+                onToggleCategory = viewModel::toggleCategoryFilter,
+                onRadiusChange = viewModel::updateSearchRadius,
+                onApply = viewModel::applyFilterSheet,
+                onClearAll = viewModel::clearFilters,
+                onDismiss = { viewModel.toggleFilterSheet() }
+            )
+        }
+    }
+}
+
+// ─── Active Filter Bar ─────────────────────────────────────────────────────────
+
+@Composable
+private fun ActiveFilterBar(
+    selectedCategories: Set<String>,
+    radiusKm: Double,
+    defaultRadius: Double,
+    onClearAll: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (radiusKm != defaultRadius) {
+                Surface(
+                    color = OrangeLight,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        "${radiusKm.toInt()} km",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        fontSize = 11.sp,
+                        color = Orange,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            selectedCategories.take(3).forEach { cat ->
+                Surface(
+                    color = OrangeLight,
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        cat,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        fontSize = 11.sp,
+                        color = Orange,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            if (selectedCategories.size > 3) {
+                Text("+${selectedCategories.size - 3}", fontSize = 11.sp, color = Orange)
+            }
+        }
+        TextButton(onClick = onClearAll) {
+            Text("Clear all", fontSize = 12.sp, color = Orange)
+        }
+    }
+}
+
+// ─── Filter Bottom Sheet ───────────────────────────────────────────────────────
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterBottomSheet(
+    selectedCategories: Set<String>,
+    selectedRadius: Double,
+    onToggleCategory: (String) -> Unit,
+    onRadiusChange: (Double) -> Unit,
+    onApply: () -> Unit,
+    onClearAll: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    // Semi-transparent background
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .clickable { onDismiss() }
+    ) {
+        // Sheet content
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(520.dp)
+                .clickable(enabled = false) { /* consume clicks */ },
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            color = Color.White,
+            shadowElevation = 16.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // ── Fixed top: Handle bar + Title + Distance
+                Column(modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp)) {
+                    // Handle bar
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.LightGray)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    Spacer(Modifier.height(16.dp))
+
+                    // Title
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Filter Workers",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextDark
+                        )
+                        TextButton(onClick = onClearAll) {
+                            Text("Reset", color = Orange)
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // ── Distance Section
+                    Text(
+                        "Distance",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = TextDark
+                    )
+                    Spacer(Modifier.height(10.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf(10.0, 25.0, 50.0, 100.0).forEach { radius ->
                             FilterChip(
-                                selected = uiState.searchRadiusKm == radius,
-                                onClick = { viewModel.updateSearchRadius(radius) },
-                                label = { Text("${radius.toInt()} km", fontSize = 12.sp) },
+                                selected = selectedRadius == radius,
+                                onClick = { onRadiusChange(radius) },
+                                label = { Text("${radius.toInt()} km", fontSize = 13.sp) },
                                 colors = FilterChipDefaults.filterChipColors(
                                     selectedContainerColor = Orange,
                                     selectedLabelColor = Color.White
@@ -395,34 +577,75 @@ private fun HomeContent(
                             )
                         }
                     }
-                }
-            }
-            Spacer(Modifier.height(8.dp))
-        }
 
-        // ── Content: Loading / Error / Empty / List
-        when (val state = uiState.workerListState) {
-            is WorkerListState.Loading -> {
-                item { WorkerListLoading() }
-            }
-            is WorkerListState.Error -> {
-                item {
-                    WorkerListError(
-                        message = state.message,
-                        onRetry = viewModel::fetchWorkers
+                    Spacer(Modifier.height(16.dp))
+
+                    // ── Categories label
+                    Text(
+                        "Categories",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = TextDark
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Select multiple to filter",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
+                    Spacer(Modifier.height(8.dp))
                 }
-            }
-            is WorkerListState.Success -> {
-                if (uiState.filteredWorkers.isEmpty()) {
-                    item { WorkerListEmpty(query = uiState.searchQuery) }
-                } else {
-                    items(uiState.filteredWorkers, key = { it.id }) { worker ->
-                        WorkerCard(
-                            worker   = worker,
-                            onClick  = { onWorkerClick(worker) },
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 6.dp)
+
+                // ── Scrollable categories section
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 24.dp)
+                        .verticalScroll(scrollState)
+                ) {
+                    val allCategories =
+                        com.example.workman.utils.CategoryRepository.getCategoriesForSelection()
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        allCategories.forEach { category ->
+                            val isSelected = selectedCategories.contains(category)
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = { onToggleCategory(category) },
+                                label = { Text(category, fontSize = 12.sp, maxLines = 1) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Orange,
+                                    selectedLabelColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                // ── Fixed bottom: Apply Button (always visible)
+                Surface(
+                    color = Color.White,
+                    shadowElevation = 8.dp
+                ) {
+                    Button(
+                        onClick = onApply,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 12.dp)
+                            .height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Orange)
+                    ) {
+                        Text(
+                            text = if (selectedCategories.isEmpty()) "Apply Filters"
+                            else "Show Results (${selectedCategories.size} selected)",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp
                         )
                     }
                 }
@@ -786,7 +1009,9 @@ private fun DashboardSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search workers or category..."
+    placeholder: String = "Search workers or category...",
+    onFilterClick: (() -> Unit)? = null,
+    activeFilterCount: Int = 0
 ) {
     Row(
         modifier = modifier
@@ -821,10 +1046,16 @@ private fun DashboardSearchBar(
             modifier = Modifier
                 .clip(RoundedCornerShape(20.dp))
                 .background(Orange)
+                .clickable { onFilterClick?.invoke() }
                 .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Filter", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (activeFilterCount > 0) "Filter ($activeFilterCount)" else "Filter",
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
                 Spacer(Modifier.width(4.dp))
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
             }
@@ -1281,8 +1512,8 @@ private fun StatusBadge(status: BookingStatus) {
 private fun HomeBossBottomNav(selectedIndex: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
         Pair(Icons.Default.Home,       "Home"),
-        Pair(Icons.Outlined.Build,     "Services"),
-        Pair(Icons.Outlined.DateRange, "Booking"),
+        Pair(Icons.Outlined.DateRange, "Bookings"),
+        Pair(Icons.Outlined.Build, "My Jobs"),
         Pair(Icons.Outlined.Email,     "Chat"),
         Pair(Icons.Outlined.Person,    "Profile")
     )
