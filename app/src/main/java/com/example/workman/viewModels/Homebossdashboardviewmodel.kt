@@ -349,8 +349,9 @@ class HomeBossDashboardViewModel : ViewModel() {
                         name             = raw.name,
                         category         = raw.category,
                         yearsOfExperience = raw.yearsOfExperience,
-                        rating           = raw.rating,
-                        reviewCount      = raw.reviewCount,
+                        rating = doc.getDouble("averageRating") ?: raw.rating,
+                        reviewCount = (doc.getLong("totalRatings")?.toString())
+                            ?: raw.reviewCount,
                         ratePerHour      = raw.ratePerHour,
                         photoUrl = raw.photoUrl,
                         isVerified = raw.isVerified,

@@ -123,6 +123,21 @@ fun WorkOfferDetailsScreen(
                     )
                 ).await()
 
+                // Best-effort: move the linked booking to ACTIVE so the boss's
+                // Bookings tab updates immediately (works without Cloud Functions).
+                try {
+                    db.collection("bookings").document(offerId).update(
+                        mapOf(
+                            "workerId" to user.uid,
+                            "workerName" to (user.displayName ?: "Worker"),
+                            "workerPhotoUrl" to (user.photoUrl?.toString() ?: ""),
+                            "status" to "ACTIVE"
+                        )
+                    ).await()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not update booking to ACTIVE: ${e.message}")
+                }
+
                 Toast.makeText(context, "Job accepted successfully!", Toast.LENGTH_SHORT).show()
                 fetchOfferDetails() // Refresh local state
             } catch (e: Exception) {

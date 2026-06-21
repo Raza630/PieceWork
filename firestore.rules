@@ -94,11 +94,16 @@ service cloud.firestore {
     match /bookings/{bookingId} {
       allow read: if isAuthenticated()
                   && (resource.data.bossId == request.auth.uid
-                      || resource.data.workerId == request.auth.uid);
+                      || resource.data.get('workerId', '') == request.auth.uid);
       allow create: if isAuthenticated();
       allow update: if isAuthenticated()
-                    && (resource.data.bossId == request.auth.uid
-                        || resource.data.workerId == request.auth.uid);
+                    && (
+                        resource.data.bossId == request.auth.uid
+                        || resource.data.get('workerId', '') == request.auth.uid
+                        // A worker accepting an unassigned (PENDING) booking
+                        || (resource.data.get('workerId', '') == ''
+                            && request.resource.data.workerId == request.auth.uid)
+                    );
     }
 
     // ─── Banners (read-only, managed via Firebase console) ─────────────

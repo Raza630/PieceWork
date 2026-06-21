@@ -53,7 +53,6 @@ import com.example.workman.ui.theme.TextDark
 import com.example.workman.ui.theme.TextMuted
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
 data class ChatConversation(
@@ -86,7 +85,6 @@ fun ChatListScreen(
         try {
             val snapshot = db.collection("chats")
                 .whereArrayContains("participants", userId)
-                .orderBy("lastActivity", Query.Direction.DESCENDING)
                 .limit(50)
                 .get()
                 .await()
@@ -110,7 +108,7 @@ fun ChatListScreen(
                     unreadCount = (doc.getLong("unread_$userId") ?: 0L).toInt(),
                     jobTitle = doc.getString("jobTitle") ?: ""
                 )
-            }
+            }.sortedByDescending { it.lastMessageTime } // newest first, no index needed
         } catch (_: Exception) {
         }
         isLoading = false
