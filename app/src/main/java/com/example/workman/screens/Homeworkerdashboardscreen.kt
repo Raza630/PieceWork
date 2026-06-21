@@ -79,6 +79,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.workman.components.UrgencyBadge
 import com.example.workman.dataClass.Banner
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.utils.JobMatchingEngine
@@ -106,6 +107,7 @@ private val MatchGreen = Color(0xFF4CAF50)
 fun HomeWorkerDashboardScreen(
     viewModel: HomeWorkerDashboardViewModel = viewModel(),
     onOfferClick: (WorkOffer) -> Unit = {},
+    onNotificationClick: () -> Unit = {},
     onNavProfile: () -> Unit = {},
     onNavChat: () -> Unit = {},
     onNavHome: () -> Unit = {},
@@ -142,7 +144,7 @@ fun HomeWorkerDashboardScreen(
                     WorkerHeader(
                         name = uiState.userName,
                         location = uiState.userLocation,
-                        onNotificationClick = { /* Handle notifications */ }
+                        onNotificationClick = onNotificationClick
                     )
                 }
 
@@ -602,17 +604,25 @@ private fun WorkOfferCard(
                     // Category chip
                     if (offer.category.isNotBlank()) {
                         Spacer(Modifier.height(6.dp))
-                        Surface(
-                            color = SecondaryBlue,
-                            shape = RoundedCornerShape(6.dp)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = offer.category,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = PrimaryBlue
-                            )
+                            Surface(
+                                color = SecondaryBlue,
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = offer.category,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = PrimaryBlue
+                                )
+                            }
+                            if (offer.urgency == "URGENT") {
+                                UrgencyBadge(urgency = offer.urgency)
+                            }
                         }
                     }
                 }

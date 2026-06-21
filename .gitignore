@@ -1,15 +1,48 @@
+# ── Android / Gradle ─────────────────────────────────────────
 *.iml
-.gradle
+.gradle/
 /local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
+local.properties
 /build
+build/
 /captures
 .externalNativeBuild
 .cxx
-local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+bin/
+gen/
+out/
+release/
+
+# ── Android Studio / IntelliJ ────────────────────────────────
+.idea/
+*.iws
+*.ipr
+.DS_Store
+
+# ── Keystores & Signing (NEVER commit) ───────────────────────
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# ── Firebase / Secrets ───────────────────────────────────────
+# google-services.json contains your Firebase config/API key.
+# Uncomment the next line if your repo is PUBLIC and you want to keep it private.
+# app/google-services.json
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# ── Node (Cloud Functions) ───────────────────────────────────
+functions/node_modules/
+node_modules/
+*.local
+npm-debug.log*
+
+# ── Logs / temp ──────────────────────────────────────────────
+*.log
+*.tmp

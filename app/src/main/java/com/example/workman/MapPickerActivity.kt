@@ -80,6 +80,12 @@ class MapPickerActivity : ComponentActivity() {
         setContent {
             var selectedLat by remember { mutableDoubleStateOf(initialLat) }
             var selectedLng by remember { mutableDoubleStateOf(initialLng) }
+            // Drives programmatic map recenter/zoom (boss GPS, My Location, pre-set location)
+            var recenterTarget by remember {
+                mutableStateOf<Pair<Double, Double>?>(
+                    if (initialLat != 20.5937 || initialLng != 78.9629) initialLat to initialLng else null
+                )
+            }
             var addressText by remember { mutableStateOf("Move the map to select location") }
             val context = LocalContext.current
 
@@ -119,6 +125,7 @@ class MapPickerActivity : ComponentActivity() {
                     centerOnUserLocation(fusedLocationClient) { lat, lng ->
                         selectedLat = lat
                         selectedLng = lng
+                        recenterTarget = lat to lng
                     }
                 }
             }
@@ -134,6 +141,7 @@ class MapPickerActivity : ComponentActivity() {
                         centerOnUserLocation(fusedLocationClient) { lat, lng ->
                             selectedLat = lat
                             selectedLng = lng
+                            recenterTarget = lat to lng
                         }
                     } else {
                         permissionLauncher.launch(
@@ -178,6 +186,7 @@ class MapPickerActivity : ComponentActivity() {
                             initialLatitude = selectedLat,
                             initialLongitude = selectedLng,
                             initialZoom = initialZoom,
+                            recenterTo = recenterTarget,
                             onLocationSelected = { lat, lng ->
                                 selectedLat = lat
                                 selectedLng = lng
@@ -191,6 +200,7 @@ class MapPickerActivity : ComponentActivity() {
                                     centerOnUserLocation(fusedLocationClient) { lat, lng ->
                                         selectedLat = lat
                                         selectedLng = lng
+                                        recenterTarget = lat to lng
                                     }
                                 } else {
                                     permissionLauncher.launch(

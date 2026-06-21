@@ -299,6 +299,11 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Quick Stats Section
+                com.example.workman.components.QuickStatsSection()
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 // Portfolio Section
                 PortfolioSection(
                     images = uiState.portfolioImages,

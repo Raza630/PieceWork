@@ -3,10 +3,17 @@ package com.example.workman.utils
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.os.Bundle
-import com.example.workman.*
+import com.example.workman.ChatListActivity
+import com.example.workman.HomeBossDashboardActivity
+import com.example.workman.HomeWorkerDashboardActivity
+import com.example.workman.MyJobOffersActivity
+import com.example.workman.NotificationsActivity
+import com.example.workman.Profile
+import com.example.workman.R
+import com.example.workman.SharedPreferencesHelper
+import com.example.workman.WorkOfferDetailsActivity
+import com.example.workman.WorkerJobsActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.firebase.auth.FirebaseAuth
 
 object NavigationUtils {
 
@@ -28,12 +35,19 @@ object NavigationUtils {
     }
 
     fun navigateToChat(context: Context) {
-        if (context is ChatActivity) return
+        if (context is ChatListActivity) return
 
-        val chatId = "G8iV5Ci38lTbj8rt8dw3" // Standardized test chat ID
-        val intent = Intent(context, ChatActivity::class.java).apply {
-            putExtra("CHAT_ID", chatId)
-            putExtra("USER_ID", FirebaseAuth.getInstance().currentUser?.uid)
+        val intent = Intent(context, ChatListActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        context.startActivity(intent)
+        if (context is Activity) context.overridePendingTransition(0, 0)
+    }
+
+    fun navigateToNotifications(context: Context) {
+        if (context is NotificationsActivity) return
+
+        val intent = Intent(context, NotificationsActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         context.startActivity(intent)

@@ -12,6 +12,7 @@ enum class BookingStatus {
 
 data class BookingUiModel(
     val id: String = "",
+    val jobId: String = "",
     val workerId: String = "",
     val workerName: String = "",
     val workerPhotoUrl: String = "",

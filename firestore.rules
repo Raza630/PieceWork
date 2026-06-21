@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper Functions ──────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ─── Users Collection ──────────────────────────────────────────────
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles
+      allow read: if isAuthenticated();
+      // Only the user can update their own profile
+      allow write: if isOwner(userId);
+
+      // Favorites subcollection — only the boss can manage their favorites
+      match /favorites/{workerId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ─── Work Offers ───────────────────────────────────────────────────
+    match /workOffers/{offerId} {
+      // All authenticated users can read offers
+      allow read: if isAuthenticated();
+
+      // Only the boss who created it can create their own offers
+      allow create: if isAuthenticated()
+                    && request.resource.data.bossId == request.auth.uid;
+
+      // Allowed updates:
+      //  - Boss editing their own offer
+      //  - The assigned worker updating status (IN_PROGRESS / COMPLETED)
+      //  - Any worker accepting a still-open offer
+      // Uses .get('acceptedBy', null) so it works even when the field is absent.
+      allow update: if isAuthenticated()
+                    && (
+                        resource.data.bossId == request.auth.uid
+                        || resource.data.get('acceptedBy', null) == request.auth.uid
+                        || (resource.data.get('acceptedBy', null) == null
+                            && request.resource.data.acceptedBy == request.auth.uid)
+                    );
+
+      // Only the boss can delete their offer (if not yet accepted)
+      allow delete: if isAuthenticated()
+                    && resource.data.bossId == request.auth.uid
+                    && resource.data.get('acceptedBy', null) == null;
+    }
+
+    // ─── Reviews ───────────────────────────────────────────────────────
+    match /reviews/{reviewId} {
+      // Anyone authenticated can read reviews
+      allow read: if isAuthenticated();
+
+      // Only create reviews (no updates/deletes) — one per job enforced in app
+      allow create: if isAuthenticated()
+                    && request.resource.data.reviewerId == request.auth.uid;
+
+      allow update, delete: if false;
+    }
+
+    // ─── Reports ───────────────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Reports are write-only for users (admin reads via console)
+      allow create: if isAuthenticated()
+                    && request.resource.data.reporterId == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // ─── Admin Alerts (Cloud Functions only) ───────────────────────────
+    match /adminAlerts/{alertId} {
+      allow read, write: if false; // Only Cloud Functions can write
+    }
+
+    // ─── Notifications ─────────────────────────────────────────────────
+    match /notifications/{notifId} {
+      // Users can read their own notifications
+      allow read: if isAuthenticated()
+                  && resource.data.recipientId == request.auth.uid;
+      // Cloud Functions create notifications (server-side, bypasses rules)
+      allow create: if false;
+      // Users can mark their own notifications as read
+      allow update: if isAuthenticated()
+                    && resource.data.recipientId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']);
+    }
+
+    // ─── Bookings ──────────────────────────────────────────────────────
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated()
+                  && (resource.data.bossId == request.auth.uid
+                      || resource.data.workerId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated()
+                    && (resource.data.bossId == request.auth.uid
+                        || resource.data.workerId == request.auth.uid);
+    }
+
+    // ─── Banners (read-only, managed via Firebase console) ─────────────
+    match /banners/{bannerId} {
+      allow read: if true; // Public read — banners shown on dashboards
+      allow write: if false;
+    }
+
+    // ─── Config (read-only for app, managed via console/functions) ─────
+    match /config/{configId} {
+      allow read: if true; // Public read for categories
+      allow write: if false;
+    }
+
+    // ─── Chat Messages ─────────────────────────────────────────────────
+    match /chats/{chatId} {
+      allow read, write: if isAuthenticated();
+
+      match /messages/{messageId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+  }
+}
+

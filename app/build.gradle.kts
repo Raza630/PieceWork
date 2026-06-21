@@ -1,9 +1,22 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     // Apply the Google Services plugin
     id ("com.google.gms.google-services")
+    // Firebase Crashlytics
+    id("com.google.firebase.crashlytics")
 }
+
+// Load secrets from local.properties (NOT committed to git)
+val localProperties = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use { load(it) }
+    }
+}
+val fcmApiKey: String = localProperties.getProperty("FCM_API_KEY", "")
 
 android {
     namespace = "com.example.workman"
@@ -24,7 +37,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "FCM_API_KEY", "\"AIzaSyCEGbbOF-ZAs3wVmdUhRonGJGJ78oqH4Us\"")
+            buildConfigField("String", "FCM_API_KEY", "\"$fcmApiKey\"")
         }
         release {
             isMinifyEnabled = false
@@ -32,7 +45,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "FCM_API_KEY", "\"AIzaSyCEGbbOF-ZAs3wVmdUhRonGJGJ78oqH4Us\"")
+            buildConfigField("String", "FCM_API_KEY", "\"$fcmApiKey\"")
         }
     }
 
@@ -81,6 +94,8 @@ dependencies {
     implementation("com.google.firebase:firebase-storage-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-messaging-ktx")
+    implementation("com.google.firebase:firebase-crashlytics-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.android.gms:play-services-tasks:18.2.0")
@@ -115,6 +130,9 @@ dependencies {
 
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // OkHttp — used for Cloudinary image uploads (free image hosting, no Firebase Storage needed)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     implementation("com.google.android.play:review:2.0.2")
     implementation("com.google.android.play:review-ktx:2.0.2")

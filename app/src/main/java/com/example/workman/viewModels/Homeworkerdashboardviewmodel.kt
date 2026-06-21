@@ -172,8 +172,24 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
                 allOffers = snapshot.documents.mapNotNull { doc ->
                     val acceptedBy = doc.getString("acceptedBy")
-                    // Show if open OR accepted by me
-                    if (acceptedBy == null || acceptedBy == currentUserId) {
+                    val directOfferedTo = doc.getString("directOfferedTo")
+                    val status = doc.getString("status") ?: "OPEN"
+
+                    // Hide jobs that are no longer available (cancelled or completed),
+                    // unless the current worker is the one who accepted it.
+                    val isClosed =
+                        status == "CANCELLED" || status == "COMPLETED" || status == "REVIEWED"
+
+                    // Show if:
+                    // - open AND (no direct offer OR direct offered to me)
+                    // - OR accepted by me
+                    val isVisibleToMe = if (acceptedBy != null) {
+                        acceptedBy == currentUserId
+                    } else {
+                        !isClosed && (directOfferedTo == null || directOfferedTo == currentUserId)
+                    }
+
+                    if (isVisibleToMe) {
                         val offerLat = doc.getDouble("latitude") ?: 0.0
                         val offerLng = doc.getDouble("longitude") ?: 0.0
 
@@ -199,6 +215,10 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                             acceptedBy = acceptedBy,
                             isAccepted = doc.getBoolean("isAccepted") ?: false,
                             category = doc.getString("category") ?: "",
+                            urgency = doc.getString("urgency") ?: "THIS_WEEK",
+                            directOfferedTo = directOfferedTo,
+                            bossId = doc.getString("bossId") ?: "",
+                            bossName = doc.getString("bossName") ?: "",
                             latitude = offerLat,
                             longitude = offerLng,
                             geohash = doc.getString("geohash") ?: "",

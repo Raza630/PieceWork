@@ -1,8 +1,8 @@
 package com.example.workman
 
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
-import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,6 +49,9 @@ class HomeWorkerDashboardActivity : AppCompatActivity() {
                     viewModel = viewModel,
                     onOfferClick = { offer ->
                         NavigationUtils.navigateToOfferDetails(this, offer.id)
+                    },
+                    onNotificationClick = {
+                        startActivity(Intent(this, NotificationsActivity::class.java))
                     },
                     onNavHome = {
                         NavigationUtils.navigateToHome(this)

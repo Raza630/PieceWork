@@ -28,7 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,12 +58,12 @@ fun MapLocationPicker(
     initialLatitude: Double = 20.5937,  // Default: India center
     initialLongitude: Double = 78.9629,
     initialZoom: Double = 5.0,
+    recenterTo: Pair<Double, Double>? = null,
     onLocationSelected: (latitude: Double, longitude: Double) -> Unit = { _, _ -> },
     onMyLocationClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    var selectedLat by remember { mutableDoubleStateOf(initialLatitude) }
-    var selectedLng by remember { mutableDoubleStateOf(initialLongitude) }
+    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
     // Configure osmdroid
     LaunchedEffect(Unit) {
@@ -72,6 +72,17 @@ fun MapLocationPicker(
             context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE)
         )
         Configuration.getInstance().userAgentValue = context.packageName
+    }
+
+    // Programmatically recenter + zoom whenever an external target changes
+    // (e.g. boss's GPS location resolves, or "My Location" is tapped).
+    LaunchedEffect(recenterTo) {
+        recenterTo?.let { (lat, lng) ->
+            mapViewRef?.let { mv ->
+                mv.controller.setZoom(16.0)
+                mv.controller.animateTo(GeoPoint(lat, lng))
+            }
+        }
     }
 
     Box(modifier = modifier) {
@@ -84,29 +95,19 @@ fun MapLocationPicker(
                     controller.setZoom(initialZoom)
                     controller.setCenter(GeoPoint(initialLatitude, initialLongitude))
 
-                    // Add a center pin overlay
-                    val pinOverlay = CenterPinOverlay(ctx, PrimaryBlue.toArgb())
-                    overlays.add(pinOverlay)
+                    // Center pin overlay (follows the map as the user drags)
+                    overlays.add(CenterPinOverlay(ctx, PrimaryBlue.toArgb()))
 
-                    // Listen for map movements (user dragging)
+                    // Move listener — attached ONCE, reports only on real center changes
+                    overlays.add(MapMoveListener { lat, lng -> onLocationSelected(lat, lng) })
+
                     addOnFirstLayoutListener { _, _, _, _, _ ->
-                        // Initial callback
                         val center = mapCenter
-                        selectedLat = center.latitude
-                        selectedLng = center.longitude
                         onLocationSelected(center.latitude, center.longitude)
                     }
+
+                    mapViewRef = this
                 }
-            },
-            update = { mapView ->
-                // Update center position whenever user scrolls
-                mapView.overlays.removeAll { it is MapMoveListener }
-                val listener = MapMoveListener { lat, lng ->
-                    selectedLat = lat
-                    selectedLng = lng
-                    onLocationSelected(lat, lng)
-                }
-                mapView.overlays.add(listener)
             }
         )
 
@@ -332,15 +333,24 @@ private class FixedPinOverlay(
 
 /**
  * Overlay that reports map center changes (acts as a scroll listener).
+ * Only fires when the center actually moves, to avoid per-frame churn.
  */
 private class MapMoveListener(
     private val onMove: (lat: Double, lng: Double) -> Unit
 ) : Overlay() {
 
+    private var lastLat = Double.NaN
+    private var lastLng = Double.NaN
+
     override fun draw(canvas: Canvas, mapView: MapView, shadow: Boolean) {
-        if (!shadow) {
-            val center = mapView.mapCenter
-            onMove(center.latitude, center.longitude)
+        if (shadow) return
+        val center = mapView.mapCenter
+        val lat = center.latitude
+        val lng = center.longitude
+        if (lat != lastLat || lng != lastLng) {
+            lastLat = lat
+            lastLng = lng
+            onMove(lat, lng)
         }
     }
 }

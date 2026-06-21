@@ -173,6 +173,7 @@ class HomeBossDashboardViewModel : ViewModel() {
                     val statusStr = doc.getString("status") ?: "PENDING"
                     BookingUiModel(
                         id = doc.id,
+                        jobId = doc.getString("jobId") ?: "",
                         workerId = doc.getString("workerId") ?: "",
                         workerName = doc.getString("workerName") ?: "Worker",
                         workerPhotoUrl = doc.getString("workerPhotoUrl") ?: "",
@@ -198,13 +199,33 @@ class HomeBossDashboardViewModel : ViewModel() {
                 db.collection("bookings").document(bookingId)
                     .update("status", newStatus.name)
                     .await()
-                
+
+                // Keep the linked Work Offer in sync
+                val booking = _uiState.value.bookings.find { it.id == bookingId }
+                val linkedJobId = booking?.jobId?.ifBlank { bookingId } ?: bookingId
+                val updates: Map<String, Any?>? = when (newStatus) {
+                    BookingStatus.IN_PROGRESS -> mapOf("status" to "IN_PROGRESS")
+                    BookingStatus.COMPLETED -> mapOf("status" to "COMPLETED")
+                    BookingStatus.CANCELLED -> mapOf(
+                        // Mark cancelled so it leaves the worker feed and active lists
+                        "status" to "CANCELLED",
+                        "acceptedBy" to null,
+                        "isAccepted" to false
+                    )
+
+                    else -> null
+                }
+                if (updates != null) {
+                    db.collection("workOffers").document(linkedJobId)
+                        .update(updates)
+                        .addOnFailureListener { Log.w(TAG, "Failed to sync work offer status", it) }
+                }
+
                 if (newStatus == BookingStatus.COMPLETED) {
-                    val booking = _uiState.value.bookings.find { it.id == bookingId }
                     _uiState.update { it.copy(bookingToRate = booking, showRatingDialog = true) }
                 }
             } catch (e: Exception) {
-                // Handle error
+                Log.e(TAG, "Failed to update booking status", e)
             }
         }
     }
@@ -336,7 +357,10 @@ class HomeBossDashboardViewModel : ViewModel() {
                         latitude = workerLat,
                         longitude = workerLng,
                         locationName = raw.location,
-                        distanceKm = distance
+                        distanceKm = distance,
+                        workerLevel = doc.getString("workerLevel") ?: "BRONZE",
+                        completedJobsCount = doc.getLong("completedJobsCount")?.toInt() ?: 0,
+                        phone = doc.getString("phone") ?: ""
                     )
                 }
 

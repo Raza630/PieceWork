@@ -26,7 +26,6 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -46,12 +45,12 @@ class CreateWorkActivity : AppCompatActivity() {
     private lateinit var toolbar: Toolbar
     private lateinit var rvSelectedImages: RecyclerView
     private lateinit var actvCategory: AutoCompleteTextView
+    private lateinit var actvUrgency: AutoCompleteTextView
     private var progressBar: ProgressBar? = null
     private var loadingOverlay: View? = null
 
     // Firebase
     private val db by lazy { FirebaseFirestore.getInstance() }
-    private val storage by lazy { FirebaseStorage.getInstance() }
     private val auth by lazy { FirebaseAuth.getInstance() }
 
     // Data
@@ -60,12 +59,17 @@ class CreateWorkActivity : AppCompatActivity() {
     private val calendar = Calendar.getInstance()
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private var selectedCategory: String = ""
+    private var selectedUrgency: String = "THIS_WEEK"
 
     // Map-picked location (overrides user profile location)
     private var pickedLatitude: Double = 0.0
     private var pickedLongitude: Double = 0.0
     private var pickedLocationName: String = ""
     private var hasPickedLocation: Boolean = false
+
+    // Boss's saved profile location — used to center the map picker initially
+    private var bossLatitude: Double = 0.0
+    private var bossLongitude: Double = 0.0
 
     // Job categories — loaded dynamically from CategoryRepository
     private val jobCategories: List<String>
@@ -128,6 +132,21 @@ class CreateWorkActivity : AppCompatActivity() {
         setupToolbar()
         setupRecyclerView()
         setupClickListeners()
+        loadBossLocation()
+    }
+
+    /** Pre-load the boss's saved location so the map picker can center on it. */
+    private fun loadBossLocation() {
+        val uid = auth.currentUser?.uid ?: return
+        lifecycleScope.launch {
+            try {
+                val userDoc = db.collection("users").document(uid).get().await()
+                bossLatitude = userDoc.getDouble("latitude") ?: 0.0
+                bossLongitude = userDoc.getDouble("longitude") ?: 0.0
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not preload boss location", e)
+            }
+        }
     }
 
     private fun initViews() {
@@ -149,6 +168,17 @@ class CreateWorkActivity : AppCompatActivity() {
         actvCategory.setAdapter(categoryAdapter)
         actvCategory.setOnItemClickListener { _, _, position, _ ->
             selectedCategory = jobCategories[position]
+        }
+
+        // Urgency dropdown
+        actvUrgency = findViewById(R.id.actvUrgency)
+        val urgencyOptions = listOf("🔴 Urgent", "🟡 This Week", "🟢 Flexible")
+        val urgencyValues = listOf("URGENT", "THIS_WEEK", "FLEXIBLE")
+        val urgencyAdapter =
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, urgencyOptions)
+        actvUrgency.setAdapter(urgencyAdapter)
+        actvUrgency.setOnItemClickListener { _, _, position, _ ->
+            selectedUrgency = urgencyValues[position]
         }
     }
 
@@ -179,6 +209,10 @@ class CreateWorkActivity : AppCompatActivity() {
             if (hasPickedLocation) {
                 intent.putExtra("initial_lat", pickedLatitude)
                 intent.putExtra("initial_lng", pickedLongitude)
+            } else if (bossLatitude != 0.0 && bossLongitude != 0.0) {
+                // Center on the boss's saved location so the map isn't a world view
+                intent.putExtra("initial_lat", bossLatitude)
+                intent.putExtra("initial_lng", bossLongitude)
             }
             mapPickerLauncher.launch(intent)
         }
@@ -265,24 +299,15 @@ class CreateWorkActivity : AppCompatActivity() {
             return@withContext listOf(defaultImageUrl)
         }
 
-        val storageRef = storage.reference.child("workOffers")
-        val uploadedUrls = mutableListOf<String>()
+        // Upload to Cloudinary (free, no Firebase Storage billing needed)
+        val uploadedUrls = com.example.workman.utils.CloudinaryUploader.uploadImages(
+            context = this@CreateWorkActivity,
+            uris = imageUris,
+            folder = "workOffers"
+        )
 
-        imageUris.forEachIndexed { index, uri ->
-            try {
-                val fileName = "${System.currentTimeMillis()}_${index}_${uri.lastPathSegment ?: "image"}"
-                val imageRef = storageRef.child(fileName)
-
-                // Upload and get download URL
-                imageRef.putFile(uri).await()
-                val downloadUrl = imageRef.downloadUrl.await()
-                uploadedUrls.add(downloadUrl.toString())
-
-                Log.d(TAG, "Uploaded image $index: $downloadUrl")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to upload image $index: ${e.message}")
-                // Continue with other images, don't fail entire batch
-            }
+        if (uploadedUrls.isEmpty()) {
+            Log.w(TAG, "Cloudinary upload returned no URLs (check CloudinaryUploader config)")
         }
 
         // Return uploaded URLs or default if all failed
@@ -341,6 +366,7 @@ class CreateWorkActivity : AppCompatActivity() {
             "status" to "OPEN",
             "isAccepted" to false,
             "category" to selectedCategory,
+            "urgency" to selectedUrgency,
             "createdAt" to FieldValue.serverTimestamp(),
             // Location data for geo-based filtering
             "latitude" to latitude,
@@ -351,6 +377,35 @@ class CreateWorkActivity : AppCompatActivity() {
 
         db.collection("workOffers").document(jobId).set(workData).await()
         Log.d(TAG, "Job saved: $jobId with location ($latitude, $longitude)")
+
+        // Create a linked PENDING booking so the job appears in the Bookings → Pending tab.
+        // Booking ID == jobId for a clean 1:1 link (avoids duplicates).
+        // This is BEST-EFFORT: if it fails (e.g. rules not deployed), the job post still succeeds.
+        try {
+            val scheduledDate = try {
+                dateFormat.parse(date) ?: calendar.time
+            } catch (e: Exception) {
+                calendar.time
+            }
+            val bookingData = hashMapOf(
+                "jobId" to jobId,
+                "bossId" to (currentUser?.uid ?: "unknown"),
+                "bossName" to (currentUser?.displayName ?: "User"),
+                "workerId" to "",
+                "workerName" to "",
+                "workerPhotoUrl" to "",
+                "serviceName" to title,
+                "agreedRate" to "Negotiable",
+                "status" to "PENDING",
+                "date" to scheduledDate,
+                "createdAt" to FieldValue.serverTimestamp()
+            )
+            db.collection("bookings").document(jobId).set(bookingData).await()
+            Log.d(TAG, "Pending booking created for job: $jobId")
+        } catch (e: Exception) {
+            // Don't fail the whole post — booking is a convenience mirror of the job.
+            Log.w(TAG, "Could not create pending booking (job still posted): ${e.message}")
+        }
     }
 
     private fun setLoading(loading: Boolean) {

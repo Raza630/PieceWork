@@ -1,5 +1,6 @@
 package com.example.workman.screens
 
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Box
@@ -48,7 +49,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.workman.ChatActivity
+import com.example.workman.SharedPreferencesHelper
 import com.example.workman.components.MapLocationView
+import com.example.workman.components.QuickContactSection
+import com.example.workman.components.ReviewRatingDialog
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.ui.theme.BgColor
 import com.example.workman.ui.theme.PrimaryBlue
@@ -60,6 +65,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "WorkOfferDetailsScreen"
+
+/**
+ * Creates a deterministic chat ID from two user IDs.
+ * Always produces the same ID regardless of parameter order.
+ */
+private fun createChatId(userId1: String, userId2: String): String {
+    return if (userId1 < userId2) "${userId1}_${userId2}" else "${userId2}_${userId1}"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -293,6 +306,71 @@ fun WorkOfferDetailsScreen(
                                 color = Color.White
                             )
                         }
+                    }
+
+                    // Quick Contact Section — shown after job is accepted
+                    if (isJobTaken && !offer!!.acceptedBy.isNullOrEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        val userRole = SharedPreferencesHelper(context).getUserChoice()
+                        val contactUserId = if (userRole == "Hiring") {
+                            offer!!.acceptedBy!! // Boss contacts the worker
+                        } else {
+                            offer!!.bossId // Worker contacts the boss
+                        }
+                        val contactLabel =
+                            if (userRole == "Hiring") "Contact Worker" else "Contact Boss"
+                        val contactName =
+                            if (userRole == "Hiring") "Worker" else offer!!.bossName.ifEmpty { "Boss" }
+
+                        QuickContactSection(
+                            userId = contactUserId,
+                            userName = contactName,
+                            label = contactLabel,
+                            onChatClick = {
+                                // Create or open chat between boss and worker
+                                val chatId = createChatId(offer!!.bossId, offer!!.acceptedBy!!)
+                                val intent = Intent(context, ChatActivity::class.java).apply {
+                                    putExtra("CHAT_ID", chatId)
+                                }
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
+
+                    // Review button for boss when job is COMPLETED
+                    var showReviewDialog by remember { mutableStateOf(false) }
+                    val userRole = SharedPreferencesHelper(context).getUserChoice()
+
+                    if (offer!!.status == "COMPLETED" && userRole == "Hiring" && !offer!!.ratingSubmitted) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { showReviewDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700))
+                        ) {
+                            Text(
+                                "⭐ Rate & Review Worker",
+                                fontWeight = FontWeight.Bold,
+                                color = TextDark
+                            )
+                        }
+                    }
+
+                    if (showReviewDialog && !offer!!.acceptedBy.isNullOrEmpty()) {
+                        ReviewRatingDialog(
+                            jobId = offer!!.id,
+                            workerId = offer!!.acceptedBy!!,
+                            workerName = "Worker",
+                            onDismiss = { showReviewDialog = false },
+                            onSubmitted = {
+                                showReviewDialog = false
+                                fetchOfferDetails() // Refresh
+                            }
+                        )
                     }
                     
                     Spacer(modifier = Modifier.height(24.dp))

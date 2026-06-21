@@ -1,14 +1,16 @@
 package com.example.workman.viewModels
 
+import android.app.Application
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.workman.utils.CloudinaryUploader
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import java.util.UUID
+import kotlinx.coroutines.launch
 
 data class ProfileUiState(
     val firstName: String = "",
@@ -28,10 +30,9 @@ data class ProfileUiState(
     val message: String? = null
 )
 
-class ProfileViewModel : ViewModel() {
+class ProfileViewModel(application: Application) : AndroidViewModel(application) {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
-    private val storage = FirebaseStorage.getInstance()
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState
@@ -91,25 +92,26 @@ class ProfileViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(isSaving = true)
 
         if (imageUri != null) {
-            uploadImage(userId, imageUri) { url ->
-                updateFirestore(userId, state, url)
+            viewModelScope.launch {
+                val url = CloudinaryUploader.uploadImage(
+                    context = getApplication(),
+                    uri = imageUri,
+                    folder = "profiles"
+                )
+                if (url != null) {
+                    updateFirestore(userId, state, url)
+                } else {
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        message = "Image upload failed. Saving without photo."
+                    )
+                    // Still save the rest of the profile with existing photo
+                    updateFirestore(userId, state, state.photoUrl)
+                }
             }
         } else {
             updateFirestore(userId, state, state.photoUrl)
         }
-    }
-
-    private fun uploadImage(userId: String, uri: Uri, onSuccess: (String) -> Unit) {
-        val ref = storage.reference.child("profile_images/$userId/${UUID.randomUUID()}")
-        ref.putFile(uri)
-            .addOnSuccessListener {
-                ref.downloadUrl.addOnSuccessListener { downloadUri ->
-                    onSuccess(downloadUri.toString())
-                }
-            }
-            .addOnFailureListener {
-                _uiState.value = _uiState.value.copy(isSaving = false, message = "Image upload failed")
-            }
     }
 
     private fun updateFirestore(userId: String, state: ProfileUiState, photoUrl: String) {
@@ -149,27 +151,21 @@ class ProfileViewModel : ViewModel() {
         if (uris.isEmpty()) return
 
         _uiState.value = _uiState.value.copy(isUploadingPortfolio = true)
-        val uploadedUrls = mutableListOf<String>()
-        var uploadCount = 0
 
-        uris.forEach { uri ->
-            val ref = storage.reference.child("portfolio_images/$userId/${UUID.randomUUID()}")
-            ref.putFile(uri)
-                .addOnSuccessListener {
-                    ref.downloadUrl.addOnSuccessListener { downloadUri ->
-                        uploadedUrls.add(downloadUri.toString())
-                        uploadCount++
-                        if (uploadCount == uris.size) {
-                            savePortfolioToFirestore(userId, uploadedUrls)
-                        }
-                    }
-                }
-                .addOnFailureListener {
-                    uploadCount++
-                    if (uploadCount == uris.size) {
-                        savePortfolioToFirestore(userId, uploadedUrls)
-                    }
-                }
+        viewModelScope.launch {
+            val uploadedUrls = CloudinaryUploader.uploadImages(
+                context = getApplication(),
+                uris = uris,
+                folder = "portfolio"
+            )
+            if (uploadedUrls.isNotEmpty()) {
+                savePortfolioToFirestore(userId, uploadedUrls)
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isUploadingPortfolio = false,
+                    message = "Portfolio upload failed. Check your connection."
+                )
+            }
         }
     }
 

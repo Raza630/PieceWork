@@ -112,10 +112,15 @@ object JobMatchingEngine {
         val histScore = computeHistoryScore(offer.category, profile)
         val recScore = computeRecencyScore(offer)
 
-        val totalScore = (catScore * WEIGHT_CATEGORY) +
+        var totalScore = (catScore * WEIGHT_CATEGORY) +
                 (distScore * WEIGHT_DISTANCE) +
                 (histScore * WEIGHT_HISTORY) +
                 (recScore * WEIGHT_RECENCY)
+
+        // Urgency bonus: URGENT jobs get +10 to their score
+        if (offer.urgency == "URGENT") {
+            totalScore = (totalScore + 10).coerceAtMost(100.0)
+        }
 
         val reason = buildMatchReason(catScore, distScore, histScore, recScore, offer, profile)
 

@@ -14,5 +14,10 @@ data class WorkerUiModel(
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
     val locationName: String = "",
-    val distanceKm: Double = -1.0  // Calculated at runtime
+    val distanceKm: Double = -1.0,  // Calculated at runtime
+    // Gamification
+    val workerLevel: String = "BRONZE",
+    val completedJobsCount: Int = 0,
+    // Phone for Quick Contact
+    val phone: String = ""
 )

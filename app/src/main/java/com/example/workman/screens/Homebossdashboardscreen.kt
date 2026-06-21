@@ -75,6 +75,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -166,7 +167,6 @@ fun HomeBossDashboardScreen(
     onNavProfile: () -> Unit = {},
     onNavChat: () -> Unit = {}
 ) {
-    var fabExpanded     by remember { mutableStateOf(false) }
     var selectedNavItem by remember { mutableStateOf(0) }
 
     Scaffold(
@@ -177,22 +177,20 @@ fun HomeBossDashboardScreen(
                 onSelect = { idx ->
                     when (idx) {
                         0 -> selectedNavItem = 0  // Home
-                        1 -> {
-                            selectedNavItem = 1
-                        } // Bookings
-                        2 -> onViewOffers()       // My Jobs
-                        3 -> onNavChat()          // Chat
-                        4 -> onNavProfile()       // Profile
+                        1 -> selectedNavItem = 1  // Bookings (now the unified job tracker)
+                        2 -> onNavChat()          // Chat
+                        3 -> onNavProfile()       // Profile
                     }
                 }
             )
         },
         floatingActionButton = {
-            HomeBossFab(
-                expanded     = fabExpanded,
-                onToggle     = { fabExpanded = !fabExpanded },
-                onViewOffers = { fabExpanded = false; onViewOffers() },
-                onCreateWork = { fabExpanded = false; onCreateWork() }
+            ExtendedFloatingActionButton(
+                onClick = onCreateWork,
+                containerColor = Orange,
+                contentColor = Color.White,
+                icon = { Icon(Icons.Default.Add, contentDescription = "Post a Job") },
+                text = { Text("Post a Job", fontWeight = FontWeight.Bold) }
             )
         }
     ) { innerPadding ->
@@ -204,7 +202,6 @@ fun HomeBossDashboardScreen(
             when (page) {
                 0 -> HomeContent(viewModel, onWorkerClick)
                 1 -> BookingContent(viewModel)
-                2 -> BookingContent(viewModel) // placeholder, won't reach due to nav handling
                 else -> HomeContent(viewModel, onWorkerClick)
             }
         }
@@ -1373,16 +1370,44 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
             val filteredBookings = uiState.bookings.filter {
                 when (uiState.selectedBookingTab) {
                     0 -> it.status == BookingStatus.PENDING
-                    1 -> it.status == BookingStatus.ACTIVE
+                    1 -> it.status == BookingStatus.ACTIVE || it.status == BookingStatus.IN_PROGRESS
                     else -> it.status == BookingStatus.COMPLETED || it.status == BookingStatus.CANCELLED
                 }
             }
 
             if (filteredBookings.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Outlined.DateRange, null, modifier = Modifier.size(64.dp), tint = OrangeLight)
-                        Text("No bookings found", color = TextMuted)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.DateRange,
+                            null,
+                            modifier = Modifier.size(72.dp),
+                            tint = OrangeLight
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = when (uiState.selectedBookingTab) {
+                                0 -> "No pending job posts"
+                                1 -> "No ongoing jobs"
+                                else -> "No past bookings yet"
+                            },
+                            fontWeight = FontWeight.Bold,
+                            color = TextDark
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = when (uiState.selectedBookingTab) {
+                                0 -> "Tap 'Post a Job' to hire a worker."
+                                1 -> "Accepted jobs in progress will appear here."
+                                else -> "Completed & cancelled jobs are kept here."
+                            },
+                            color = TextMuted,
+                            fontSize = 13.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                     }
                 }
             } else {
@@ -1411,6 +1436,7 @@ private fun BookingCard(
     onComplete: () -> Unit
 ) {
     val dateFormatter = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
+    val hasWorker = booking.workerId.isNotBlank()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1420,22 +1446,51 @@ private fun BookingCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(
-                    model = booking.workerPhotoUrl.ifBlank { "https://ui-avatars.com/api/?name=${booking.workerName.replace(" ", "+")}" },
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                if (hasWorker) {
+                    AsyncImage(
+                        model = booking.workerPhotoUrl.ifBlank {
+                            "https://ui-avatars.com/api/?name=${
+                                booking.workerName.replace(
+                                    " ",
+                                    "+"
+                                )
+                            }"
+                        },
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Pending — no worker yet, show a job icon
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(CircleShape)
+                            .background(Orange.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.Build, contentDescription = null, tint = Orange)
+                    }
+                }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(booking.workerName, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text(booking.serviceName, color = TextMuted, fontSize = 13.sp)
+                    Text(
+                        booking.serviceName,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        maxLines = 1
+                    )
+                    Text(
+                        text = if (hasWorker) booking.workerName else "Waiting for a worker to accept…",
+                        color = if (hasWorker) TextMuted else Orange,
+                        fontSize = 13.sp
+                    )
                 }
                 StatusBadge(booking.status)
             }
-            
+
             Divider(Modifier.padding(vertical = 12.dp), color = ChipBg)
 
             Row(
@@ -1445,7 +1500,14 @@ private fun BookingCard(
             ) {
                 Column {
                     Text("Agreed Rate", color = TextMuted, fontSize = 11.sp)
-                    Text("₹${booking.agreedRate}", fontWeight = FontWeight.ExtraBold, color = Orange, fontSize = 15.sp)
+                    val rateText =
+                        if (booking.agreedRate.any { it.isDigit() }) "₹${booking.agreedRate}" else booking.agreedRate
+                    Text(
+                        rateText,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Orange,
+                        fontSize = 15.sp
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text("Scheduled For", color = TextMuted, fontSize = 11.sp)
@@ -1453,26 +1515,45 @@ private fun BookingCard(
                 }
             }
 
-            if (booking.status == BookingStatus.PENDING || booking.status == BookingStatus.ACTIVE) {
-                Spacer(Modifier.height(16.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Actions per status
+            when (booking.status) {
+                BookingStatus.PENDING -> {
+                    Spacer(Modifier.height(16.dp))
                     OutlinedButton(
                         onClick = onCancel,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                         border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                     ) {
-                        Text("Cancel", fontSize = 12.sp)
+                        Text("Cancel Job Post", fontSize = 13.sp)
                     }
-                    if (booking.status == BookingStatus.ACTIVE) {
+                }
+
+                BookingStatus.ACTIVE, BookingStatus.IN_PROGRESS -> {
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = onCancel,
+                            modifier = Modifier.weight(1f),
+                            border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
+                        ) {
+                            Text("Cancel", fontSize = 12.sp)
+                        }
                         Button(
                             onClick = onComplete,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                         ) {
-                            Text("Complete", fontSize = 12.sp)
+                            Text("Mark Complete", fontSize = 12.sp)
                         }
                     }
+                }
+
+                else -> { /* COMPLETED / CANCELLED — no actions */
                 }
             }
         }
@@ -1513,7 +1594,6 @@ private fun HomeBossBottomNav(selectedIndex: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
         Pair(Icons.Default.Home,       "Home"),
         Pair(Icons.Outlined.DateRange, "Bookings"),
-        Pair(Icons.Outlined.Build, "My Jobs"),
         Pair(Icons.Outlined.Email,     "Chat"),
         Pair(Icons.Outlined.Person,    "Profile")
     )
