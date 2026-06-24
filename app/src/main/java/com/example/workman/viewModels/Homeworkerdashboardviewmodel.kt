@@ -159,11 +159,22 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         }
     }
 
-    fun fetchWorkOffers() {
+    /**
+     * Fetches the latest work offers.
+     *
+     * @param showLoading when true the list switches to the skeleton/loading state.
+     *        Pass false for background refreshes (e.g. on resume) to avoid flicker.
+     */
+    fun fetchWorkOffers(showLoading: Boolean = true) {
         val currentUserId = auth.currentUser?.uid ?: return
         
         viewModelScope.launch {
-            _uiState.update { it.copy(offerListState = WorkOfferListState.Loading, isRefreshing = true) }
+            _uiState.update {
+                it.copy(
+                    offerListState = if (showLoading) WorkOfferListState.Loading else it.offerListState,
+                    isRefreshing = true
+                )
+            }
             try {
                 val snapshot = db.collection("workOffers")
                     .orderBy("createdAt", Query.Direction.DESCENDING)
@@ -214,6 +225,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                             id = doc.id,
                             acceptedBy = acceptedBy,
                             isAccepted = doc.getBoolean("isAccepted") ?: false,
+                            status = status,
                             category = doc.getString("category") ?: "",
                             urgency = doc.getString("urgency") ?: "THIS_WEEK",
                             directOfferedTo = directOfferedTo,
@@ -389,7 +401,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 // Update local list instead of full refresh
                 allOffers = allOffers.map {
                     if (it.id == workOffer.id) {
-                        it.copy(acceptedBy = userId, isAccepted = true)
+                        it.copy(acceptedBy = userId, isAccepted = true, status = "ASSIGNED")
                     } else it
                 }
 

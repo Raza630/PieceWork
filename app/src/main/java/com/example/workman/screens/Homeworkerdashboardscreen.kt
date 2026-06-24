@@ -552,6 +552,7 @@ private fun WorkOfferCard(
     modifier: Modifier = Modifier
 ) {
     val isAcceptedByMe = offer.acceptedBy != null
+    val isCompleted = offer.status == "COMPLETED" || offer.status == "REVIEWED"
 
     Card(
         onClick = onClick,
@@ -675,13 +676,22 @@ private fun WorkOfferCard(
                 }
 
                 Button(
-                    onClick = { if (!isAcceptedByMe && !isAccepting) onAccept() },
+                    onClick = { if (!isAcceptedByMe && !isAccepting && !isCompleted) onAccept() },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isAcceptedByMe) Color(0xFF4CAF50) else PrimaryBlue
+                        containerColor = when {
+                            isCompleted -> Color(0xFF4CAF50)
+                            isAcceptedByMe -> Color(0xFF4CAF50)
+                            else -> PrimaryBlue
+                        },
+                        disabledContainerColor = when {
+                            isCompleted -> Color(0xFF4CAF50)
+                            isAcceptedByMe -> Color(0xFF4CAF50)
+                            else -> Color.Gray.copy(alpha = 0.5f)
+                        }
                     ),
                     shape = RoundedCornerShape(12.dp),
                     contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                    enabled = !isAcceptedByMe && !isAccepting
+                    enabled = !isAcceptedByMe && !isAccepting && !isCompleted
                 ) {
                     if (isAccepting) {
                         CircularProgressIndicator(
@@ -691,9 +701,14 @@ private fun WorkOfferCard(
                         )
                     } else {
                         Text(
-                            if (isAcceptedByMe) "Accepted" else "Accept Work",
+                            when {
+                                isCompleted -> "✓ Completed"
+                                isAcceptedByMe -> "Accepted"
+                                else -> "Accept Work"
+                            },
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            color = Color.White
                         )
                     }
                 }
