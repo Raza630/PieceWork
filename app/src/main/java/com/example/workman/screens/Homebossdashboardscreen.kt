@@ -108,12 +108,15 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.example.workman.R
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
@@ -234,8 +237,21 @@ fun RatingDialog(
         shape = RoundedCornerShape(28.dp),
         title = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                val context = LocalContext.current
                 AsyncImage(
-                    model = booking.workerPhotoUrl.ifBlank { "https://ui-avatars.com/api/?name=${booking.workerName.replace(" ", "+")}" },
+                    model = ImageRequest.Builder(context)
+                        .data(booking.workerPhotoUrl.ifBlank {
+                            "https://ui-avatars.com/api/?name=${
+                                booking.workerName.replace(
+                                    " ",
+                                    "+"
+                                )
+                            }"
+                        })
+                        .crossfade(true)
+                        .placeholder(R.drawable.ic_workman_logo)
+                        .error(R.drawable.ic_workman_logo)
+                        .build(),
                     contentDescription = null,
                     modifier = Modifier
                         .size(80.dp)
@@ -812,10 +828,20 @@ private fun PopularServiceCard(
         elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column {
+            val context = LocalContext.current
+            val fallbackUrl = "https://ui-avatars.com/api/?name=${
+                worker.name.replace(
+                    " ",
+                    "+"
+                )
+            }&background=FFB74D&color=fff&size=200"
             AsyncImage(
-                model = worker.photoUrl.ifBlank {
-                    "https://ui-avatars.com/api/?name=${worker.name.replace(" ", "+")}&background=FFB74D&color=fff&size=200"
-                },
+                model = ImageRequest.Builder(context)
+                    .data(worker.photoUrl.ifBlank { fallbackUrl })
+                    .crossfade(true)
+                    .placeholder(R.drawable.ic_workman_logo)
+                    .error(R.drawable.ic_workman_logo)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -1116,10 +1142,20 @@ private fun WorkerCard(
 
             // ── Photo with overlay badges
             Box(modifier = Modifier.size(100.dp)) {
+                val context = LocalContext.current
+                val fallbackUrl = "https://ui-avatars.com/api/?name=${
+                    worker.name.replace(
+                        " ",
+                        "+"
+                    )
+                }&background=FFB74D&color=fff&size=200"
                 AsyncImage(
-                    model              = worker.photoUrl.ifBlank {
-                        "https://ui-avatars.com/api/?name=${worker.name.replace(" ", "+")}&background=FFB74D&color=fff&size=200"
-                    },
+                    model = ImageRequest.Builder(context)
+                        .data(worker.photoUrl.ifBlank { fallbackUrl })
+                        .crossfade(true)
+                        .placeholder(R.drawable.ic_workman_logo)
+                        .error(R.drawable.ic_workman_logo)
+                        .build(),
                     contentDescription = worker.name,
                     contentScale       = ContentScale.Crop,
                     modifier           = Modifier
@@ -1447,15 +1483,21 @@ private fun BookingCard(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (hasWorker) {
+                    val context = LocalContext.current
                     AsyncImage(
-                        model = booking.workerPhotoUrl.ifBlank {
-                            "https://ui-avatars.com/api/?name=${
-                                booking.workerName.replace(
-                                    " ",
-                                    "+"
-                                )
-                            }"
-                        },
+                        model = ImageRequest.Builder(context)
+                            .data(booking.workerPhotoUrl.ifBlank {
+                                "https://ui-avatars.com/api/?name=${
+                                    booking.workerName.replace(
+                                        " ",
+                                        "+"
+                                    )
+                                }"
+                            })
+                            .crossfade(true)
+                            .placeholder(R.drawable.ic_workman_logo)
+                            .error(R.drawable.ic_workman_logo)
+                            .build(),
                         contentDescription = null,
                         modifier = Modifier
                             .size(50.dp)

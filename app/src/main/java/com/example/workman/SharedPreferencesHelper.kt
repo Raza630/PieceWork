@@ -13,6 +13,7 @@ class SharedPreferencesHelper(context: Context) {
         private const val KEY_IS_LOGGED_IN = "USER_LOGGED_IN"
         private const val KEY_USER_CHOICE = "USER_CHOICE"
         private const val KEY_FIRST_RUN = "FIRST_RUN"
+        private const val KEY_ONBOARDING_DONE = "ONBOARDING_DONE"
     }
 
     // ✅ Login status
@@ -45,6 +46,15 @@ class SharedPreferencesHelper(context: Context) {
     // ✅ Clear all login-related data
     fun clearLoginData() {
         sharedPreferences.edit().clear().apply()
+    }
+
+    // ✅ Onboarding completion flag
+    fun isOnboardingDone(): Boolean {
+        return sharedPreferences.getBoolean(KEY_ONBOARDING_DONE, false)
+    }
+
+    fun setOnboardingDone() {
+        sharedPreferences.edit().putBoolean(KEY_ONBOARDING_DONE, true).apply()
     }
 }
 

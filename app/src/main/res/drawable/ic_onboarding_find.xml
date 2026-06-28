@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Onboarding Illustration 1: Find Workers -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="280dp"
+    android:viewportWidth="280"
+    android:viewportHeight="280">
+
+    <!-- Background blob -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M140,30 Q220,30 240,100 Q260,170 200,220 Q140,270 80,230 Q20,190 30,120 Q40,50 140,30 Z" />
+
+    <!-- Magnifying glass circle -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M130,110m-55,0a55,55 0,1 1,110 0a55,55 0,1 1,-110 0"
+        android:strokeWidth="8"
+        android:strokeColor="#2196F3" />
+
+    <!-- Magnifying glass handle -->
+    <path
+        android:pathData="M170,150 L210,190"
+        android:strokeWidth="10"
+        android:strokeColor="#1976D2"
+        android:strokeLineCap="round" />
+
+    <!-- Person inside magnifier -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M130,85m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M110,105 Q130,98 150,105 L152,130 Q130,138 108,130 Z" />
+
+    <!-- Star decorations -->
+    <path
+        android:fillColor="#FFD600"
+        android:pathData="M60,60 L63,68 L72,68 L65,73 L67,81 L60,76 L53,81 L55,73 L48,68 L57,68 Z" />
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M210,70 L212,76 L218,76 L213,80 L215,86 L210,82 L205,86 L207,80 L202,76 L208,76 Z" />
+
+    <!-- Checkmark badge -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M200,200m-18,0a18,18 0,1 1,36 0a18,18 0,1 1,-36 0" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M192,200 L198,208 L212,192"
+        android:strokeWidth="4"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+</vector>
+

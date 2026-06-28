@@ -42,11 +42,51 @@ class AuthViewModel : ViewModel() {
     private fun fetchUserRole(uid: String) {
         db.collection("users").document(uid).get()
             .addOnSuccessListener { document ->
-                val role = document.getString("role") ?: "Worker"
-                _authState.value = AuthState.Success(role)
+                if (document.exists()) {
+                    // Existing user → read role and refresh the FCM token.
+                    saveFCMToken(uid)
+                    val role = document.getString("role")
+                    if (role.isNullOrEmpty()) {
+                        // Partial doc (e.g. created only by a location-sync
+                        // merge) → backfill the role so routing works.
+                        db.collection("users").document(uid).set(
+                            mapOf("role" to "Worker"),
+                            com.google.firebase.firestore.SetOptions.merge()
+                        )
+                        _authState.value = AuthState.Success("Worker")
+                    } else {
+                        _authState.value = AuthState.Success(role)
+                    }
+                } else {
+                    // Brand-new account that signed in (e.g. Google) without
+                    // going through registration → no users/{uid} doc exists yet.
+                    // Create a minimal one so location/FCM/feature writes don't
+                    // fail with NOT_FOUND.
+                    createMissingUserDoc(uid)
+                }
             }
             .addOnFailureListener {
                 _authState.value = AuthState.Error(it.message ?: "Failed to fetch user data")
+            }
+    }
+
+    private fun createMissingUserDoc(uid: String) {
+        val role = "Worker" // sensible default; user can switch later
+        val user = hashMapOf(
+            "email" to (auth.currentUser?.email ?: ""),
+            "role" to role,
+            "isVerified" to false,
+            "totalRatings" to 0,
+            "averageRating" to 0.0,
+            "portfolioImages" to emptyList<String>()
+        )
+        db.collection("users").document(uid).set(user)
+            .addOnSuccessListener {
+                saveFCMToken(uid)
+                _authState.value = AuthState.Success(role)
+            }
+            .addOnFailureListener {
+                _authState.value = AuthState.Error(it.message ?: "Failed to create user data")
             }
     }
 
@@ -86,7 +126,12 @@ class AuthViewModel : ViewModel() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val fcmToken = task.result
-                db.collection("users").document(userId).update("fcmToken", fcmToken)
+                // set(merge) so it works even if the doc is missing/partial.
+                db.collection("users").document(userId)
+                    .set(
+                        mapOf("fcmToken" to fcmToken),
+                        com.google.firebase.firestore.SetOptions.merge()
+                    )
                     .addOnSuccessListener {
                         Log.d("FCM", "FCM Token updated successfully.")
                     }

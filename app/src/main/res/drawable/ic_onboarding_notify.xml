@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Onboarding Illustration 3: Notifications / Stay Updated -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="280dp"
+    android:viewportWidth="280"
+    android:viewportHeight="280">
+
+    <!-- Background blob -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M130,20 Q210,10 250,80 Q290,150 230,220 Q170,290 90,250 Q10,210 20,130 Q30,50 130,20 Z" />
+
+    <!-- Bell body -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M140,60 C140,60 100,70 95,120 L85,170 L195,170 L185,120 C180,70 140,60 140,60 Z" />
+
+    <!-- Bell top -->
+    <path
+        android:fillColor="#F57C00"
+        android:pathData="M140,50m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+
+    <!-- Bell bottom -->
+    <path
+        android:fillColor="#F57C00"
+        android:pathData="M80,170 L200,170 L200,180 Q200,185 195,185 L85,185 Q80,185 80,180 Z" />
+
+    <!-- Bell clapper -->
+    <path
+        android:fillColor="#E65100"
+        android:pathData="M140,185 Q130,200 140,210 Q150,200 140,185 Z" />
+
+    <!-- Notification waves left -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M70,100 Q55,120 70,140"
+        android:strokeWidth="3"
+        android:strokeColor="#FF9800"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M55,90 Q35,120 55,150"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFB74D"
+        android:strokeLineCap="round" />
+
+    <!-- Notification waves right -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M210,100 Q225,120 210,140"
+        android:strokeWidth="3"
+        android:strokeColor="#FF9800"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M225,90 Q245,120 225,150"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FFB74D"
+        android:strokeLineCap="round" />
+
+    <!-- Badge dot -->
+    <path
+        android:fillColor="#F44336"
+        android:pathData="M185,70m-12,0a12,12 0,1 1,24 0a12,12 0,1 1,-24 0" />
+    <path
+        android:pathData="M182,65 L182,75"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M188,65 L188,75"
+        android:strokeWidth="3"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round" />
+
+    <!-- Small stars -->
+    <path
+        android:fillColor="#FFD600"
+        android:pathData="M50,55 L52,62 L60,62 L54,66 L56,73 L50,69 L44,73 L46,66 L40,62 L48,62 Z" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M230,195 L232,200 L238,200 L233,203 L235,208 L230,205 L225,208 L227,203 L222,200 L228,200 Z" />
+
+</vector>
+

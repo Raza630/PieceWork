@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Onboarding Illustration 2: Location / Nearby -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="280dp"
+    android:viewportWidth="280"
+    android:viewportHeight="280">
+
+    <!-- Background blob -->
+    <path
+        android:fillColor="#FFF3E0"
+        android:pathData="M140,25 Q230,20 250,110 Q270,200 190,240 Q110,280 50,210 Q-10,140 40,70 Q90,0 140,25 Z" />
+
+    <!-- Map base -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,90 L230,90 L230,220 L50,220 Z"
+        android:strokeWidth="2"
+        android:strokeColor="#E0E0E0" />
+
+    <!-- Map roads -->
+    <path
+        android:pathData="M50,140 L230,140"
+        android:strokeWidth="2"
+        android:strokeColor="#E0E0E0" />
+    <path
+        android:pathData="M50,180 L230,180"
+        android:strokeWidth="2"
+        android:strokeColor="#E0E0E0" />
+    <path
+        android:pathData="M110,90 L110,220"
+        android:strokeWidth="2"
+        android:strokeColor="#E0E0E0" />
+    <path
+        android:pathData="M170,90 L170,220"
+        android:strokeWidth="2"
+        android:strokeColor="#E0E0E0" />
+
+    <!-- Location Pin (main) -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M140,80 Q140,80 140,80 C155,80 168,93 168,108 C168,128 140,155 140,155 C140,155 112,128 112,108 C112,93 125,80 140,80 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M140,100m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+
+    <!-- Small location dots -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M80,120m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M200,160m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M90,190m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+
+    <!-- Radius circle -->
+    <path
+        android:fillColor="#102196F3"
+        android:pathData="M140,130m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+        android:strokeWidth="1.5"
+        android:strokeAlpha="0.5"
+        android:strokeColor="#2196F3" />
+
+    <!-- Pulse rings -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M140,130m-65,0a65,65 0,1 1,130 0a65,65 0,1 1,-130 0"
+        android:strokeWidth="1"
+        android:strokeAlpha="0.3"
+        android:strokeColor="#2196F3" />
+
+</vector>
+

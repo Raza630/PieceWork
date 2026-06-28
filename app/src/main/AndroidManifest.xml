@@ -15,7 +15,7 @@
 
     <application
         android:name=".WorkManApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:hardwareAccelerated="true"
@@ -50,6 +50,10 @@
         <activity
             android:name=".ChooseActivity"
             android:exported="false" />
+        <activity
+            android:name=".OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.WorkMan" />
         <activity
             android:name=".WorkerDetailsActivity"
             android:exported="false" />

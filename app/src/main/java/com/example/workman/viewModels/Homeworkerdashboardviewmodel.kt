@@ -11,7 +11,6 @@ import com.example.workman.utils.JobMatchingEngine
 import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -176,12 +175,22 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 )
             }
             try {
+                // NOTE: We intentionally do NOT use .orderBy("createdAt") here.
+                // Firestore's orderBy silently EXCLUDES any document that is
+                // missing the field (e.g. jobs created/edited manually in the
+                // console without a proper createdAt Timestamp). Fetching all and
+                // sorting client-side guarantees every offer is considered.
                 val snapshot = db.collection("workOffers")
-                    .orderBy("createdAt", Query.Direction.DESCENDING)
                     .get()
                     .await()
 
-                allOffers = snapshot.documents.mapNotNull { doc ->
+                // Sort newest-first client-side. Docs missing createdAt are
+                // treated as newest so manually-created test jobs still appear.
+                val sortedDocs = snapshot.documents.sortedByDescending { doc ->
+                    doc.getTimestamp("createdAt")?.toDate()?.time ?: Long.MAX_VALUE
+                }
+
+                allOffers = sortedDocs.mapNotNull { doc ->
                     val acceptedBy = doc.getString("acceptedBy")
                     val directOfferedTo = doc.getString("directOfferedTo")
                     val status = doc.getString("status") ?: "OPEN"
@@ -310,6 +319,14 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
         val state = _uiState.value
         val filtered = applyFilters(allOffers, state.searchQuery, state.searchRadiusKm)
+
+        Log.d(
+            TAG,
+            "Radius filter → viewerLoc=($userLatitude,$userLongitude) " +
+                    "radius=${state.searchRadiusKm}km " +
+                    "total=${allOffers.size} passed=${filtered.size} " +
+                    "distances=${allOffers.map { it.distanceKm }}"
+        )
 
         // Score and partition offers using the matching engine
         val scoredOffers = JobMatchingEngine.scoreOffers(filtered, workerProfile)

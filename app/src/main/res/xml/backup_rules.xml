@@ -6,8 +6,9 @@
    See https://developer.android.com/about/versions/12/backup-restore
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <!-- Exclude the login/session prefs so a reinstall starts clean and a
+         stale "logged in" flag is never restored. (API < 31) -->
+    <exclude
+        domain="sharedpref"
+        path="UserPrefs.xml" />
 </full-backup-content>

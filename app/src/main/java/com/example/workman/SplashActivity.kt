@@ -6,7 +6,17 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.AlphaAnimation
+import android.view.animation.AnimationSet
+import android.view.animation.OvershootInterpolator
+import android.view.animation.ScaleAnimation
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 
 @SuppressLint("CustomSplashScreen")
@@ -18,37 +28,112 @@ class SplashActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_splash)
 
-        sharedPreferencesHelper = SharedPreferencesHelper(this)
+        // Light status bar
+        window.statusBarColor = ContextCompat.getColor(this, R.color.white)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
 
+        sharedPreferencesHelper = SharedPreferencesHelper(this)
 
         if (sharedPreferencesHelper.isFirstRun()) {
             sharedPreferencesHelper.clearLoginData()
             sharedPreferencesHelper.setFirstRunDone()
         }
 
+        // Animate logo
+        val logo = findViewById<ImageView>(R.id.imgSplashLogo)
+        val appName = findViewById<TextView>(R.id.tvSplashAppName)
+        val tagline = findViewById<TextView>(R.id.tvSplashTagline)
+
+        // Logo: scale up with overshoot
+        val scaleAnim = ScaleAnimation(
+            0.3f, 1f, 0.3f, 1f,
+            ScaleAnimation.RELATIVE_TO_SELF, 0.5f,
+            ScaleAnimation.RELATIVE_TO_SELF, 0.5f
+        ).apply {
+            duration = 800
+            interpolator = OvershootInterpolator(1.5f)
+        }
+        val fadeIn = AlphaAnimation(0f, 1f).apply { duration = 800 }
+        val logoAnim = AnimationSet(false).apply {
+            addAnimation(scaleAnim)
+            addAnimation(fadeIn)
+        }
+        logo.startAnimation(logoAnim)
+
+        // App name: fade in after delay
+        appName.alpha = 0f
+        appName.animate().alpha(1f).setStartDelay(500).setDuration(600)
+            .setInterpolator(AccelerateDecelerateInterpolator()).start()
+
+        // Tagline: fade in after longer delay
+        tagline.alpha = 0f
+        tagline.animate().alpha(1f).setStartDelay(800).setDuration(600)
+            .setInterpolator(AccelerateDecelerateInterpolator()).start()
 
         Handler(Looper.getMainLooper()).postDelayed({
-            val isLoggedIn = sharedPreferencesHelper.isLoggedIn()
-            val userChoice = sharedPreferencesHelper.getUserChoice()
+            navigateNext()
+        }, 2500)
+    }
 
-            Log.d("SplashActivity", "LoggedIn: $isLoggedIn, Choice: $userChoice")
+    private fun navigateNext() {
+        val firebaseUser = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser
+        val userChoice = sharedPreferencesHelper.getUserChoice()
+        val onboardingDone = sharedPreferencesHelper.isOnboardingDone()
 
-            if (!isLoggedIn || userChoice.isNullOrEmpty()) {
-                // Either not logged in or no choice selected
-                startActivity(Intent(this, ChooseActivity::class.java))
-            } else {
-                // Logged in and has choice
-                val homeIntent = when (userChoice) {
+        Log.d(
+            "SplashActivity",
+            "FirebaseUser: ${firebaseUser?.uid}, Choice: $userChoice, Onboarding: $onboardingDone"
+        )
+
+        // 1. First-time user → onboarding.
+        if (!onboardingDone) {
+            goTo(Intent(this, OnboardingActivity::class.java))
+            return
+        }
+
+        // 2. Firebase Auth is the SOURCE OF TRUTH for login — not the local flag.
+        // This prevents stale or backup-restored SharedPreferences (e.g. after a
+        // reinstall, or after backing out of an unfinished sign-up) from pushing
+        // an unauthenticated user straight into a dashboard.
+        if (firebaseUser == null) {
+            sharedPreferencesHelper.setLoggedIn(false)
+            goTo(Intent(this, ChooseActivity::class.java))
+            return
+        }
+
+        // 3. Genuinely authenticated → keep the flag in sync and route by role.
+        sharedPreferencesHelper.setLoggedIn(true)
+        when (userChoice) {
+            "Hiring" -> goTo(Intent(this, HomeBossDashboardActivity::class.java))
+            "Worker" -> goTo(Intent(this, HomeWorkerDashboardActivity::class.java))
+            // Logged in but no saved role → recover it from Firestore.
+            else -> fetchRoleAndRoute(firebaseUser.uid)
+        }
+    }
+
+    private fun fetchRoleAndRoute(uid: String) {
+        com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            .collection("users").document(uid).get()
+            .addOnSuccessListener { doc ->
+                val role = doc.getString("role")
+                if (!role.isNullOrEmpty()) sharedPreferencesHelper.saveUserChoice(role)
+                val intent = when (role) {
                     "Hiring" -> Intent(this, HomeBossDashboardActivity::class.java)
                     "Worker" -> Intent(this, HomeWorkerDashboardActivity::class.java)
-                    else -> Intent(this, ChooseActivity::class.java) // fallback
+                    else -> Intent(this, ChooseActivity::class.java)
                 }
-                startActivity(homeIntent)
+                goTo(intent)
             }
+            .addOnFailureListener {
+                goTo(Intent(this, ChooseActivity::class.java))
+            }
+    }
 
-            finish()
-        }, 3000)
-
+    private fun goTo(intent: Intent) {
+        startActivity(intent)
+        finish()
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 }
 

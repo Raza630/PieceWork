@@ -5,15 +5,16 @@
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <!-- Exclude login/session prefs so a reinstall starts clean and a
+             stale "logged in" flag is never restored from cloud backup. -->
+        <exclude
+            domain="sharedpref"
+            path="UserPrefs.xml" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <!-- Same exclusion for device-to-device transfer. -->
+        <exclude
+            domain="sharedpref"
+            path="UserPrefs.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

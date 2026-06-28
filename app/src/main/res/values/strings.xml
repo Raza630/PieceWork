@@ -4,4 +4,13 @@
     <string name="close_drawer">Close Drawer</string>
     <string name="search_icon">search icon</string>
     <string name="default_web_client_id">307995814223-kr4ib9mb3k878en1bjte7rnl7hrt8pgi.apps.googleusercontent.com</string>
+
+    <!-- Splash -->
+    <string name="splash_tagline">Hire Smart. Work Smart.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_get_started">Get Started</string>
+    <string name="onboarding_permission_granted">✓ Permission Granted</string>
 </resources>

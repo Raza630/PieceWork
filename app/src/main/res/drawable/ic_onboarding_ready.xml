@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?><!-- Onboarding Illustration 4: Get Started / Ready -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="280dp"
+    android:height="280dp"
+    android:viewportWidth="280"
+    android:viewportHeight="280">
+
+    <!-- Background blob -->
+    <path
+        android:fillColor="#EDE7F6"
+        android:pathData="M150,25 Q235,15 260,100 Q285,185 210,235 Q135,285 60,230 Q-15,175 25,95 Q65,15 150,25 Z" />
+
+    <!-- Rocket body -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M140,45 Q125,80 120,130 L160,130 Q155,80 140,45 Z" />
+
+    <!-- Rocket nose -->
+    <path
+        android:fillColor="#1565C0"
+        android:pathData="M140,35 Q130,55 128,70 L152,70 Q150,55 140,35 Z" />
+
+    <!-- Rocket window -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M140,85m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M140,85m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+
+    <!-- Rocket fins -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M120,115 L100,140 L120,135 Z" />
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M160,115 L180,140 L160,135 Z" />
+
+    <!-- Rocket exhaust -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M125,130 L140,165 L155,130 Z" />
+    <path
+        android:fillColor="#FFD600"
+        android:pathData="M130,130 L140,155 L150,130 Z" />
+
+    <!-- Smoke/flame particles -->
+    <path
+        android:fillColor="#FFAB91"
+        android:pathData="M135,170m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M148,180m-6,0a6,6 0,1 1,12 0a6,6 0,1 1,-12 0" />
+    <path
+        android:fillColor="#FFCCBC"
+        android:pathData="M128,185m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path
+        android:fillColor="#FFE0B2"
+        android:pathData="M140,195m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <!-- Stars around -->
+    <path
+        android:fillColor="#FFD600"
+        android:pathData="M60,50 L63,58 L72,58 L65,63 L67,71 L60,66 L53,71 L55,63 L48,58 L57,58 Z" />
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M220,80 L222,86 L228,86 L223,89 L225,95 L220,92 L215,95 L217,89 L212,86 L218,86 Z" />
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M70,180 L72,186 L78,186 L73,189 L75,195 L70,192 L65,195 L67,189 L62,186 L68,186 Z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M210,200 L212,205 L217,205 L213,208 L215,213 L210,210 L205,213 L207,208 L203,205 L208,205 Z" />
+
+    <!-- Orbit ring -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M80,220 Q140,240 200,220"
+        android:strokeWidth="2"
+        android:strokeColor="#B39DDB"
+        android:strokeLineCap="round" />
+
+</vector>
+

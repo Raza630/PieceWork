@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingHorizontal="32dp"
+    android:paddingTop="40dp"
+    android:paddingBottom="24dp">
+
+    <!-- Illustration -->
+    <ImageView
+        android:id="@+id/imgOnboarding"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_marginBottom="32dp"
+        android:contentDescription="Onboarding illustration"
+        android:scaleType="fitCenter" />
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-bold"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:textColor="#1A1A1A"
+        android:textSize="26sp" />
+
+    <!-- Description -->
+    <TextView
+        android:id="@+id/tvDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:fontFamily="sans-serif"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:textColor="#666666"
+        android:textSize="15sp" />
+
+    <!-- Permission button (shown only on permission pages) -->
+    <TextView
+        android:id="@+id/btnPermission"
+        android:layout_width="wrap_content"
+        android:layout_height="44dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_button_outline"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:paddingHorizontal="28dp"
+        android:text="Grant Permission"
+        android:textColor="#2196F3"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- Permission status text -->
+    <TextView
+        android:id="@+id/tvPermissionStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="#4CAF50"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+</LinearLayout>
+

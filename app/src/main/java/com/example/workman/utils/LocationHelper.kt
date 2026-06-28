@@ -253,13 +253,14 @@ object LocationHelper {
 
         try {
             FirebaseFirestore.getInstance().collection("users").document(userId)
-                .update(
+                .set(
                     mapOf(
                         "latitude" to locationResult.latitude,
                         "longitude" to locationResult.longitude,
                         "geohash" to locationResult.geohash,
                         "location" to locationResult.locationName
-                    )
+                    ),
+                    com.google.firebase.firestore.SetOptions.merge()
                 ).await()
             Log.d(TAG, "Location synced for user $userId: ${locationResult.locationName}")
         } catch (e: Exception) {

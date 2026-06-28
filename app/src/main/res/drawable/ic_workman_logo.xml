@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Background Circle -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M100,100m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0" />
+
+    <!-- Inner Circle Accent -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M100,100m-78,0a78,78 0,1 1,156 0a78,78 0,1 1,-156 0" />
+
+    <!-- Wrench/Tool Shape - Left -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M65,55 L55,65 L75,120 L85,120 L95,85 L85,75 Z" />
+
+    <!-- Wrench/Tool Shape - Right -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M135,55 L145,65 L125,120 L115,120 L105,85 L115,75 Z" />
+
+    <!-- Person Silhouette Head -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,50m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0" />
+
+    <!-- Person Silhouette Body -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,72 Q100,62 120,72 L125,105 Q100,115 75,105 Z" />
+
+    <!-- Briefcase -->
+    <path
+        android:fillColor="#FF9800"
+        android:pathData="M72,120 L128,120 L132,155 L68,155 Z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#F57C00" />
+
+    <!-- Briefcase Handle -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M88,120 L88,114 Q88,108 94,108 L106,108 Q112,108 112,114 L112,120"
+        android:strokeWidth="3"
+        android:strokeColor="#FF9800" />
+
+    <!-- Briefcase Lock -->
+    <path
+        android:fillColor="#F57C00"
+        android:pathData="M96,133 L104,133 L104,140 L96,140 Z" />
+
+    <!-- Star Badge -->
+    <path
+        android:fillColor="#FFD600"
+        android:pathData="M155,40 L158,49 L168,49 L160,55 L163,64 L155,58 L147,64 L150,55 L142,49 L152,49 Z" />
+
+</vector>
+

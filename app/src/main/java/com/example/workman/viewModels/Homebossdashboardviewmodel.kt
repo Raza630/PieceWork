@@ -13,7 +13,9 @@ import com.example.workman.utils.LocationHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.IgnoreExtraProperties
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.PropertyName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +56,7 @@ data class DashboardUiState(
 
 // ─── Firestore Worker Document Model ──────────────────────────────────────────
 
+@IgnoreExtraProperties
 data class WorkerDocument(
     val name: String = "",
     val category: String = "",
@@ -64,7 +67,8 @@ data class WorkerDocument(
     val ratePerHour: Int = 0,
     val photoUrl: String = "",
     val role: String = "",
-    val isVerified: Boolean = false,
+    @get:PropertyName("isVerified") @set:PropertyName("isVerified")
+    var verified: Boolean = false,
     // Location fields
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
@@ -79,6 +83,7 @@ class HomeBossDashboardViewModel : ViewModel() {
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private var bookingsListener: ListenerRegistration? = null
+    private var offersSyncListener: ListenerRegistration? = null
 
     // Raw fetched list — never modified after fetch
     private var allWorkers: List<WorkerUiModel> = emptyList()
@@ -98,6 +103,7 @@ class HomeBossDashboardViewModel : ViewModel() {
         loadUserData()
         fetchWorkers()
         observeBookings()
+        observeWorkOffersForBookingSync()
     }
 
     private fun loadUserData() {
@@ -157,6 +163,7 @@ class HomeBossDashboardViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         bookingsListener?.remove()
+        offersSyncListener?.remove()
     }
 
     // ── Real-time Bookings ──────────────────────────────────────────────────
@@ -191,6 +198,76 @@ class HomeBossDashboardViewModel : ViewModel() {
 
     fun onBookingTabSelected(index: Int) {
         _uiState.update { it.copy(selectedBookingTab = index) }
+    }
+
+    /**
+     * Real-time listener on the boss's own work offers that keeps each linked
+     * booking in sync. The moment a job gains an `acceptedBy` (or its status
+     * moves to IN_PROGRESS / COMPLETED), the matching booking is promoted to
+     * the right state — so the Bookings tabs stay correct even without the
+     * Cloud Function (works for in-app accepts AND manual Firestore edits).
+     */
+    private fun observeWorkOffersForBookingSync() {
+        val currentUserId = auth.currentUser?.uid ?: return
+
+        offersSyncListener = db.collection("workOffers")
+            .whereEqualTo("bossId", currentUserId)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null || snapshot == null) return@addSnapshotListener
+
+                viewModelScope.launch {
+                    for (doc in snapshot.documents) {
+                        val acceptedBy = doc.getString("acceptedBy")
+                        val offerStatus = doc.getString("status") ?: "OPEN"
+
+                        // Nothing to sync until a worker has actually claimed it.
+                        if (acceptedBy.isNullOrBlank() ||
+                            offerStatus == "OPEN" || offerStatus == "CANCELLED"
+                        ) {
+                            continue
+                        }
+
+                        val jobId = doc.id
+                        try {
+                            val bookingRef = db.collection("bookings").document(jobId)
+                            val bookingSnap = bookingRef.get().await()
+                            if (!bookingSnap.exists()) continue
+
+                            val bookingStatus = bookingSnap.getString("status") ?: "PENDING"
+                            val target: String? = when (offerStatus) {
+                                "ASSIGNED" ->
+                                    if (bookingStatus == "PENDING") "ACTIVE" else null
+
+                                "IN_PROGRESS" ->
+                                    if (bookingStatus == "PENDING" ||
+                                        bookingStatus == "ACTIVE"
+                                    ) "IN_PROGRESS" else null
+
+                                "COMPLETED", "REVIEWED" ->
+                                    if (bookingStatus != "COMPLETED") "COMPLETED" else null
+
+                                else -> null
+                            }
+
+                            if (target != null) {
+                                bookingRef.update(
+                                    mapOf(
+                                        "workerId" to acceptedBy,
+                                        "workerName" to (doc.getString("acceptedByName")
+                                            ?: "Worker"),
+                                        "workerPhotoUrl" to (doc.getString("acceptedByPhoto")
+                                            ?: ""),
+                                        "status" to target
+                                    )
+                                ).await()
+                                Log.d(TAG, "Booking $jobId synced to $target")
+                            }
+                        } catch (ex: Exception) {
+                            Log.w(TAG, "Booking sync failed for $jobId: ${ex.message}")
+                        }
+                    }
+                }
+            }
     }
 
     fun updateBookingStatus(bookingId: String, newStatus: BookingStatus) {
@@ -354,7 +431,7 @@ class HomeBossDashboardViewModel : ViewModel() {
                             ?: raw.reviewCount,
                         ratePerHour      = raw.ratePerHour,
                         photoUrl = raw.photoUrl,
-                        isVerified = raw.isVerified,
+                        isVerified = raw.verified,
                         latitude = workerLat,
                         longitude = workerLng,
                         locationName = raw.location,
@@ -476,6 +553,14 @@ class HomeBossDashboardViewModel : ViewModel() {
             state.selectedCategory,
             state.searchRadiusKm,
             state.selectedCategories
+        )
+
+        Log.d(
+            TAG,
+            "Radius filter → viewerLoc=($userLatitude,$userLongitude) " +
+                    "radius=${state.searchRadiusKm}km " +
+                    "total=${allWorkers.size} passed=${filtered.size} " +
+                    "distances=${allWorkers.map { it.distanceKm }}"
         )
 
         _uiState.update {
