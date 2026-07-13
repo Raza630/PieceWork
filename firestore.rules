@@ -112,10 +112,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ─── Config (read-only for app, managed via console/functions) ─────
+    // ─── Config (read for all, write for authenticated users to seed) ───
     match /config/{configId} {
       allow read: if true; // Public read for categories
-      allow write: if false;
+      allow write: if isAuthenticated(); // Allow app to seed categories
     }
 
     // ─── Chat Messages ─────────────────────────────────────────────────

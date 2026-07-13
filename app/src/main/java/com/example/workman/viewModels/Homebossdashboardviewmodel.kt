@@ -282,7 +282,11 @@ class HomeBossDashboardViewModel : ViewModel() {
                 val linkedJobId = booking?.jobId?.ifBlank { bookingId } ?: bookingId
                 val updates: Map<String, Any?>? = when (newStatus) {
                     BookingStatus.IN_PROGRESS -> mapOf("status" to "IN_PROGRESS")
-                    BookingStatus.COMPLETED -> mapOf("status" to "COMPLETED")
+                    BookingStatus.COMPLETED -> mapOf(
+                        "status" to "COMPLETED",
+                        // Timestamp completion so the worker's weekly earnings are accurate
+                        "completedAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
+                    )
                     BookingStatus.CANCELLED -> mapOf(
                         // Mark cancelled so it leaves the worker feed and active lists
                         "status" to "CANCELLED",

@@ -25,13 +25,21 @@ data class WorkOffer(
     // Boss info
     var bossId: String = "",
     var bossName: String = "",
+    var bossPhoto: String = "",
+    var bossRating: Double = 0.0,
     // Location fields for geo-based filtering
     var latitude: Double = 0.0,
     var longitude: Double = 0.0,
     var geohash: String = "",
     var locationName: String = "",
-    // Transient field - not stored in Firestore, calculated at runtime
-    @get:Exclude var distanceKm: Double = -1.0
+    // Pay / budget info
+    var budgetAmount: Double = 0.0,          // 0 or less => treated as "Negotiable"
+    var budgetType: String = "NEGOTIABLE",   // FIXED, HOURLY, NEGOTIABLE
+    var currency: String = "Rs",
+    // Transient fields - not stored in Firestore, calculated at runtime
+    @get:Exclude var distanceKm: Double = -1.0,
+    @get:Exclude var createdAtMillis: Long = 0L,
+    @get:Exclude var completedAtMillis: Long = 0L
 ) {
     constructor() : this(
         title = "",
@@ -49,12 +57,66 @@ data class WorkOffer(
         directOfferedTo = null,
         bossId = "",
         bossName = "",
+        bossPhoto = "",
+        bossRating = 0.0,
         latitude = 0.0,
         longitude = 0.0,
         geohash = "",
         locationName = "",
-        distanceKm = -1.0
+        budgetAmount = 0.0,
+        budgetType = "NEGOTIABLE",
+        currency = "Rs",
+        distanceKm = -1.0,
+        createdAtMillis = 0L,
+        completedAtMillis = 0L
     )
+}
+
+/**
+ * Human-readable pay label for a work offer.
+ * Returns "Negotiable" when no amount is set.
+ */
+fun WorkOffer.displayPay(): String {
+    if (budgetAmount <= 0.0) return "Negotiable"
+    val amount = if (budgetAmount % 1.0 == 0.0) budgetAmount.toLong().toString()
+    else budgetAmount.toString()
+    val suffix = when (budgetType) {
+        "HOURLY" -> "/hr"
+        else -> ""
+    }
+    return "$currency $amount$suffix"
+}
+
+/** True if the job was posted within the last hour. */
+fun WorkOffer.isNew(): Boolean =
+    createdAtMillis > 0L && (System.currentTimeMillis() - createdAtMillis) < 60 * 60 * 1000L
+
+/** Short "posted X ago" label, or empty string if unknown. */
+fun WorkOffer.postedAgo(): String {
+    if (createdAtMillis <= 0L) return ""
+    val diff = System.currentTimeMillis() - createdAtMillis
+    if (diff < 0) return "Just now"
+    val minutes = diff / (60 * 1000L)
+    val hours = minutes / 60
+    val days = hours / 24
+    return when {
+        minutes < 1 -> "Just now"
+        minutes < 60 -> "Posted ${minutes}m ago"
+        hours < 24 -> "Posted ${hours}h ago"
+        days < 7 -> "Posted ${days}d ago"
+        else -> "Posted ${days / 7}w ago"
+    }
+}
+
+/**
+ * Rough travel-time estimate based on distance (assumes ~30 km/h city driving).
+ * Returns null when distance is unknown.
+ */
+fun WorkOffer.travelEstimate(): String? {
+    if (distanceKm < 0) return null
+    if (distanceKm < 1.0) return "~5 min away"
+    val minutes = (distanceKm / 30.0 * 60).toInt().coerceAtLeast(1)
+    return "~$minutes min drive"
 }
 
 /**

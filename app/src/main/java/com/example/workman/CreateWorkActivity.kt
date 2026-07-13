@@ -46,6 +46,8 @@ class CreateWorkActivity : AppCompatActivity() {
     private lateinit var rvSelectedImages: RecyclerView
     private lateinit var actvCategory: AutoCompleteTextView
     private lateinit var actvUrgency: AutoCompleteTextView
+    private lateinit var etBudgetAmount: TextInputEditText
+    private lateinit var actvBudgetType: AutoCompleteTextView
     private var progressBar: ProgressBar? = null
     private var loadingOverlay: View? = null
 
@@ -60,6 +62,7 @@ class CreateWorkActivity : AppCompatActivity() {
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     private var selectedCategory: String = ""
     private var selectedUrgency: String = "THIS_WEEK"
+    private var selectedBudgetType: String = "FIXED"
 
     // Map-picked location (overrides user profile location)
     private var pickedLatitude: Double = 0.0
@@ -179,6 +182,18 @@ class CreateWorkActivity : AppCompatActivity() {
         actvUrgency.setAdapter(urgencyAdapter)
         actvUrgency.setOnItemClickListener { _, _, position, _ ->
             selectedUrgency = urgencyValues[position]
+        }
+
+        // Budget / pay
+        etBudgetAmount = findViewById(R.id.etBudgetAmount)
+        actvBudgetType = findViewById(R.id.actvBudgetType)
+        val budgetTypeOptions = listOf("Fixed price", "Per hour", "Negotiable")
+        val budgetTypeValues = listOf("FIXED", "HOURLY", "NEGOTIABLE")
+        val budgetTypeAdapter =
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, budgetTypeOptions)
+        actvBudgetType.setAdapter(budgetTypeAdapter)
+        actvBudgetType.setOnItemClickListener { _, _, position, _ ->
+            selectedBudgetType = budgetTypeValues[position]
         }
     }
 
@@ -323,6 +338,20 @@ class CreateWorkActivity : AppCompatActivity() {
         val currentUser = auth.currentUser
         val jobId = db.collection("workOffers").document().id
 
+        // Parse budget/pay. Empty or 0 => Negotiable.
+        val budgetAmount = etBudgetAmount.text?.toString()?.trim()
+            ?.replace(",", "")?.toDoubleOrNull() ?: 0.0
+        val budgetType = if (budgetAmount <= 0.0) "NEGOTIABLE" else selectedBudgetType
+        val currency = "Rs"
+        val payLabel = if (budgetAmount <= 0.0) {
+            "Negotiable"
+        } else {
+            val amountStr = if (budgetAmount % 1.0 == 0.0) budgetAmount.toLong().toString()
+            else budgetAmount.toString()
+            val suffix = if (budgetType == "HOURLY") "/hr" else ""
+            "$currency $amountStr$suffix"
+        }
+
         // Get location: prefer map-picked location, fallback to boss's profile location
         var latitude = 0.0
         var longitude = 0.0
@@ -367,6 +396,10 @@ class CreateWorkActivity : AppCompatActivity() {
             "isAccepted" to false,
             "category" to selectedCategory,
             "urgency" to selectedUrgency,
+            // Pay / budget the worker will earn on completion
+            "budgetAmount" to budgetAmount,
+            "budgetType" to budgetType,
+            "currency" to currency,
             "createdAt" to FieldValue.serverTimestamp(),
             // Location data for geo-based filtering
             "latitude" to latitude,
@@ -395,7 +428,7 @@ class CreateWorkActivity : AppCompatActivity() {
                 "workerName" to "",
                 "workerPhotoUrl" to "",
                 "serviceName" to title,
-                "agreedRate" to "Negotiable",
+                "agreedRate" to payLabel,
                 "status" to "PENDING",
                 "date" to scheduledDate,
                 "createdAt" to FieldValue.serverTimestamp()
