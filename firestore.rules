@@ -15,8 +15,17 @@ service cloud.firestore {
     match /users/{userId} {
       // Anyone authenticated can read user profiles
       allow read: if isAuthenticated();
-      // Only the user can update their own profile
-      allow write: if isOwner(userId);
+      // Only the user can create/delete their own profile
+      allow create, delete: if isOwner(userId);
+      // The user can update their own profile fully. Other authenticated users
+      // may ONLY update the review/rating aggregate fields — this lets a boss
+      // rate a worker (and vice-versa) without touching the rest of the profile.
+      allow update: if isOwner(userId)
+                    || (
+                        isAuthenticated()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                            .hasOnly(['averageRating', 'totalRatings', 'rating'])
+                    );
 
       // Favorites subcollection — only the boss can manage their favorites
       match /favorites/{workerId} {
@@ -82,8 +91,13 @@ service cloud.firestore {
       // Users can read their own notifications
       allow read: if isAuthenticated()
                   && resource.data.recipientId == request.auth.uid;
-      // Cloud Functions create notifications (server-side, bypasses rules)
-      allow create: if false;
+      // Cloud Functions create notifications server-side; authenticated users
+      // may also create notifications (e.g. a worker requesting a review from
+      // the boss). Must target a recipient and start unread.
+      allow create: if isAuthenticated()
+                    && request.resource.data.recipientId is string
+                    && request.resource.data.recipientId != ''
+                    && request.resource.data.isRead == false;
       // Users can mark their own notifications as read
       allow update: if isAuthenticated()
                     && resource.data.recipientId == request.auth.uid

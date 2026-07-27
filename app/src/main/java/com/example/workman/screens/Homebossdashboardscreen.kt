@@ -1456,7 +1456,13 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
                         BookingCard(
                             booking = booking,
                             onCancel = { viewModel.updateBookingStatus(booking.id, BookingStatus.CANCELLED) },
-                            onComplete = { viewModel.updateBookingStatus(booking.id, BookingStatus.COMPLETED) }
+                            onComplete = {
+                                viewModel.updateBookingStatus(
+                                    booking.id,
+                                    BookingStatus.COMPLETED
+                                )
+                            },
+                            onRate = { viewModel.openRatingDialog(booking) }
                         )
                     }
                 }
@@ -1469,13 +1475,18 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
 private fun BookingCard(
     booking: BookingUiModel,
     onCancel: () -> Unit,
-    onComplete: () -> Unit
+    onComplete: () -> Unit,
+    onRate: () -> Unit = {}
 ) {
     val dateFormatter = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
     val hasWorker = booking.workerId.isNotBlank()
+    // Completed jobs with a worker can be reviewed at any time from History.
+    val canRate = hasWorker && booking.status == BookingStatus.COMPLETED
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (canRate) Modifier.clickable { onRate() } else Modifier),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = CreamCard),
         elevation = CardDefaults.cardElevation(2.dp)
@@ -1595,7 +1606,33 @@ private fun BookingCard(
                     }
                 }
 
-                else -> { /* COMPLETED / CANCELLED — no actions */
+                else -> {
+                    // COMPLETED / CANCELLED
+                    if (booking.status == BookingStatus.COMPLETED && hasWorker) {
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = onRate,
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Orange),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Rate Worker", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "You can leave feedback for ${booking.workerName} anytime.",
+                            color = TextMuted,
+                            fontSize = 11.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
         }

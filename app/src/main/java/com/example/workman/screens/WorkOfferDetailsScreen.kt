@@ -2,7 +2,6 @@ package com.example.workman.screens
 
 import android.content.Intent
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,6 +64,7 @@ import com.example.workman.ChatActivity
 import com.example.workman.SharedPreferencesHelper
 import com.example.workman.components.MapLocationView
 import com.example.workman.components.QuickContactSection
+import com.example.workman.components.ReceivedReviewCard
 import com.example.workman.components.ReviewRatingDialog
 import com.example.workman.components.UrgencyBadge
 import com.example.workman.dataClass.WorkOffer
@@ -73,6 +73,7 @@ import com.example.workman.ui.theme.PrimaryBlue
 import com.example.workman.ui.theme.SecondaryBlue
 import com.example.workman.ui.theme.TextDark
 import com.example.workman.ui.theme.TextMuted
+import com.example.workman.utils.ReviewRequestHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
@@ -97,10 +98,17 @@ fun WorkOfferDetailsScreen(
     var offer by remember { mutableStateOf<WorkOffer?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isAccepting by remember { mutableStateOf(false) }
+    var feedback by remember { mutableStateOf<com.example.workman.components.FeedbackData?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
+
+    // Professional animated feedback for accepting a job.
+    com.example.workman.components.FeedbackDialog(
+        data = feedback,
+        onDismiss = { feedback = null }
+    )
 
     fun fetchOfferDetails() {
         scope.launch {
@@ -152,11 +160,22 @@ fun WorkOfferDetailsScreen(
                     Log.w(TAG, "Could not update booking to ACTIVE: ${e.message}")
                 }
 
-                Toast.makeText(context, "Job accepted successfully!", Toast.LENGTH_SHORT).show()
+                feedback = com.example.workman.components.FeedbackData(
+                    type = com.example.workman.components.FeedbackType.SUCCESS,
+                    title = "You got the job! 🎉",
+                    message = "\"${offer?.title ?: "This job"}\" is now assigned to you. " +
+                            "You can message the client and start working from My Jobs.",
+                    confirmLabel = "Great!"
+                )
                 fetchOfferDetails() // Refresh local state
             } catch (e: Exception) {
-                Toast.makeText(context, "Failed to accept job: ${e.message}", Toast.LENGTH_SHORT)
-                    .show()
+                feedback = com.example.workman.components.FeedbackData(
+                    type = com.example.workman.components.FeedbackType.ERROR,
+                    title = "Couldn't accept job",
+                    message = e.localizedMessage
+                        ?: "Something went wrong. Please check your connection and try again.",
+                    confirmLabel = "Try again"
+                )
             } finally {
                 isAccepting = false
             }
@@ -293,7 +312,8 @@ fun WorkOfferDetailsScreen(
                                     latitude = current.latitude,
                                     longitude = current.longitude,
                                     locationName = current.locationName,
-                                    zoom = 15.0
+                                    zoom = 15.0,
+                                    showDirections = true
                                 )
                             }
                         }
@@ -363,6 +383,76 @@ fun WorkOfferDetailsScreen(
                                     showReviewDialog = false
                                     fetchOfferDetails()
                                 }
+                            )
+                        }
+
+                        // ── Worker: seek feedback from the client on a completed job
+                        val myUid = auth.currentUser?.uid
+                        val isMyCompletedJob =
+                            userRole != "Hiring" && current.acceptedBy == myUid
+
+                        if (isMyCompletedJob && current.status == "COMPLETED") {
+                            Spacer(Modifier.height(16.dp))
+                            if (current.reviewRequested) {
+                                Surface(
+                                    color = Color(0xFFFF9800).copy(alpha = 0.10f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "⏳ Feedback requested — we've asked the client to review your work.",
+                                        modifier = Modifier.padding(14.dp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFFB26A00),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = "Job complete! A great review helps you win more work. " +
+                                            "Ask the client for feedback.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextMuted
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Button(
+                                    onClick = {
+                                        ReviewRequestHelper.requestBossReview(
+                                            jobId = current.id,
+                                            bossId = current.bossId,
+                                            jobTitle = current.title
+                                        ) { success, msg ->
+                                            feedback = com.example.workman.components.FeedbackData(
+                                                type = if (success) com.example.workman.components.FeedbackType.SUCCESS
+                                                else com.example.workman.components.FeedbackType.ERROR,
+                                                title = if (success) "Feedback requested 🙌" else "Couldn't send request",
+                                                message = msg,
+                                                confirmLabel = "Done"
+                                            )
+                                            if (success) fetchOfferDetails()
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(52.dp),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                                ) {
+                                    Text(
+                                        "Request feedback from client",
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                }
+                            }
+                        }
+
+                        // ── Worker: show the review the client left
+                        if (isMyCompletedJob && current.status == "REVIEWED") {
+                            Spacer(Modifier.height(16.dp))
+                            ReceivedReviewCard(
+                                jobId = current.id,
+                                workerId = myUid ?: ""
                             )
                         }
 

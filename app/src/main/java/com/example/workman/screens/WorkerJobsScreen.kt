@@ -3,6 +3,7 @@ package com.example.workman.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,8 +43,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.workman.components.FeedbackData
+import com.example.workman.components.FeedbackDialog
+import com.example.workman.components.FeedbackType
+import com.example.workman.components.ReceivedReviewCard
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.ui.theme.PrimaryBlue
+import com.example.workman.utils.ReviewRequestHelper
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -55,8 +61,12 @@ fun WorkerJobsScreen(
     var acceptedJobs by remember { mutableStateOf<List<WorkOffer>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var isCompleting by remember { mutableStateOf(false) }
+    var feedback by remember { mutableStateOf<FeedbackData?>(null) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     val db = FirebaseFirestore.getInstance()
+
+    // Animated professional feedback for start/complete actions.
+    FeedbackDialog(data = feedback, onDismiss = { feedback = null })
 
     // Completion image picker
     var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
@@ -131,7 +141,25 @@ fun WorkerJobsScreen(
                                     onClick = {
                                         db.collection("workOffers").document(job.id)
                                             .update("status", "IN_PROGRESS")
-                                            .addOnSuccessListener { fetchJobs() }
+                                            .addOnSuccessListener {
+                                                feedback = FeedbackData(
+                                                    type = FeedbackType.SUCCESS,
+                                                    title = "You're on the clock! ⏱️",
+                                                    message = "You've started \"${job.title}\". " +
+                                                            "When you're done, add proof photos and mark it completed.",
+                                                    confirmLabel = "Let's go"
+                                                )
+                                                fetchJobs()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                feedback = FeedbackData(
+                                                    type = FeedbackType.ERROR,
+                                                    title = "Couldn't start job",
+                                                    message = e.localizedMessage
+                                                        ?: "Please check your connection and try again.",
+                                                    confirmLabel = "Try again"
+                                                )
+                                            }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
@@ -157,9 +185,6 @@ fun WorkerJobsScreen(
 
                                         Button(
                                             onClick = {
-                                                // Implementation for upload would typically be in a ViewModel, 
-                                                // but since we're using a simple screen, we'll simulate or call a helper
-                                                // For now, let's just trigger a status update if images exist
                                                 if (selectedImages.isNotEmpty()) {
                                                     isCompleting = true
                                                     // This is where Firebase Storage upload logic would go
@@ -170,9 +195,27 @@ fun WorkerJobsScreen(
                                                                 "completionNote" to "Completed by worker"
                                                             )
                                                         ).addOnSuccessListener {
-                                                        isCompleting = false
-                                                        fetchJobs()
-                                                    }
+                                                            isCompleting = false
+                                                            selectedImages = emptyList()
+                                                            feedback = FeedbackData(
+                                                                type = FeedbackType.SUCCESS,
+                                                                title = "Job completed! ✅",
+                                                                message = "Great work! The client has been notified " +
+                                                                        "about \"${job.title}\". Your earnings will " +
+                                                                        "update shortly and they can now leave you a review.",
+                                                                confirmLabel = "Awesome"
+                                                            )
+                                                            fetchJobs()
+                                                        }.addOnFailureListener { e ->
+                                                            isCompleting = false
+                                                            feedback = FeedbackData(
+                                                                type = FeedbackType.ERROR,
+                                                                title = "Couldn't complete job",
+                                                                message = e.localizedMessage
+                                                                    ?: "Please check your connection and try again.",
+                                                                confirmLabel = "Try again"
+                                                            )
+                                                        }
                                                 }
                                             },
                                             modifier = Modifier.weight(1f),
@@ -193,11 +236,56 @@ fun WorkerJobsScreen(
                                     }
                                 }
                             } else {
-                                Text(
-                                    "Status: ${job.status}",
-                                    color = PrimaryBlue,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                when (job.status) {
+                                    "COMPLETED" -> {
+                                        if (job.reviewRequested) {
+                                            StatusNote(
+                                                text = "Feedback requested — waiting for the client to review ⏳",
+                                                color = Color(0xFFFF9800)
+                                            )
+                                        } else {
+                                            Text(
+                                                "Job done! Ask your client to leave a review — great reviews win you more jobs.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color.Gray
+                                            )
+                                            Spacer(Modifier.height(8.dp))
+                                            Button(
+                                                onClick = {
+                                                    ReviewRequestHelper.requestBossReview(
+                                                        jobId = job.id,
+                                                        bossId = job.bossId,
+                                                        jobTitle = job.title
+                                                    ) { success, msg ->
+                                                        feedback = FeedbackData(
+                                                            type = if (success) FeedbackType.SUCCESS else FeedbackType.ERROR,
+                                                            title = if (success) "Feedback requested 🙌" else "Couldn't send request",
+                                                            message = msg,
+                                                            confirmLabel = "Done"
+                                                        )
+                                                        if (success) fetchJobs()
+                                                    }
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                                            ) {
+                                                Text("Request feedback from client")
+                                            }
+                                        }
+                                    }
+
+                                    "REVIEWED" -> {
+                                        ReceivedReviewCard(jobId = job.id, workerId = userId ?: "")
+                                    }
+
+                                    else -> {
+                                        Text(
+                                            "Status: ${job.status}",
+                                            color = PrimaryBlue,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -206,3 +294,26 @@ fun WorkerJobsScreen(
         }
     }
 }
+
+/** A small coloured status note (e.g. "waiting for the client"). */
+@Composable
+private fun StatusNote(text: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color.copy(alpha = 0.10f),
+                androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
+            )
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+

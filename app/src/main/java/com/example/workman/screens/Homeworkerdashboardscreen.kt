@@ -143,6 +143,23 @@ fun HomeWorkerDashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    // Professional in-app feedback (animated success/error dialog) for key actions.
+    var feedback by remember { mutableStateOf<com.example.workman.components.FeedbackData?>(null) }
+    var pendingJobsNav by remember { mutableStateOf(false) }
+
+    com.example.workman.components.FeedbackDialog(
+        data = feedback,
+        onDismiss = { feedback = null },
+        onConfirm = {
+            if (pendingJobsNav) {
+                pendingJobsNav = false
+                onNavJobs()
+            }
+        },
+        secondaryLabel = if (pendingJobsNav) "Stay here" else null,
+        onSecondary = { pendingJobsNav = false }
+    )
+
     HomeWorkerDashboardContent(
         uiState = uiState,
         onSearchQueryChange = viewModel::onSearchQueryChange,
@@ -154,25 +171,46 @@ fun HomeWorkerDashboardScreen(
             viewModel.createJobAlert(
                 uiState.selectedCategory,
                 uiState.searchRadiusKm
-            ) { _, msg ->
-                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT)
-                    .show()
+            ) { success, msg ->
+                feedback = com.example.workman.components.FeedbackData(
+                    type = if (success) com.example.workman.components.FeedbackType.SUCCESS
+                    else com.example.workman.components.FeedbackType.ERROR,
+                    title = if (success) "Alert created" else "Couldn't create alert",
+                    message = msg,
+                    confirmLabel = "Got it"
+                )
             }
         },
         fetchWorkOffers = viewModel::fetchWorkOffers,
         acceptWork = { offer ->
-            viewModel.acceptWork(offer) { _, msg ->
-                android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT)
-                    .show()
+            viewModel.acceptWork(offer) { success, msg ->
+                if (success) {
+                    pendingJobsNav = true
+                    feedback = com.example.workman.components.FeedbackData(
+                        type = com.example.workman.components.FeedbackType.SUCCESS,
+                        title = "You got the job! 🎉",
+                        message = "\"${offer.title}\" is now assigned to you. " +
+                                "Head to My Jobs to start working and track your progress.",
+                        confirmLabel = "Go to My Jobs"
+                    )
+                } else {
+                    feedback = com.example.workman.components.FeedbackData(
+                        type = com.example.workman.components.FeedbackType.ERROR,
+                        title = "Couldn't accept job",
+                        message = msg.ifBlank { "Something went wrong. Please try again." },
+                        confirmLabel = "Try again"
+                    )
+                }
             }
         },
         submitReport = { entityId, type, reason ->
             viewModel.submitReport(entityId, type, reason)
-            android.widget.Toast.makeText(
-                context,
-                "Thanks — report submitted",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+            feedback = com.example.workman.components.FeedbackData(
+                type = com.example.workman.components.FeedbackType.SUCCESS,
+                title = "Report submitted",
+                message = "Thanks for helping keep WorkMan safe. Our team will review this shortly.",
+                confirmLabel = "Done"
+            )
         },
         onEnableLocation = { viewModel.updateLocation(context) },
         onOfferClick = onOfferClick,

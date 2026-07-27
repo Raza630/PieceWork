@@ -312,9 +312,25 @@ class HomeBossDashboardViewModel : ViewModel() {
     }
 
     fun submitRating(rating: Float, reviewComment: String) {
-        val booking = _uiState.value.bookingToRate ?: return
-        val bossId = auth.currentUser?.uid ?: return
-        
+        val booking = _uiState.value.bookingToRate ?: run {
+            Log.w(TAG, "submitRating aborted: no bookingToRate in state")
+            return
+        }
+        val bossId = auth.currentUser?.uid ?: run {
+            Log.w(TAG, "submitRating aborted: no authenticated user")
+            return
+        }
+
+        Log.d(
+            TAG,
+            "submitRating START → bookingId=${booking.id} jobId=${booking.jobId} " +
+                    "workerId=${booking.workerId} rating=$rating"
+        )
+
+        if (booking.workerId.isBlank()) {
+            Log.e(TAG, "submitRating: workerId is blank — cannot rate. Booking=${booking.id}")
+        }
+
         viewModelScope.launch {
             try {
                 val reviewId = db.collection("reviews").document().id
@@ -330,19 +346,42 @@ class HomeBossDashboardViewModel : ViewModel() {
                 )
 
                 db.collection("reviews").document(reviewId).set(review).await()
+                Log.d(TAG, "submitRating: review document saved OK → reviewId=$reviewId")
 
                 // Update worker's total rating in their profile
-                updateWorkerRating(booking.workerId, rating)
-                
+                val profileUpdated = updateWorkerRating(booking.workerId, rating)
+
+                if (profileUpdated) {
+                    Log.i(
+                        TAG,
+                        "submitRating SUCCESS ✓ Review saved AND worker profile rating updated " +
+                                "(workerId=${booking.workerId})"
+                    )
+                } else {
+                    Log.w(
+                        TAG,
+                        "submitRating PARTIAL ⚠ Review saved but worker profile rating NOT updated " +
+                                "(likely Firestore rules not deployed). workerId=${booking.workerId}"
+                    )
+                }
+
                 _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to submit rating", e)
+                Log.e(
+                    TAG,
+                    "submitRating FAILED ✗ Could not save review for booking=${booking.id}",
+                    e
+                )
             }
         }
     }
 
-    private suspend fun updateWorkerRating(workerId: String, newRating: Float) {
-        try {
+    /**
+     * Updates the worker's aggregate rating fields in their profile.
+     * @return true if the transaction committed, false on any failure.
+     */
+    private suspend fun updateWorkerRating(workerId: String, newRating: Float): Boolean {
+        return try {
             val workerRef = db.collection("users").document(workerId)
             db.runTransaction { transaction ->
                 val snapshot = transaction.get(workerRef)
@@ -352,6 +391,12 @@ class HomeBossDashboardViewModel : ViewModel() {
                 val newTotal = currentTotal + 1
                 val newAvg = ((currentAvg * currentTotal) + newRating) / newTotal
 
+                Log.d(
+                    TAG,
+                    "updateWorkerRating: workerId=$workerId " +
+                            "oldAvg=$currentAvg oldTotal=$currentTotal → newAvg=$newAvg newTotal=$newTotal"
+                )
+
                 transaction.update(
                     workerRef, mapOf(
                         "totalRatings" to newTotal,
@@ -360,8 +405,16 @@ class HomeBossDashboardViewModel : ViewModel() {
                     )
                 )
             }.await()
+            Log.d(TAG, "updateWorkerRating: transaction committed OK for workerId=$workerId")
+            true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to update worker rating profile", e)
+            Log.e(
+                TAG,
+                "updateWorkerRating: FAILED for workerId=$workerId — ${e.message}. " +
+                        "If this is PERMISSION_DENIED, deploy firestore.rules.",
+                e
+            )
+            false
         }
     }
 
@@ -396,6 +449,15 @@ class HomeBossDashboardViewModel : ViewModel() {
 
     fun dismissRatingDialog() {
         _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
+    }
+
+    /**
+     * Open the rating dialog for a given (usually completed) booking so the boss
+     * can leave feedback for the worker at any time from the History tab.
+     */
+    fun openRatingDialog(booking: BookingUiModel) {
+        if (booking.workerId.isBlank()) return
+        _uiState.update { it.copy(bookingToRate = booking, showRatingDialog = true) }
     }
 
     // ── Firestore Fetch ────────────────────────────────────────────────────────

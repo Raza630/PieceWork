@@ -13,6 +13,15 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Allow resolving maps/navigation apps for turn-by-turn directions (Android 11+ package visibility) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <package android:name="com.google.android.apps.maps" />
+    </queries>
+
     <application
         android:name=".WorkManApplication"
         android:allowBackup="false"

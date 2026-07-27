@@ -16,6 +16,8 @@ data class WorkOffer(
     var category: String = "",  // Job category for smart matching
     var status: String = "OPEN", // OPEN, ASSIGNED, IN_PROGRESS, COMPLETED, REVIEWED
     var ratingSubmitted: Boolean = false,
+    // True once the worker has asked the boss to leave a review for a completed job
+    var reviewRequested: Boolean = false,
     var completionImages: List<String> = emptyList(),
     var completionNote: String = "",
     // Urgency tiers: URGENT, THIS_WEEK, FLEXIBLE
@@ -53,6 +55,7 @@ data class WorkOffer(
         category = "",
         status = "OPEN",
         ratingSubmitted = false,
+        reviewRequested = false,
         urgency = "THIS_WEEK",
         directOfferedTo = null,
         bossId = "",

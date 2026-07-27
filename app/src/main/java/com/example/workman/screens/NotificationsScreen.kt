@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -201,10 +202,12 @@ private fun NotificationCard(
         "work_accepted" -> Color(0xFF4CAF50)
         "work_completed" -> Color(0xFF2196F3)
         "new_review" -> Color(0xFFFFD700)
+        "review_request" -> Color(0xFFFFC107)
         else -> PrimaryBlue
     }
     val icon = when (notification.type) {
         "work_accepted" -> Icons.Default.Check
+        "review_request", "new_review" -> Icons.Default.Star
         else -> Icons.Default.Notifications
     }
 
