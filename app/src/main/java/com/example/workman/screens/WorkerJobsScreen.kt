@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import com.example.workman.components.FeedbackData
 import com.example.workman.components.FeedbackDialog
 import com.example.workman.components.FeedbackType
+import com.example.workman.components.PaymentSection
 import com.example.workman.components.ReceivedReviewCard
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.ui.theme.PrimaryBlue
@@ -238,6 +239,13 @@ fun WorkerJobsScreen(
                             } else {
                                 when (job.status) {
                                     "COMPLETED" -> {
+                                        // ── Payment confirmation (Phase 1 manual flow)
+                                        PaymentSection(
+                                            jobId = job.id,
+                                            isBoss = false
+                                        )
+                                        Spacer(Modifier.height(12.dp))
+
                                         if (job.reviewRequested) {
                                             StatusNote(
                                                 text = "Feedback requested — waiting for the client to review ⏳",
@@ -275,6 +283,11 @@ fun WorkerJobsScreen(
                                     }
 
                                     "REVIEWED" -> {
+                                        PaymentSection(
+                                            jobId = job.id,
+                                            isBoss = false
+                                        )
+                                        Spacer(Modifier.height(12.dp))
                                         ReceivedReviewCard(jobId = job.id, workerId = userId ?: "")
                                     }
 

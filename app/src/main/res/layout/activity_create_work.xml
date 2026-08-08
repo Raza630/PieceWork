@@ -179,6 +179,28 @@
                             android:text="Fixed price" />
                     </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Payment Method (how the boss will pay the worker) -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:hint="Payment Method"
+                        app:boxStrokeColor="#FF9800"
+                        app:helperText="How you'll pay the worker after the job"
+                        app:helperTextTextColor="#757575"
+                        app:hintTextColor="#FF9800">
+
+                        <AutoCompleteTextView
+                            android:id="@+id/actvPaymentMethod"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="false"
+                            android:inputType="none"
+                            android:text="💵 Cash" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
                     <!-- Location Picker Section -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnPickLocation"

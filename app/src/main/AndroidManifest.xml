@@ -20,6 +20,18 @@
             <data android:scheme="geo" />
         </intent>
         <package android:name="com.google.android.apps.maps" />
+
+        <!-- UPI payment apps (GPay, PhonePe, Paytm, BHIM…). Without this,
+             Android 11+ hides them and resolveActivity() returns null. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+        <package android:name="com.google.android.apps.nbu.paisa.user" /> <!-- Google Pay -->
+        <package android:name="com.phonepe.app" />                        <!-- PhonePe -->
+        <package android:name="net.one97.paytm" />                        <!-- Paytm -->
+        <package android:name="in.org.npci.upiapp" />                     <!-- BHIM -->
+        <package android:name="com.amazon.mShop.android.shopping" />      <!-- Amazon Pay -->
     </queries>
 
     <application

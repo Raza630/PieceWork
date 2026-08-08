@@ -18,6 +18,12 @@ val localProperties = Properties().apply {
 }
 val fcmApiKey: String = localProperties.getProperty("FCM_API_KEY", "")
 
+// Mappls (MapmyIndia) credentials — from https://apis.mappls.com/console/
+val mapplsMapSdkKey: String = localProperties.getProperty("MAPPLS_MAP_SDK_KEY", "")
+val mapplsRestApiKey: String = localProperties.getProperty("MAPPLS_REST_API_KEY", "")
+val mapplsAtlasClientId: String = localProperties.getProperty("MAPPLS_ATLAS_CLIENT_ID", "")
+val mapplsAtlasClientSecret: String = localProperties.getProperty("MAPPLS_ATLAS_CLIENT_SECRET", "")
+
 android {
     namespace = "com.example.workman"
     compileSdk = 34
@@ -33,6 +39,12 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Mappls credentials exposed to code via BuildConfig (kept out of source control)
+        buildConfigField("String", "MAPPLS_MAP_SDK_KEY", "\"$mapplsMapSdkKey\"")
+        buildConfigField("String", "MAPPLS_REST_API_KEY", "\"$mapplsRestApiKey\"")
+        buildConfigField("String", "MAPPLS_ATLAS_CLIENT_ID", "\"$mapplsAtlasClientId\"")
+        buildConfigField("String", "MAPPLS_ATLAS_CLIENT_SECRET", "\"$mapplsAtlasClientSecret\"")
     }
 
     buildTypes {
@@ -137,6 +149,9 @@ dependencies {
     implementation("com.google.android.play:review:2.0.2")
     implementation("com.google.android.play:review-ktx:2.0.2")
 
-    // OSMDroid - Free OpenStreetMap (no API key required)
-    implementation("org.osmdroid:osmdroid-android:6.1.18")
+    // Mappls (MapmyIndia) Maps SDK — replaces OpenStreetMap/osmdroid.
+    // v8.3.0 is the last release that initializes with API keys via MapplsAccountManager
+    // (REST/Map SDK key + Atlas client id/secret) and needs NO Gradle plugin or license
+    // file. v9 (BoM 2.0.0) dropped key-based init in favour of an OLF file + plugin.
+    implementation("com.mappls.sdk:mappls-android-sdk:8.3.0")
 }

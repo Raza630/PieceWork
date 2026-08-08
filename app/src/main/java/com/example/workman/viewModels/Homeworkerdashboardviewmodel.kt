@@ -97,8 +97,14 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     
     private var allOffers: List<WorkOffer> = emptyList()
 
+    /** Confirmed/pending payment records where this user is the worker. */
+    private var myPayments: List<com.example.workman.dataClass.PaymentRecord> = emptyList()
+
     /** Live Firestore listener so accepted/removed jobs update in real time. */
     private var offersListener: ListenerRegistration? = null
+
+    /** Live listener on this worker's payment records. */
+    private var paymentsListener: ListenerRegistration? = null
 
     // Current user's location
     private var userLatitude: Double = 0.0
@@ -118,6 +124,22 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         loadUserData()
         fetchBanners()
         fetchWorkOffers()
+        observePayments()
+    }
+
+    /**
+     * Live listener on this worker's payment records so earnings update the
+     * instant a boss marks a job paid / the worker confirms receipt.
+     */
+    private fun observePayments() {
+        val userId = auth.currentUser?.uid ?: return
+        paymentsListener = com.example.workman.utils.PaymentRepository.listenForUser(
+            field = "workerId",
+            userId = userId
+        ) { records ->
+            myPayments = records
+            _uiState.update { it.copy(earnings = computeEarnings(it.earnings)) }
+        }
     }
 
     private fun loadUserData() {
@@ -341,6 +363,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         offersListener?.remove()
+        paymentsListener?.remove()
     }
 
     fun updateLocation(context: Context) {
@@ -540,36 +563,50 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     }
 
     /**
-     * Compute earnings & progress from the worker's own completed/accepted jobs.
+     * Compute earnings & progress from CONFIRMED PAYMENTS (not job budgets).
      *
-     * Earnings are derived from the agreed [WorkOffer.budgetAmount] the boss set
-     * when posting the job. A job counts toward earnings once its status becomes
-     * COMPLETED/REVIEWED. The weekly window uses the completion date
-     * ([WorkOffer.completedAtMillis]); for legacy jobs missing that timestamp we
-     * fall back to the post date so nothing silently disappears.
+     * Phase 1 payment model: a job only counts toward earnings once BOTH the boss
+     * marked it paid AND the worker confirmed receipt (status == PAID_OUT in the
+     * `payments` collection). This makes "earned" mean *money actually received*
+     * rather than "amount the boss advertised".
+     *
+     * [pendingPayout] now means "completed jobs still awaiting payment
+     * confirmation" — i.e. work done but money not yet settled.
      */
     private fun computeEarnings(base: EarningsSummary): EarningsSummary {
         val userId = auth.currentUser?.uid ?: return base
         val mine = allOffers.filter { it.acceptedBy == userId }
-
         val completed = mine.filter { it.status == "COMPLETED" || it.status == "REVIEWED" }
-        val pending = mine.filter { it.status == "ASSIGNED" || it.status == "IN_PROGRESS" }
+
+        // Only fully-confirmed payments count as real money.
+        val paidRecords = myPayments.filter { it.isPaidOut }
+        val paidJobIds = paidRecords.map { it.jobId }.toSet()
 
         val weekAgo = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(7)
-        val completedThisWeek = completed.filter { offer ->
-            val when_ = if (offer.completedAtMillis > 0L) offer.completedAtMillis
-            else parseCreatedAtMillis(offer)
-            when_ >= weekAgo
+        val paidThisWeek = paidRecords.filter { record ->
+            val settledAt = if (record.paidAtMillis > 0L) {
+                record.paidAtMillis
+            } else {
+                // Legacy/missing timestamp — fall back to the job's completion date
+                val offer = mine.firstOrNull { it.id == record.jobId }
+                offer?.completedAtMillis?.takeIf { it > 0L } ?: 0L
+            }
+            settledAt >= weekAgo
         }
 
-        val currency = mine.firstOrNull { it.currency.isNotBlank() }?.currency ?: base.currency
+        // Work that's finished but the money isn't settled yet.
+        val awaitingPayment = completed.count { it.id !in paidJobIds }
+
+        val currency = paidRecords.firstOrNull { it.currency.isNotBlank() }?.currency
+            ?: mine.firstOrNull { it.currency.isNotBlank() }?.currency
+            ?: base.currency
 
         return base.copy(
-            weeklyEarnings = completedThisWeek.sumOf { it.budgetAmount },
-            totalEarnings = completed.sumOf { it.budgetAmount },
-            completedThisWeek = completedThisWeek.size,
+            weeklyEarnings = paidThisWeek.sumOf { it.amount },
+            totalEarnings = paidRecords.sumOf { it.amount },
+            completedThisWeek = paidThisWeek.size,
             completedTotal = completed.size,
-            pendingPayout = pending.size,
+            pendingPayout = awaitingPayment,
             currency = currency
         )
     }

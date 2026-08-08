@@ -120,6 +120,53 @@ service cloud.firestore {
                     );
     }
 
+    // ─── Payments (manual, two-sided confirmation — Phase 1, no gateway) ──
+    // Doc id == jobId. Money moves off-app (cash / UPI); this is the audit record.
+    // A boss may only flip `bossMarkedPaid`; a worker may only flip
+    // `workerConfirmed`. Neither can set the other's flag, so PAID_OUT can only
+    // ever be reached when BOTH parties have independently confirmed.
+    match /payments/{jobId} {
+      function isParticipant() {
+        return resource.data.bossId == request.auth.uid
+               || resource.data.workerId == request.auth.uid;
+      }
+
+      // NOTE: `get` must tolerate a missing document — the client reads the
+      // payment doc inside a transaction BEFORE creating it, and for a
+      // non-existent doc `resource` is null (which would otherwise deny).
+      allow get: if isAuthenticated() && (resource == null || isParticipant());
+
+      // Queries are constrained by bossId/workerId on the client, so per-doc
+      // participant checks make the query provably safe.
+      allow list: if isAuthenticated() && isParticipant();
+
+      // First write: creator must be a participant and may only set their own flag.
+      allow create: if isAuthenticated()
+                    && (
+                        (request.resource.data.bossId == request.auth.uid
+                         && request.resource.data.workerConfirmed == false)
+                        || (request.resource.data.workerId == request.auth.uid
+                            && request.resource.data.bossMarkedPaid == false)
+                    );
+
+      allow update: if isAuthenticated()
+                    && (
+                        // Boss confirms payment sent — cannot touch worker's flag
+                        (resource.data.bossId == request.auth.uid
+                         && request.resource.data.workerConfirmed == resource.data.workerConfirmed)
+                        // Worker confirms receipt — cannot touch boss's flag
+                        || (resource.data.workerId == request.auth.uid
+                            && request.resource.data.bossMarkedPaid == resource.data.bossMarkedPaid)
+                    )
+                    // Immutable financial facts
+                    && request.resource.data.amount == resource.data.amount
+                    && request.resource.data.bossId == resource.data.bossId
+                    && request.resource.data.workerId == resource.data.workerId;
+
+      // Payment history is permanent — no deletions.
+      allow delete: if false;
+    }
+
     // ─── Banners (read-only, managed via Firebase console) ─────────────
     match /banners/{bannerId} {
       allow read: if true; // Public read — banners shown on dashboards

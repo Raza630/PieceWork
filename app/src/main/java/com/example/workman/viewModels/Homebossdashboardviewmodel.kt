@@ -188,7 +188,10 @@ class HomeBossDashboardViewModel : ViewModel() {
                         agreedRate = doc.getString("agreedRate") ?: "0",
                         status = BookingStatus.valueOf(statusStr),
                         date = doc.getDate("date") ?: java.util.Date(),
-                        bossId = doc.getString("bossId") ?: ""
+                        bossId = doc.getString("bossId") ?: "",
+                        paymentStatus = doc.getString("paymentStatus") ?: "UNPAID",
+                        paymentMethod = doc.getString("paymentMethod") ?: "CASH",
+                        ratingSubmitted = doc.getBoolean("ratingSubmitted") ?: false
                     )
                 } ?: emptyList()
                 
@@ -351,6 +354,29 @@ class HomeBossDashboardViewModel : ViewModel() {
                 // Update worker's total rating in their profile
                 val profileUpdated = updateWorkerRating(booking.workerId, rating)
 
+                // Mark this job as rated so the "Rate Worker" CTA disappears.
+                // Written to BOTH the booking (drives the Bookings tab) and the
+                // work offer (drives WorkOfferDetailsScreen) so the UI agrees
+                // everywhere. Best-effort: a failure here must not lose the review.
+                val linkedJobId = booking.jobId.ifBlank { booking.id }
+                try {
+                    db.collection("bookings").document(booking.id)
+                        .update("ratingSubmitted", true).await()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not flag booking as rated: ${e.message}")
+                }
+                try {
+                    db.collection("workOffers").document(linkedJobId)
+                        .update(
+                            mapOf(
+                                "ratingSubmitted" to true,
+                                "status" to "REVIEWED"
+                            )
+                        ).await()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not flag work offer as rated: ${e.message}")
+                }
+
                 if (profileUpdated) {
                     Log.i(
                         TAG,
@@ -365,7 +391,17 @@ class HomeBossDashboardViewModel : ViewModel() {
                     )
                 }
 
-                _uiState.update { it.copy(showRatingDialog = false, bookingToRate = null) }
+                _uiState.update { state ->
+                    state.copy(
+                        showRatingDialog = false,
+                        bookingToRate = null,
+                        // Optimistically flip the flag so the Rate CTA disappears
+                        // immediately, before the Firestore listener echoes back.
+                        bookings = state.bookings.map { b ->
+                            if (b.id == booking.id) b.copy(ratingSubmitted = true) else b
+                        }
+                    )
+                }
             } catch (e: Exception) {
                 Log.e(
                     TAG,
@@ -457,6 +493,8 @@ class HomeBossDashboardViewModel : ViewModel() {
      */
     fun openRatingDialog(booking: BookingUiModel) {
         if (booking.workerId.isBlank()) return
+        // Guard against double-reviewing the same job.
+        if (booking.ratingSubmitted) return
         _uiState.update { it.copy(bookingToRate = booking, showRatingDialog = true) }
     }
 

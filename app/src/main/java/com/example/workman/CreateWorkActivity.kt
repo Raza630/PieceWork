@@ -48,6 +48,7 @@ class CreateWorkActivity : AppCompatActivity() {
     private lateinit var actvUrgency: AutoCompleteTextView
     private lateinit var etBudgetAmount: TextInputEditText
     private lateinit var actvBudgetType: AutoCompleteTextView
+    private lateinit var actvPaymentMethod: AutoCompleteTextView
     private var progressBar: ProgressBar? = null
     private var loadingOverlay: View? = null
 
@@ -63,6 +64,7 @@ class CreateWorkActivity : AppCompatActivity() {
     private var selectedCategory: String = ""
     private var selectedUrgency: String = "THIS_WEEK"
     private var selectedBudgetType: String = "FIXED"
+    private var selectedPaymentMethod: String = "CASH"
 
     // Map-picked location (overrides user profile location)
     private var pickedLatitude: Double = 0.0
@@ -194,6 +196,17 @@ class CreateWorkActivity : AppCompatActivity() {
         actvBudgetType.setAdapter(budgetTypeAdapter)
         actvBudgetType.setOnItemClickListener { _, _, position, _ ->
             selectedBudgetType = budgetTypeValues[position]
+        }
+
+        // Payment method — how the boss will pay the worker (Phase 1: no gateway)
+        actvPaymentMethod = findViewById(R.id.actvPaymentMethod)
+        val paymentMethodOptions = listOf("💵 Cash", "📲 Online (UPI / Bank)")
+        val paymentMethodValues = listOf("CASH", "ONLINE")
+        val paymentMethodAdapter =
+            ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, paymentMethodOptions)
+        actvPaymentMethod.setAdapter(paymentMethodAdapter)
+        actvPaymentMethod.setOnItemClickListener { _, _, position, _ ->
+            selectedPaymentMethod = paymentMethodValues[position]
         }
     }
 
@@ -400,6 +413,8 @@ class CreateWorkActivity : AppCompatActivity() {
             "budgetAmount" to budgetAmount,
             "budgetType" to budgetType,
             "currency" to currency,
+            // How the boss intends to pay the worker (Phase 1 manual flow)
+            "paymentMethod" to selectedPaymentMethod,
             "createdAt" to FieldValue.serverTimestamp(),
             // Location data for geo-based filtering
             "latitude" to latitude,
@@ -431,6 +446,9 @@ class CreateWorkActivity : AppCompatActivity() {
                 "agreedRate" to payLabel,
                 "status" to "PENDING",
                 "date" to scheduledDate,
+                // Manual payment tracking (Phase 1)
+                "paymentStatus" to "UNPAID",
+                "paymentMethod" to selectedPaymentMethod,
                 "createdAt" to FieldValue.serverTimestamp()
             )
             db.collection("bookings").document(jobId).set(bookingData).await()

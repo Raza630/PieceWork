@@ -264,6 +264,38 @@ fun ProfileScreen(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
+                        // ── Payout details — WORKERS ONLY.
+                        // In Phase 1 money flows boss → worker, so a UPI ID is a
+                        // payout destination. Showing it to a boss would wrongly
+                        // imply they get paid, so it's hidden for the "Hiring" role.
+                        val isWorker = remember {
+                            com.example.workman.SharedPreferencesHelper(context)
+                                .getUserChoice() != "Hiring"
+                        }
+                        if (isWorker) {
+                            Text(
+                                "Payment Details",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextDark
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ProfileTextField(
+                                value = uiState.upiId,
+                                onValueChange = { viewModel.onUpiIdChange(it) },
+                                label = "UPI ID (e.g. name@okhdfcbank)"
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Optional. Clients use this to pay you directly from their " +
+                                        "UPI app. If left empty, we'll use your phone number.",
+                                fontSize = 12.sp,
+                                color = TextMuted
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+
                         // Checkboxes
                         ProfileCheckbox(
                             label = "Specially abled",

@@ -4,10 +4,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Point
 import android.net.Uri
+import android.os.Bundle
+import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,37 +44,67 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.example.workman.ui.theme.PrimaryBlue
 import com.example.workman.ui.theme.TextDark
 import com.google.android.gms.location.LocationServices
+import com.mappls.sdk.maps.MapView
+import com.mappls.sdk.maps.MapplsMap
+import com.mappls.sdk.maps.OnMapReadyCallback
+import com.mappls.sdk.maps.annotations.MarkerOptions
+import com.mappls.sdk.maps.annotations.PolylineOptions
+import com.mappls.sdk.maps.camera.CameraUpdateFactory
+import com.mappls.sdk.maps.geometry.LatLng
+import com.mappls.sdk.maps.geometry.LatLngBounds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.util.BoundingBox
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Overlay
-import org.osmdroid.views.overlay.Polyline
 
 /**
- * A stable, identifiable User-Agent. OpenStreetMap tile servers BLOCK requests
- * whose User-Agent is a generic/sample package name (e.g. "com.example.*"),
- * which is what caused the "access blocked" tiles. A unique app name fixes it.
+ * Creates a [MapView] whose lifecycle is bound to the current Compose lifecycle owner.
+ * The Mappls (Mapbox-based) MapView requires the standard onCreate/onStart/.../onDestroy
+ * calls to be forwarded, which we do here via a [LifecycleEventObserver].
  */
-private const val OSM_USER_AGENT = "WorkMan-Android/1.0"
+@Composable
+private fun rememberMapViewWithLifecycle(): MapView {
+    val context = LocalContext.current
+    val mapView = remember {
+        MapView(context).apply { id = View.generateViewId() }
+    }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    DisposableEffect(lifecycle, mapView) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_CREATE -> mapView.onCreate(Bundle())
+                Lifecycle.Event.ON_START -> mapView.onStart()
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                Lifecycle.Event.ON_STOP -> mapView.onStop()
+                Lifecycle.Event.ON_DESTROY -> mapView.onDestroy()
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+        }
+    }
+    return mapView
+}
 
 /**
- * A composable that shows an OpenStreetMap view where the user can pick a location
- * by tapping or dragging the map. Shows a center pin.
+ * A composable that shows a Mappls map where the user can pick a location by moving
+ * the map under a fixed center pin.
  */
 @Composable
 fun MapLocationPicker(
@@ -85,54 +116,61 @@ fun MapLocationPicker(
     onLocationSelected: (latitude: Double, longitude: Double) -> Unit = { _, _ -> },
     onMyLocationClick: (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
+    val mapView = rememberMapViewWithLifecycle()
+    var mapplsMap by remember { mutableStateOf<MapplsMap?>(null) }
 
-    // Configure osmdroid
-    LaunchedEffect(Unit) {
-        Configuration.getInstance().load(
-            context,
-            context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE)
-        )
-        // Unique UA — prevents OpenStreetMap "access blocked" tiles.
-        Configuration.getInstance().userAgentValue = OSM_USER_AGENT
+    // Initialize the map once it's ready.
+    LaunchedEffect(mapView) {
+        mapView.getMapAsync(object : OnMapReadyCallback {
+            override fun onMapReady(map: MapplsMap) {
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(
+                        LatLng(initialLatitude, initialLongitude),
+                        initialZoom
+                    )
+                )
+
+                // Report the map center whenever the user stops moving the map.
+                map.addOnCameraIdleListener {
+                    val target = map.cameraPosition.target
+                    if (target != null) {
+                        onLocationSelected(target.latitude, target.longitude)
+                    }
+                }
+                mapplsMap = map
+            }
+
+            override fun onMapError(errorCode: Int, message: String?) = Unit
+        })
     }
 
     // Programmatically recenter + zoom whenever an external target changes
     // (e.g. boss's GPS location resolves, or "My Location" is tapped).
-    LaunchedEffect(recenterTo) {
+    LaunchedEffect(recenterTo, mapplsMap) {
+        val map = mapplsMap ?: return@LaunchedEffect
         recenterTo?.let { (lat, lng) ->
-            mapViewRef?.let { mv ->
-                mv.controller.setZoom(16.0)
-                mv.controller.animateTo(GeoPoint(lat, lng))
-            }
+            map.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(LatLng(lat, lng), 16.0)
+            )
         }
     }
 
     Box(modifier = modifier) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                MapView(ctx).apply {
-                    setTileSource(TileSourceFactory.MAPNIK)
-                    setMultiTouchControls(true)
-                    controller.setZoom(initialZoom)
-                    controller.setCenter(GeoPoint(initialLatitude, initialLongitude))
+            factory = { mapView }
+        )
 
-                    // Center pin overlay (follows the map as the user drags)
-                    overlays.add(CenterPinOverlay(ctx, PrimaryBlue.toArgb()))
-
-                    // Move listener — attached ONCE, reports only on real center changes
-                    overlays.add(MapMoveListener { lat, lng -> onLocationSelected(lat, lng) })
-
-                    addOnFirstLayoutListener { _, _, _, _, _ ->
-                        val center = mapCenter
-                        onLocationSelected(center.latitude, center.longitude)
-                    }
-
-                    mapViewRef = this
-                }
-            }
+        // Fixed center pin — the map moves under it while the pin stays put.
+        Icon(
+            imageVector = Icons.Default.LocationOn,
+            contentDescription = "Selected location",
+            tint = PrimaryBlue,
+            modifier = Modifier
+                .align(Alignment.Center)
+                // Offset up by half the icon height so the tip points at the center.
+                .offset(y = (-18).dp)
+                .size(40.dp)
         )
 
         // My Location FAB
@@ -158,7 +196,7 @@ fun MapLocationPicker(
 }
 
 /**
- * A composable that shows a map with a pin at a fixed location (read-only).
+ * A composable that shows a Mappls map with a pin at a fixed location (read-only).
  *
  * When [showDirections] is true it will:
  *  1. Fetch the viewer's current location (if permission granted),
@@ -175,17 +213,31 @@ fun MapLocationView(
     showDirections: Boolean = false
 ) {
     val context = LocalContext.current
-    var mapViewRef by remember { mutableStateOf<MapView?>(null) }
-    var routePoints by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
-    var originPoint by remember { mutableStateOf<GeoPoint?>(null) }
+    val mapView = rememberMapViewWithLifecycle()
+    var mapplsMap by remember { mutableStateOf<MapplsMap?>(null) }
+    var routePoints by remember { mutableStateOf<List<LatLng>>(emptyList()) }
+    var originPoint by remember { mutableStateOf<LatLng?>(null) }
 
-    // Configure osmdroid — unique UA prevents OpenStreetMap "access blocked" tiles.
-    LaunchedEffect(Unit) {
-        Configuration.getInstance().load(
-            context,
-            context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE)
-        )
-        Configuration.getInstance().userAgentValue = OSM_USER_AGENT
+    // Initialize the map + drop the job pin once it's ready.
+    LaunchedEffect(mapView) {
+        mapView.getMapAsync(object : OnMapReadyCallback {
+            override fun onMapReady(map: MapplsMap) {
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), zoom)
+                )
+                map.addMarker(
+                    MarkerOptions()
+                        .position(LatLng(latitude, longitude))
+                        .title(locationName.ifBlank { "Job location" })
+                )
+                // Read-only: disable rotation/tilt gestures for a cleaner card.
+                map.uiSettings?.setRotateGesturesEnabled(false)
+                map.uiSettings?.setTiltGesturesEnabled(false)
+                mapplsMap = map
+            }
+
+            override fun onMapError(errorCode: Int, message: String?) = Unit
+        })
     }
 
     // Fetch the viewer's location + driving route to the job (free OSRM API).
@@ -200,43 +252,39 @@ fun MapLocationView(
         if (!hasPermission) return@LaunchedEffect
 
         val origin = getLastKnownLocation(context) ?: return@LaunchedEffect
-        originPoint = GeoPoint(origin.first, origin.second)
+        originPoint = LatLng(origin.first, origin.second)
         routePoints = fetchDrivingRoute(origin.first, origin.second, latitude, longitude)
     }
 
     // Draw the route line + origin marker and fit the map to show the whole trip.
-    LaunchedEffect(routePoints, mapViewRef) {
-        val mv = mapViewRef ?: return@LaunchedEffect
+    LaunchedEffect(routePoints, mapplsMap) {
+        val map = mapplsMap ?: return@LaunchedEffect
         if (routePoints.isEmpty()) return@LaunchedEffect
 
-        // Remove any previously-added route line before re-adding.
-        mv.overlays.removeAll { it is Polyline }
-        val line = Polyline().apply {
-            setPoints(routePoints)
-            outlinePaint.color = PrimaryBlue.toArgb()
-            outlinePaint.strokeWidth = 12f
-            outlinePaint.isAntiAlias = true
-        }
-        mv.overlays.add(0, line)
+        map.addPolyline(
+            PolylineOptions()
+                .addAll(routePoints)
+                .color(PrimaryBlue.toArgb())
+                .width(4f)
+        )
 
         originPoint?.let { op ->
-            mv.overlays.add(
-                FixedPinOverlay(
-                    context,
-                    android.graphics.Color.parseColor("#2ECC71"),
-                    op
-                )
-            )
+            map.addMarker(MarkerOptions().position(op).title("You"))
         }
 
         // Fit the map to include the whole route with a little padding.
-        val bounds = BoundingBox.fromGeoPoints(routePoints + GeoPoint(latitude, longitude))
         try {
-            mv.zoomToBoundingBox(bounds.increaseByScale(1.4f), true, 80)
+            val boundsBuilder = LatLngBounds.Builder()
+            routePoints.forEach { boundsBuilder.include(it) }
+            boundsBuilder.include(LatLng(latitude, longitude))
+            map.animateCamera(
+                CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 80)
+            )
         } catch (_: Exception) {
-            mv.controller.setCenter(GeoPoint(latitude, longitude))
+            map.moveCamera(
+                CameraUpdateFactory.newLatLngZoom(LatLng(latitude, longitude), zoom)
+            )
         }
-        mv.invalidate()
     }
 
     Card(
@@ -250,27 +298,7 @@ fun MapLocationView(
                     .fillMaxWidth()
                     .height(200.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
-                factory = { ctx ->
-                    MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
-                        setMultiTouchControls(true)
-                        controller.setZoom(zoom)
-                        controller.setCenter(GeoPoint(latitude, longitude))
-
-                        // Disable interaction for view-only
-                        setBuiltInZoomControls(false)
-
-                        // Add pin overlay at the fixed (job) location
-                        val pinOverlay = FixedPinOverlay(
-                            ctx,
-                            PrimaryBlue.toArgb(),
-                            GeoPoint(latitude, longitude)
-                        )
-                        overlays.add(pinOverlay)
-
-                        mapViewRef = this
-                    }
-                }
+                factory = { mapView }
             )
 
             // Location label below the map
@@ -350,21 +378,21 @@ private suspend fun getLastKnownLocation(context: Context): Pair<Double, Double>
 
 /**
  * Fetches a driving route polyline from the free OSRM demo server (no API key).
- * Returns an ordered list of GeoPoints, or an empty list on failure.
+ * Returns an ordered list of Mappls [LatLng], or an empty list on failure.
  */
 private suspend fun fetchDrivingRoute(
     startLat: Double,
     startLng: Double,
     endLat: Double,
     endLng: Double
-): List<GeoPoint> = withContext(Dispatchers.IO) {
+): List<LatLng> = withContext(Dispatchers.IO) {
     try {
         // OSRM expects lng,lat order.
         val url = "https://router.project-osrm.org/route/v1/driving/" +
                 "$startLng,$startLat;$endLng,$endLat?overview=full&geometries=geojson"
         val request = Request.Builder()
             .url(url)
-            .header("User-Agent", OSM_USER_AGENT)
+            .header("User-Agent", "WorkMan-Android/1.0")
             .build()
         OkHttpClient().newCall(request).execute().use { response ->
             val body = response.body?.string() ?: return@withContext emptyList()
@@ -373,11 +401,11 @@ private suspend fun fetchDrivingRoute(
             val coords = routes.getJSONObject(0)
                 .getJSONObject("geometry")
                 .getJSONArray("coordinates")
-            val points = ArrayList<GeoPoint>(coords.length())
+            val points = ArrayList<LatLng>(coords.length())
             for (i in 0 until coords.length()) {
                 val c = coords.getJSONArray(i)
                 // GeoJSON is [lng, lat]
-                points.add(GeoPoint(c.getDouble(1), c.getDouble(0)))
+                points.add(LatLng(c.getDouble(1), c.getDouble(0)))
             }
             points
         }
@@ -418,144 +446,4 @@ private fun launchTurnByTurnNavigation(
     }
 }
 
-// ── Custom Overlays ────────────────────────────────────────────────────────────
-
-/**
- * Draws a pin at the center of the map (follows the map as user drags).
- */
-private class CenterPinOverlay(
-    private val context: Context,
-    private val pinColor: Int
-) : Overlay() {
-
-    private val paint = Paint().apply {
-        color = pinColor
-        isAntiAlias = true
-        style = Paint.Style.FILL
-    }
-
-    private val shadowPaint = Paint().apply {
-        color = android.graphics.Color.argb(60, 0, 0, 0)
-        isAntiAlias = true
-        style = Paint.Style.FILL
-    }
-
-    override fun draw(canvas: Canvas, mapView: MapView, shadow: Boolean) {
-        if (shadow) return
-
-        val centerX = mapView.width / 2f
-        val centerY = mapView.height / 2f
-
-        // Shadow ellipse
-        canvas.drawOval(
-            centerX - 8f, centerY + 20f,
-            centerX + 8f, centerY + 26f,
-            shadowPaint
-        )
-
-        // Pin body (teardrop shape using circle + triangle)
-        val pinRadius = 16f
-        val pinTip = centerY + 20f
-        val pinCenter = centerY - pinRadius
-
-        // Triangle (point)
-        val path = android.graphics.Path().apply {
-            moveTo(centerX - pinRadius * 0.6f, pinCenter + pinRadius * 0.5f)
-            lineTo(centerX, pinTip)
-            lineTo(centerX + pinRadius * 0.6f, pinCenter + pinRadius * 0.5f)
-            close()
-        }
-        canvas.drawPath(path, paint)
-
-        // Circle (head)
-        canvas.drawCircle(centerX, pinCenter, pinRadius, paint)
-
-        // Inner white dot
-        val whitePaint = Paint().apply {
-            color = android.graphics.Color.WHITE
-            isAntiAlias = true
-            style = Paint.Style.FILL
-        }
-        canvas.drawCircle(centerX, pinCenter, pinRadius * 0.4f, whitePaint)
-    }
-}
-
-/**
- * Draws a pin at a fixed GeoPoint location (for view-only maps).
- */
-private class FixedPinOverlay(
-    private val context: Context,
-    private val pinColor: Int,
-    private val geoPoint: GeoPoint
-) : Overlay() {
-
-    private val paint = Paint().apply {
-        color = pinColor
-        isAntiAlias = true
-        style = Paint.Style.FILL
-    }
-
-    override fun draw(canvas: Canvas, mapView: MapView, shadow: Boolean) {
-        if (shadow) return
-
-        val point = Point()
-        mapView.projection.toPixels(geoPoint, point)
-        val cx = point.x.toFloat()
-        val cy = point.y.toFloat()
-
-        val pinRadius = 16f
-        val pinTip = cy + 20f
-        val pinCenter = cy - pinRadius
-
-        // Shadow
-        val shadowPaint = Paint().apply {
-            color = android.graphics.Color.argb(60, 0, 0, 0)
-            isAntiAlias = true
-        }
-        canvas.drawOval(cx - 8f, pinTip, cx + 8f, pinTip + 6f, shadowPaint)
-
-        // Triangle
-        val path = android.graphics.Path().apply {
-            moveTo(cx - pinRadius * 0.6f, pinCenter + pinRadius * 0.5f)
-            lineTo(cx, pinTip)
-            lineTo(cx + pinRadius * 0.6f, pinCenter + pinRadius * 0.5f)
-            close()
-        }
-        canvas.drawPath(path, paint)
-
-        // Circle
-        canvas.drawCircle(cx, pinCenter, pinRadius, paint)
-
-        // White dot
-        val whitePaint = Paint().apply {
-            color = android.graphics.Color.WHITE
-            isAntiAlias = true
-        }
-        canvas.drawCircle(cx, pinCenter, pinRadius * 0.4f, whitePaint)
-    }
-}
-
-/**
- * Overlay that reports map center changes (acts as a scroll listener).
- * Only fires when the center actually moves, to avoid per-frame churn.
- */
-private class MapMoveListener(
-    private val onMove: (lat: Double, lng: Double) -> Unit
-) : Overlay() {
-
-    private var lastLat = Double.NaN
-    private var lastLng = Double.NaN
-
-    override fun draw(canvas: Canvas, mapView: MapView, shadow: Boolean) {
-        if (shadow) return
-        val center = mapView.mapCenter
-        val lat = center.latitude
-        val lng = center.longitude
-        if (lat != lastLat || lng != lastLng) {
-            lastLat = lat
-            lastLng = lng
-            onMove(lat, lng)
-        }
-    }
-}
 

@@ -38,6 +38,8 @@ data class WorkOffer(
     var budgetAmount: Double = 0.0,          // 0 or less => treated as "Negotiable"
     var budgetType: String = "NEGOTIABLE",   // FIXED, HOURLY, NEGOTIABLE
     var currency: String = "Rs",
+    // Preferred payment method the boss will use to pay the worker (CASH / ONLINE)
+    var paymentMethod: String = "CASH",
     // Transient fields - not stored in Firestore, calculated at runtime
     @get:Exclude var distanceKm: Double = -1.0,
     @get:Exclude var createdAtMillis: Long = 0L,
@@ -69,6 +71,7 @@ data class WorkOffer(
         budgetAmount = 0.0,
         budgetType = "NEGOTIABLE",
         currency = "Rs",
+        paymentMethod = "CASH",
         distanceKm = -1.0,
         createdAtMillis = 0L,
         completedAtMillis = 0L

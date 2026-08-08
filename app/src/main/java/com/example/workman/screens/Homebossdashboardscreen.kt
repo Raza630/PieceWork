@@ -1480,8 +1480,10 @@ private fun BookingCard(
 ) {
     val dateFormatter = remember { SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()) }
     val hasWorker = booking.workerId.isNotBlank()
-    // Completed jobs with a worker can be reviewed at any time from History.
-    val canRate = hasWorker && booking.status == BookingStatus.COMPLETED
+    // Completed jobs with a worker can be reviewed — but only once.
+    val canRate = hasWorker &&
+            booking.status == BookingStatus.COMPLETED &&
+            !booking.ratingSubmitted
 
     Card(
         modifier = Modifier
@@ -1609,29 +1611,59 @@ private fun BookingCard(
                 else -> {
                     // COMPLETED / CANCELLED
                     if (booking.status == BookingStatus.COMPLETED && hasWorker) {
+                        // ── Manual payment (Phase 1): Pay via UPI + Mark as Paid
                         Spacer(Modifier.height(16.dp))
-                        Button(
-                            onClick = onRate,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = Orange),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(
-                                Icons.Filled.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text("Rate Worker", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "You can leave feedback for ${booking.workerName} anytime.",
-                            color = TextMuted,
-                            fontSize = 11.sp,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                        com.example.workman.components.PaymentSection(
+                            jobId = booking.jobId.ifBlank { booking.id },
+                            isBoss = true
                         )
+
+                        Spacer(Modifier.height(16.dp))
+                        if (booking.ratingSubmitted) {
+                            // Already reviewed — confirm it instead of re-prompting.
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Filled.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "You've reviewed ${booking.workerName}",
+                                    color = Color(0xFF4CAF50),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        } else {
+                            Button(
+                                onClick = onRate,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(containerColor = Orange),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Star,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text("Rate Worker", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "You can leave feedback for ${booking.workerName} anytime.",
+                                color = TextMuted,
+                                fontSize = 11.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     }
                 }
             }

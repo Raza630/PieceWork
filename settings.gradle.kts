@@ -10,6 +10,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Mappls (MapmyIndia) SDK artifacts
+        maven { url = uri("https://maven.mappls.com/repository/mappls/") }
     }
 }
 
