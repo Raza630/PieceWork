@@ -396,6 +396,20 @@ class CreateWorkActivity : AppCompatActivity() {
             }
         }
 
+        // Fetch the boss's profile photo (Cloudinary URL saved in Firestore) so
+        // job cards show the correct poster image. FirebaseAuth.photoUrl is not
+        // populated by our profile flow, so it is only used as a fallback.
+        var bossPhotoUrl = currentUser?.photoUrl?.toString() ?: ""
+        try {
+            currentUser?.uid?.let { uid ->
+                val profileDoc = db.collection("users").document(uid).get().await()
+                val storedPhoto = profileDoc.getString("photoUrl") ?: ""
+                if (storedPhoto.isNotBlank()) bossPhotoUrl = storedPhoto
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not fetch boss photo for job", e)
+        }
+
         val workData = hashMapOf(
             "jobId" to jobId,
             "title" to title,
@@ -404,7 +418,7 @@ class CreateWorkActivity : AppCompatActivity() {
             "images" to imageUrls,
             "bossId" to (currentUser?.uid ?: "unknown"),
             "bossName" to (currentUser?.displayName ?: "User"),
-            "bossPhoto" to (currentUser?.photoUrl?.toString() ?: ""),
+            "bossPhoto" to bossPhotoUrl,
             "status" to "OPEN",
             "isAccepted" to false,
             "category" to selectedCategory,

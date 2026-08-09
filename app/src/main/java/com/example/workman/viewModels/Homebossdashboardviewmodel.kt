@@ -44,6 +44,7 @@ data class DashboardUiState(
     val bookingToRate: BookingUiModel? = null,
     val showRatingDialog: Boolean = false,
     val userName: String = "Boss",
+    val userPhotoUrl: String = "",
     val userLocation: String = "Detecting location...",
     // Location-based filtering
     val searchRadiusKm: Double = LocationHelper.DEFAULT_RADIUS_KM,
@@ -118,6 +119,7 @@ class HomeBossDashboardViewModel : ViewModel() {
 
                 _uiState.update { it.copy(
                     userName = doc.getString("name") ?: "Boss",
+                    userPhotoUrl = doc.getString("photoUrl") ?: "",
                     userLocation = doc.getString("location") ?: "Not set",
                     isLocationAvailable = lat != 0.0 && lng != 0.0
                 ) }

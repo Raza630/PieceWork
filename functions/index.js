@@ -67,8 +67,8 @@ exports.sendWorkAcceptedNotification = onDocumentUpdated(
           workerId: workerId,
           workerName: workerName,
           workerPhoto: workerPhoto,
-          read: false,
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          isRead: false,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
         };
 
         await admin.firestore()

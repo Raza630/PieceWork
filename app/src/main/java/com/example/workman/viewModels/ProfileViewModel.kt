@@ -24,8 +24,6 @@ data class ProfileUiState(
     val acceptNotifications: String = "No",
     val photoUrl: String = "",
     val portfolioImages: List<String> = emptyList(),
-    // Payout details (workers) — used to build a UPI deep link for the boss
-    val upiId: String = "",
     val isUploadingPortfolio: Boolean = false,
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
@@ -62,7 +60,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                         photoUrl = document.getString("photoUrl") ?: "",
                         portfolioImages = document.get("portfolioImages") as? List<String>
                             ?: emptyList(),
-                        upiId = document.getString("upiId") ?: "",
                         isLoading = false
                     )
                 } else {
@@ -82,9 +79,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
     fun onCategoryChange(value: String) { _uiState.value = _uiState.value.copy(category = value) }
     fun onSpeciallyAbledChange(value: String) { _uiState.value = _uiState.value.copy(speciallyAbled = value) }
     fun onAcceptNotificationsChange(value: String) { _uiState.value = _uiState.value.copy(acceptNotifications = value) }
-    fun onUpiIdChange(value: String) {
-        _uiState.value = _uiState.value.copy(upiId = value)
-    }
 
     fun saveProfile(imageUri: Uri? = null) {
         val userId = auth.currentUser?.uid ?: return
@@ -95,15 +89,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             return
         }
 
-        // UPI ID is optional, but if provided it must look like a real VPA.
-        if (state.upiId.isNotBlank() &&
-            !com.example.workman.utils.UpiPaymentHelper.isValidUpiId(state.upiId)
-        ) {
-            _uiState.value = _uiState.value.copy(
-                message = "Enter a valid UPI ID (e.g. name@okhdfcbank)"
-            )
-            return
-        }
 
         _uiState.value = _uiState.value.copy(isSaving = true)
 
@@ -142,8 +127,6 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             "speciallyAbled" to state.speciallyAbled,
             "acceptNotifications" to state.acceptNotifications,
             "photoUrl" to photoUrl,
-            // Payout destination used to build the boss's UPI deep link
-            "upiId" to state.upiId.trim(),
             "yearsOfExperience" to 5,
             "rating" to 4.5,
             "reviewCount" to "120",

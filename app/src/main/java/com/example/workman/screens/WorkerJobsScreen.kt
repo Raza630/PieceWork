@@ -37,10 +37,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.workman.components.FeedbackData
@@ -50,9 +52,12 @@ import com.example.workman.components.PaymentSection
 import com.example.workman.components.ReceivedReviewCard
 import com.example.workman.dataClass.WorkOffer
 import com.example.workman.ui.theme.PrimaryBlue
+import com.example.workman.utils.CloudinaryUploader
 import com.example.workman.utils.ReviewRequestHelper
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,6 +70,8 @@ fun WorkerJobsScreen(
     var feedback by remember { mutableStateOf<FeedbackData?>(null) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     val db = FirebaseFirestore.getInstance()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // Animated professional feedback for start/complete actions.
     FeedbackDialog(data = feedback, onDismiss = { feedback = null })
@@ -188,35 +195,60 @@ fun WorkerJobsScreen(
                                             onClick = {
                                                 if (selectedImages.isNotEmpty()) {
                                                     isCompleting = true
-                                                    // This is where Firebase Storage upload logic would go
-                                                    db.collection("workOffers").document(job.id)
-                                                        .update(
-                                                            mapOf(
-                                                                "status" to "COMPLETED",
-                                                                "completionNote" to "Completed by worker"
+                                                    val imagesToUpload = selectedImages
+                                                    // Upload "After" proof photos to Cloudinary,
+                                                    // then persist them so the boss can review the work.
+                                                    scope.launch {
+                                                        val uploadedUrls =
+                                                            CloudinaryUploader.uploadImages(
+                                                                context = context,
+                                                                uris = imagesToUpload,
+                                                                folder = "completions"
                                                             )
-                                                        ).addOnSuccessListener {
-                                                            isCompleting = false
-                                                            selectedImages = emptyList()
-                                                            feedback = FeedbackData(
-                                                                type = FeedbackType.SUCCESS,
-                                                                title = "Job completed! ✅",
-                                                                message = "Great work! The client has been notified " +
-                                                                        "about \"${job.title}\". Your earnings will " +
-                                                                        "update shortly and they can now leave you a review.",
-                                                                confirmLabel = "Awesome"
-                                                            )
-                                                            fetchJobs()
-                                                        }.addOnFailureListener { e ->
+
+                                                        if (uploadedUrls.isEmpty()) {
                                                             isCompleting = false
                                                             feedback = FeedbackData(
                                                                 type = FeedbackType.ERROR,
-                                                                title = "Couldn't complete job",
-                                                                message = e.localizedMessage
-                                                                    ?: "Please check your connection and try again.",
+                                                                title = "Couldn't upload photos",
+                                                                message = "Your proof photos failed to upload. " +
+                                                                        "Please check your connection and try again.",
                                                                 confirmLabel = "Try again"
                                                             )
+                                                            return@launch
                                                         }
+
+                                                        db.collection("workOffers").document(job.id)
+                                                            .update(
+                                                                mapOf(
+                                                                    "status" to "COMPLETED",
+                                                                    "completionImages" to uploadedUrls,
+                                                                    "completionNote" to "Completed by worker",
+                                                                    "completedAt" to FieldValue.serverTimestamp()
+                                                                )
+                                                            ).addOnSuccessListener {
+                                                                isCompleting = false
+                                                                selectedImages = emptyList()
+                                                                feedback = FeedbackData(
+                                                                    type = FeedbackType.SUCCESS,
+                                                                    title = "Job completed! ✅",
+                                                                    message = "Great work! The client has been notified " +
+                                                                            "about \"${job.title}\". They can now review your " +
+                                                                            "proof photos and leave you a rating.",
+                                                                    confirmLabel = "Awesome"
+                                                                )
+                                                                fetchJobs()
+                                                            }.addOnFailureListener { e ->
+                                                                isCompleting = false
+                                                                feedback = FeedbackData(
+                                                                    type = FeedbackType.ERROR,
+                                                                    title = "Couldn't complete job",
+                                                                    message = e.localizedMessage
+                                                                        ?: "Please check your connection and try again.",
+                                                                    confirmLabel = "Try again"
+                                                                )
+                                                            }
+                                                    }
                                                 }
                                             },
                                             modifier = Modifier.weight(1f),

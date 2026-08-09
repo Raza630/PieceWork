@@ -281,6 +281,7 @@ fun HomeWorkerDashboardContent(
                 item {
                     WorkerHeader(
                         name = uiState.userName,
+                        photoUrl = uiState.userPhotoUrl,
                         location = uiState.userLocation,
                         onNotificationClick = onNotificationClick
                     )
@@ -1181,6 +1182,7 @@ private fun ActiveJobsRow(
 @Composable
 private fun WorkerHeader(
     name: String,
+    photoUrl: String,
     location: String,
     onNotificationClick: () -> Unit
 ) {
@@ -1208,7 +1210,23 @@ private fun WorkerHeader(
                         .border(2.dp, Color.White, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Person, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+                    if (photoUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = photoUrl,
+                            contentDescription = "Profile photo",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
                 }
                 Spacer(Modifier.width(16.dp))
                 Column {

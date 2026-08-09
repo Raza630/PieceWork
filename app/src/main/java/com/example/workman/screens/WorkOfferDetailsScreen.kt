@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Person
@@ -59,6 +61,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.workman.ChatActivity
 import com.example.workman.SharedPreferencesHelper
@@ -99,6 +103,7 @@ fun WorkOfferDetailsScreen(
     var isLoading by remember { mutableStateOf(true) }
     var isAccepting by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf<com.example.workman.components.FeedbackData?>(null) }
+    var fullScreenImage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
@@ -109,6 +114,11 @@ fun WorkOfferDetailsScreen(
         data = feedback,
         onDismiss = { feedback = null }
     )
+
+    // Full-screen viewer for completion "After" photos.
+    fullScreenImage?.let { url ->
+        FullScreenImageDialog(url = url, onDismiss = { fullScreenImage = null })
+    }
 
     fun fetchOfferDetails() {
         scope.launch {
@@ -293,6 +303,23 @@ fun WorkOfferDetailsScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextDark.copy(alpha = 0.8f),
                                 lineHeight = 22.sp
+                            )
+                        }
+
+                        // ── Completed Work proof — "After" photos + note submitted by the
+                        // worker on completion. Shown to the boss (to review before rating)
+                        // and to the worker (to see their own submission).
+                        val userRoleForCompletion = SharedPreferencesHelper(context).getUserChoice()
+                        val hasCompletionProof = current.completionImages.isNotEmpty() ||
+                                current.completionNote.isNotBlank()
+                        if (hasCompletionProof &&
+                            (current.status == "COMPLETED" || current.status == "REVIEWED")
+                        ) {
+                            Spacer(Modifier.height(16.dp))
+                            WorkCompletionSection(
+                                offer = current,
+                                isBoss = userRoleForCompletion == "Hiring",
+                                onImageClick = { fullScreenImage = it }
                             )
                         }
 
@@ -753,3 +780,108 @@ private fun BottomAcceptBar(
         }
     }
 }
+
+// ─── Work Completion Proof (After photos + note) ─────────────────────────────────
+
+@Composable
+private fun WorkCompletionSection(
+    offer: WorkOffer,
+    isBoss: Boolean,
+    onImageClick: (String) -> Unit
+) {
+    SectionCard(title = "Completed Work", icon = Icons.Default.CheckCircle) {
+        Text(
+            text = if (isBoss)
+                "The worker submitted these photos as proof of completion. Review them before rating."
+            else
+                "Photos you submitted when marking this job complete.",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextMuted
+        )
+
+        if (offer.completionNote.isNotBlank()) {
+            Spacer(Modifier.height(12.dp))
+            Surface(
+                color = SecondaryBlue.copy(alpha = 0.4f),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "\u201C${offer.completionNote}\u201D",
+                    modifier = Modifier.padding(12.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextDark
+                )
+            }
+        }
+
+        if (offer.completionImages.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                offer.completionImages.forEach { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Completion photo",
+                        modifier = Modifier
+                            .size(128.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onImageClick(url) },
+                        contentScale = ContentScale.Crop
+                    )
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Tap a photo to view full screen",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMuted,
+                fontSize = 11.sp
+            )
+        }
+    }
+}
+
+// ─── Full-screen Image Viewer ────────────────────────────────────────────────────
+
+@Composable
+private fun FullScreenImageDialog(
+    url: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f))
+                .clickable { onDismiss() },
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = url,
+                contentDescription = "Completion photo",
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = ContentScale.Fit
+            )
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 40.dp, end = 16.dp)
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .clickable { onDismiss() },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+            }
+        }
+    }
+}
+
+

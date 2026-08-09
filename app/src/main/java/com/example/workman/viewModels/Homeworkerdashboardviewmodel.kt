@@ -13,7 +13,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +58,7 @@ data class WorkerDashboardUiState(
     val banners: List<Banner> = emptyList(),
     val searchQuery: String = "",
     val userName: String = "Worker",
+    val userPhotoUrl: String = "",
     val userLocation: String = "Detecting location...",
     val filteredOffers: List<WorkOffer> = emptyList(),
     val isRefreshing: Boolean = false,
@@ -93,8 +93,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
-    private val storage = FirebaseStorage.getInstance()
-    
+
     private var allOffers: List<WorkOffer> = emptyList()
 
     /** Confirmed/pending payment records where this user is the worker. */
@@ -161,6 +160,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
                 _uiState.update { it.copy(
                     userName = doc.getString("name") ?: "Worker",
+                    userPhotoUrl = doc.getString("photoUrl") ?: "",
                     userLocation = doc.getString("location") ?: "Not set",
                     isLocationAvailable = lat != 0.0 && lng != 0.0,
                     savedOfferIds = savedIds,
@@ -733,8 +733,14 @@ class HomeWorkerDashboardViewModel : ViewModel() {
 
     fun acceptWork(workOffer: WorkOffer, onResult: (Boolean, String) -> Unit) {
         val userId = auth.currentUser?.uid ?: return
-        val userName = auth.currentUser?.displayName ?: "Worker"
-        val userPhoto = auth.currentUser?.photoUrl?.toString() ?: ""
+        val userName = _uiState.value.userName.ifBlank {
+            auth.currentUser?.displayName ?: "Worker"
+        }
+        // Prefer the Firestore profile photo (Cloudinary URL). The FirebaseAuth
+        // photoUrl is not populated by our profile flow, so it is only a fallback.
+        val userPhoto = _uiState.value.userPhotoUrl.ifBlank {
+            auth.currentUser?.photoUrl?.toString() ?: ""
+        }
 
         viewModelScope.launch {
             _uiState.update { it.copy(acceptingOfferIds = it.acceptingOfferIds + workOffer.id) }
@@ -774,6 +780,7 @@ class HomeWorkerDashboardViewModel : ViewModel() {
     }
 
     fun completeWork(
+        context: Context,
         workOffer: WorkOffer,
         images: List<Uri>,
         note: String,
@@ -787,12 +794,19 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isCompleting = true) }
             try {
-                val imageUrls = mutableListOf<String>()
-                images.forEach { uri ->
-                    val ref =
-                        storage.reference.child("completion_images/${workOffer.id}/${System.currentTimeMillis()}")
-                    ref.putFile(uri).await()
-                    imageUrls.add(ref.downloadUrl.await().toString())
+                // Upload the "After" photos to Cloudinary (no Firebase Storage / Blaze billing needed).
+                val imageUrls = com.example.workman.utils.CloudinaryUploader.uploadImages(
+                    context = context,
+                    uris = images,
+                    folder = "completions"
+                )
+
+                if (imageUrls.isEmpty()) {
+                    onResult(
+                        false,
+                        "Failed to upload completion photos. Please check your connection and try again."
+                    )
+                    return@launch
                 }
 
                 db.collection("workOffers").document(workOffer.id).update(

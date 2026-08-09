@@ -146,6 +146,7 @@ dependencies {
     // OkHttp — used for Cloudinary image uploads (free image hosting, no Firebase Storage needed)
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+
     implementation("com.google.android.play:review:2.0.2")
     implementation("com.google.android.play:review-ktx:2.0.2")
 
