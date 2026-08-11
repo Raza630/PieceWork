@@ -15,8 +15,18 @@ class NotificationsActivity : ComponentActivity() {
                 NotificationsScreen(
                     onBack = { finish() },
                     onNotificationClick = { notification ->
-                        if (notification.jobId.isNotEmpty()) {
-                            NavigationUtils.navigateToOfferDetails(this, notification.jobId)
+                        when {
+                            // Job-related notifications (job accepted / completed /
+                            // review requested / urgent job) open that job.
+                            notification.jobId.isNotEmpty() ->
+                                NavigationUtils.navigateToOfferDetails(this, notification.jobId)
+
+                            // A review left about you is shown on your profile.
+                            notification.type == "new_review" ->
+                                NavigationUtils.navigateToProfile(this)
+
+                            // Nothing specific to open — stay on the list.
+                            else -> Unit
                         }
                     }
                 )

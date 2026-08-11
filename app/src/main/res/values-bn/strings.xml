@@ -293,5 +293,18 @@
     <string name="job_post_error">ত্রুটি: %1$s</string>
     <string name="posting">পোস্ট হচ্ছে…</string>
     <string name="post_job">কাজ পোস্ট করুন</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">বিজ্ঞপ্তি</string>
+    <string name="mark_all_read">সব পঠিত হিসেবে চিহ্নিত করুন</string>
+    <string name="no_notifications">এখনও কোনো বিজ্ঞপ্তি নেই</string>
+    <string name="notifications_hint">এখানে আপনি কাজের আপডেট দেখতে পাবেন</string>
+    <string name="notifications_load_error">বিজ্ঞপ্তি লোড করা যায়নি। আবার চেষ্টা করতে ট্যাপ করুন।</string>
+    <string name="notification_default_title">বিজ্ঞপ্তি</string>
+    <string name="time_just_now">এইমাত্র</string>
+    <string name="time_minutes_ago">%1$d মিনিট আগে</string>
+    <string name="time_hours_ago">%1$d ঘণ্টা আগে</string>
+    <string name="time_days_ago">%1$d দিন আগে</string>
+    <string name="time_weeks_ago">%1$d সপ্তাহ আগে</string>
 </resources>
 

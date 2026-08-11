@@ -293,5 +293,18 @@
     <string name="job_post_error">లోపం: %1$s</string>
     <string name="posting">పోస్ట్ చేస్తోంది…</string>
     <string name="post_job">జాబ్ పోస్ట్ చేయండి</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">నోటిఫికేషన్‌లు</string>
+    <string name="mark_all_read">అన్నీ చదివినట్లు గుర్తించు</string>
+    <string name="no_notifications">ఇంకా నోటిఫికేషన్‌లు లేవు</string>
+    <string name="notifications_hint">ఇక్కడ మీకు పని అప్‌డేట్‌లు కనిపిస్తాయి</string>
+    <string name="notifications_load_error">నోటిఫికేషన్‌లను లోడ్ చేయలేకపోయాం. మళ్లీ ప్రయత్నించడానికి నొక్కండి.</string>
+    <string name="notification_default_title">నోటిఫికేషన్</string>
+    <string name="time_just_now">ఇప్పుడే</string>
+    <string name="time_minutes_ago">%1$d నిమిషాల క్రితం</string>
+    <string name="time_hours_ago">%1$d గంటల క్రితం</string>
+    <string name="time_days_ago">%1$d రోజుల క్రితం</string>
+    <string name="time_weeks_ago">%1$d వారాల క్రితం</string>
 </resources>
 

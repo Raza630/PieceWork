@@ -293,5 +293,18 @@
     <string name="job_post_error">त्रुटि: %1$s</string>
     <string name="posting">पोस्ट हो रहा है…</string>
     <string name="post_job">जॉब पोस्ट करें</string>
+
+    <!-- Notifications -->
+    <string name="notifications_title">सूचनाएँ</string>
+    <string name="mark_all_read">सभी पढ़ी हुई चिह्नित करें</string>
+    <string name="no_notifications">अभी तक कोई सूचना नहीं</string>
+    <string name="notifications_hint">यहाँ आपको काम के अपडेट दिखेंगे</string>
+    <string name="notifications_load_error">सूचनाएँ लोड नहीं हो सकीं। पुनः प्रयास के लिए टैप करें।</string>
+    <string name="notification_default_title">सूचना</string>
+    <string name="time_just_now">अभी</string>
+    <string name="time_minutes_ago">%1$d मिनट पहले</string>
+    <string name="time_hours_ago">%1$d घंटे पहले</string>
+    <string name="time_days_ago">%1$d दिन पहले</string>
+    <string name="time_weeks_ago">%1$d सप्ताह पहले</string>
 </resources>
 

@@ -14,6 +14,7 @@ import android.view.animation.ScaleAnimation
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.TaskStackBuilder
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -23,6 +24,20 @@ import androidx.core.view.WindowInsetsControllerCompat
 class SplashActivity : AppCompatActivity() {
 
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
+
+    /**
+     * Job id delivered by a push notification.
+     *
+     * When the app is in the background/killed, FCM messages that carry a
+     * `notification` payload are rendered by the system and
+     * `onMessageReceived()` is NEVER called — tapping simply launches this
+     * activity with the `data` payload as intent extras. Capturing `jobId` here
+     * is what makes those notifications deep-link correctly instead of just
+     * dumping the user on the dashboard.
+     */
+    private val deepLinkJobId: String? by lazy {
+        intent?.extras?.getString("jobId")?.takeIf { it.isNotBlank() }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -105,8 +120,15 @@ class SplashActivity : AppCompatActivity() {
         // 3. Genuinely authenticated → keep the flag in sync and route by role.
         sharedPreferencesHelper.setLoggedIn(true)
         when (userChoice) {
-            "Hiring" -> goTo(Intent(this, HomeBossDashboardActivity::class.java))
-            "Worker" -> goTo(Intent(this, HomeWorkerDashboardActivity::class.java))
+            "Hiring" -> goTo(
+                Intent(this, HomeBossDashboardActivity::class.java),
+                allowDeepLink = true
+            )
+
+            "Worker" -> goTo(
+                Intent(this, HomeWorkerDashboardActivity::class.java),
+                allowDeepLink = true
+            )
             // Logged in but no saved role → recover it from Firestore.
             else -> fetchRoleAndRoute(firebaseUser.uid)
         }
@@ -118,19 +140,44 @@ class SplashActivity : AppCompatActivity() {
             .addOnSuccessListener { doc ->
                 val role = doc.getString("role")
                 if (!role.isNullOrEmpty()) sharedPreferencesHelper.saveUserChoice(role)
-                val intent = when (role) {
-                    "Hiring" -> Intent(this, HomeBossDashboardActivity::class.java)
-                    "Worker" -> Intent(this, HomeWorkerDashboardActivity::class.java)
-                    else -> Intent(this, ChooseActivity::class.java)
+                when (role) {
+                    "Hiring" -> goTo(
+                        Intent(this, HomeBossDashboardActivity::class.java),
+                        allowDeepLink = true
+                    )
+
+                    "Worker" -> goTo(
+                        Intent(this, HomeWorkerDashboardActivity::class.java),
+                        allowDeepLink = true
+                    )
+
+                    else -> goTo(Intent(this, ChooseActivity::class.java))
                 }
-                goTo(intent)
             }
             .addOnFailureListener {
                 goTo(Intent(this, ChooseActivity::class.java))
             }
     }
 
-    private fun goTo(intent: Intent) {
+    /**
+     * @param allowDeepLink when true and the app was opened from a job
+     *   notification, the job details screen is stacked on top of [intent] so
+     *   Back still returns to the dashboard.
+     */
+    private fun goTo(intent: Intent, allowDeepLink: Boolean = false) {
+        val jobId = deepLinkJobId
+        if (allowDeepLink && jobId != null) {
+            TaskStackBuilder.create(this)
+                .addNextIntent(intent)
+                .addNextIntent(
+                    Intent(this, WorkOfferDetailsActivity::class.java)
+                        .putExtra("OFFER_ID", jobId)
+                )
+                .startActivities()
+            finish()
+            return
+        }
+
         startActivity(intent)
         finish()
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
