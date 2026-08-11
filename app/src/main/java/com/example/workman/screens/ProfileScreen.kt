@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -113,10 +114,20 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile", color = TextDark, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(R.string.profile_title),
+                        color = TextDark,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextDark)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                            tint = TextDark
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BgColor)
@@ -142,7 +153,7 @@ fun ProfileScreen(
                     if (uiState.photoUrl.isNotEmpty()) {
                         AsyncImage(
                             model = uiState.photoUrl,
-                            contentDescription = "Profile Image",
+                            contentDescription = stringResource(R.string.cd_profile_image),
                             modifier = Modifier
                                 .size(120.dp)
                                 .clip(CircleShape)
@@ -152,7 +163,7 @@ fun ProfileScreen(
                     } else {
                         Image(
                             painter = painterResource(id = R.drawable.ic_icon__profile),
-                            contentDescription = "Default Profile",
+                            contentDescription = stringResource(R.string.cd_default_profile),
                             modifier = Modifier
                                 .size(120.dp)
                                 .clip(CircleShape)
@@ -166,7 +177,11 @@ fun ProfileScreen(
                         contentColor = Color.White,
                         shape = CircleShape
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit Profile Image", modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.cd_edit_profile_image),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
@@ -180,7 +195,7 @@ fun ProfileScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            "Account Information",
+                            stringResource(R.string.account_information),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextDark
@@ -191,14 +206,14 @@ fun ProfileScreen(
                             ProfileTextField(
                                 value = uiState.firstName,
                                 onValueChange = { viewModel.onFirstNameChange(it) },
-                                label = "First Name",
+                                label = stringResource(R.string.label_first_name),
                                 modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             ProfileTextField(
                                 value = uiState.lastName,
                                 onValueChange = { viewModel.onLastNameChange(it) },
-                                label = "Last Name",
+                                label = stringResource(R.string.label_last_name),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -210,7 +225,7 @@ fun ProfileScreen(
                                 ProfileTextField(
                                     value = uiState.dob,
                                     onValueChange = {},
-                                    label = "Date of Birth",
+                                    label = stringResource(R.string.label_dob),
                                     readOnly = true,
                                     trailingIcon = {
                                         IconButton(onClick = {
@@ -219,7 +234,10 @@ fun ProfileScreen(
                                                 viewModel.onDobChange("$day/${month + 1}/$year")
                                             }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
                                         }) {
-                                            Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                                            Icon(
+                                                Icons.Default.DateRange,
+                                                contentDescription = stringResource(R.string.cd_select_date)
+                                            )
                                         }
                                     }
                                 )
@@ -229,7 +247,7 @@ fun ProfileScreen(
                                 options = listOf("Male", "Female", "Other"),
                                 selectedOption = uiState.gender,
                                 onOptionSelected = { viewModel.onGenderChange(it) },
-                                label = "Gender",
+                                label = stringResource(R.string.label_gender),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -239,7 +257,7 @@ fun ProfileScreen(
                         ProfileTextField(
                             value = uiState.email,
                             onValueChange = {},
-                            label = "Email",
+                            label = stringResource(R.string.label_email),
                             enabled = false
                         )
 
@@ -249,7 +267,7 @@ fun ProfileScreen(
                             ProfileTextField(
                                 value = uiState.phone,
                                 onValueChange = { if (it.length <= 10) viewModel.onPhoneChange(it) },
-                                label = "Phone Number",
+                                label = stringResource(R.string.label_phone),
                                 modifier = Modifier.weight(1f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -257,7 +275,7 @@ fun ProfileScreen(
                                 options = com.example.workman.utils.CategoryRepository.getCategoriesForSelection(),
                                 selectedOption = uiState.category,
                                 onOptionSelected = { viewModel.onCategoryChange(it) },
-                                label = "Occupation",
+                                label = stringResource(R.string.label_occupation),
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -267,13 +285,13 @@ fun ProfileScreen(
 
                         // Checkboxes
                         ProfileCheckbox(
-                            label = "Specially abled",
+                            label = stringResource(R.string.label_specially_abled),
                             checked = uiState.speciallyAbled == "Yes",
                             onCheckedChange = { viewModel.onSpeciallyAbledChange(if (it) "Yes" else "No") }
                         )
 
                         ProfileCheckbox(
-                            label = "I accept to receive Notifications",
+                            label = stringResource(R.string.label_accept_notifications),
                             checked = uiState.acceptNotifications == "Yes",
                             onCheckedChange = { viewModel.onAcceptNotificationsChange(if (it) "Yes" else "No") }
                         )
@@ -292,7 +310,11 @@ fun ProfileScreen(
                             if (uiState.isSaving) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                             } else {
-                                Text("Save Changes", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    stringResource(R.string.save_changes),
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -326,7 +348,7 @@ fun ProfileScreen(
                     )
                 ) {
                     Text(
-                        "Logout",
+                        stringResource(R.string.logout),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -357,7 +379,7 @@ fun PortfolioSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Work Portfolio",
+                    stringResource(R.string.work_portfolio),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDark
@@ -368,7 +390,7 @@ fun PortfolioSection(
                     IconButton(onClick = onAddImages) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "Add Portfolio Images",
+                            contentDescription = stringResource(R.string.cd_add_portfolio),
                             tint = PrimaryBlue
                         )
                     }
@@ -378,7 +400,7 @@ fun PortfolioSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             if (images.isEmpty()) {
-                Text("No portfolio images added yet.", fontSize = 14.sp, color = TextMuted)
+                Text(stringResource(R.string.no_portfolio), fontSize = 14.sp, color = TextMuted)
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
@@ -389,7 +411,7 @@ fun PortfolioSection(
                     items(images) { imageUrl ->
                         AsyncImage(
                             model = imageUrl,
-                            contentDescription = "Portfolio Image",
+                            contentDescription = stringResource(R.string.cd_portfolio_image),
                             modifier = Modifier
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(8.dp)),

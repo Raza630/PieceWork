@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -90,6 +91,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -98,6 +100,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.workman.R
+import com.example.workman.components.LanguageIconButton
+import com.example.workman.components.LanguagePickerSheet
 import com.example.workman.components.ReportDialog
 import com.example.workman.components.UrgencyBadge
 import com.example.workman.dataClass.Banner
@@ -301,8 +306,11 @@ fun HomeWorkerDashboardContent(
                 if (uiState.activeJobs.isNotEmpty()) {
                     item {
                         SectionHeader(
-                            title = "Your Active Jobs",
-                            subtitle = "${uiState.activeJobs.size} in progress",
+                            title = stringResource(R.string.active_jobs_title),
+                            subtitle = stringResource(
+                                R.string.active_jobs_subtitle,
+                                uiState.activeJobs.size
+                            ),
                             icon = Icons.Default.CheckCircle,
                             iconTint = MatchGreen
                         )
@@ -365,8 +373,11 @@ fun HomeWorkerDashboardContent(
                         if (uiState.recommendedOffers.isNotEmpty()) {
                             item {
                                 SectionHeader(
-                                    title = "Recommended for You",
-                                    subtitle = "${uiState.recommendedOffers.size} best matches",
+                                    title = stringResource(R.string.recommended_title),
+                                    subtitle = stringResource(
+                                        R.string.recommended_subtitle,
+                                        uiState.recommendedOffers.size
+                                    ),
                                     icon = Icons.Default.Star,
                                     iconTint = MatchGold
                                 )
@@ -394,8 +405,14 @@ fun HomeWorkerDashboardContent(
                         if (uiState.otherOffers.isNotEmpty()) {
                             item {
                                 SectionHeader(
-                                    title = if (uiState.recommendedOffers.isNotEmpty()) "Other Available Work" else "Available Work",
-                                    subtitle = "${uiState.nearbyOfferCount} jobs within ${uiState.searchRadiusKm.toInt()} km",
+                                    title = if (uiState.recommendedOffers.isNotEmpty()) stringResource(
+                                        R.string.other_available_work
+                                    ) else stringResource(R.string.available_work),
+                                    subtitle = stringResource(
+                                        R.string.jobs_within_km,
+                                        uiState.nearbyOfferCount,
+                                        uiState.searchRadiusKm.toInt()
+                                    ),
                                     icon = null,
                                     iconTint = PrimaryBlue
                                 )
@@ -547,7 +564,7 @@ private fun MatchBadge(scoredOffer: JobMatchingEngine.ScoredOffer) {
                 Spacer(Modifier.width(4.dp))
             }
             Text(
-                text = "${score}% match",
+                text = stringResource(R.string.match_percent, score),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 color = badgeColor
@@ -580,16 +597,16 @@ private fun MatchBreakdown(scoredOffer: JobMatchingEngine.ScoredOffer) {
             .padding(12.dp)
     ) {
         Text(
-            "Why we recommend this",
+            stringResource(R.string.why_recommend_title),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = TextDark
         )
         Spacer(Modifier.height(8.dp))
-        BreakdownRow("Skill match", scoredOffer.categoryScore)
-        BreakdownRow("Distance", scoredOffer.distanceScore)
-        BreakdownRow("Your history", scoredOffer.historyScore)
-        BreakdownRow("Freshness", scoredOffer.recencyScore)
+        BreakdownRow(stringResource(R.string.breakdown_skill_match), scoredOffer.categoryScore)
+        BreakdownRow(stringResource(R.string.breakdown_distance), scoredOffer.distanceScore)
+        BreakdownRow(stringResource(R.string.breakdown_history), scoredOffer.historyScore)
+        BreakdownRow(stringResource(R.string.breakdown_freshness), scoredOffer.recencyScore)
     }
 }
 
@@ -643,7 +660,11 @@ private fun EarningsMotivationCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("This week", fontSize = 12.sp, color = TextMuted)
+                    Text(
+                        stringResource(R.string.earnings_this_week),
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "${earnings.currency} ${earnings.weeklyEarnings.toLong()}",
@@ -662,7 +683,7 @@ private fun EarningsMotivationCard(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            "${earnings.completedThisWeek} done",
+                            stringResource(R.string.earnings_done, earnings.completedThisWeek),
                             fontSize = 12.sp,
                             color = TextDark,
                             fontWeight = FontWeight.Medium
@@ -677,7 +698,7 @@ private fun EarningsMotivationCard(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                "${earnings.pendingPayout} pending",
+                                stringResource(R.string.earnings_pending, earnings.pendingPayout),
                                 fontSize = 12.sp,
                                 color = TextMuted
                             )
@@ -750,8 +771,12 @@ private fun LevelProgressBar(completedJobs: Int) {
         Spacer(Modifier.weight(1f))
         Text(
             if (nextInfo != null)
-                "${nextInfo.second} more to ${WorkerLevel.getDisplayName(nextInfo.first)}"
-            else "Max level reached ⭐",
+                stringResource(
+                    R.string.level_more_to_next,
+                    nextInfo.second,
+                    WorkerLevel.getDisplayName(nextInfo.first)
+                )
+            else stringResource(R.string.level_max_reached),
             fontSize = 11.sp,
             color = TextMuted
         )
@@ -792,7 +817,11 @@ private fun FilterButton(activeCount: Int, onClick: () -> Unit) {
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(Icons.Default.List, contentDescription = "Filters", tint = Color.White)
+        Icon(
+            Icons.Default.List,
+            contentDescription = stringResource(R.string.cd_filters),
+            tint = Color.White
+        )
         if (activeCount > 0) {
             Box(
                 modifier = Modifier
@@ -839,14 +868,22 @@ private fun ResultsSummary(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(6.dp))
-                Text("Enable location", color = Color.White, fontSize = 13.sp)
+                Text(
+                    stringResource(R.string.enable_location),
+                    color = Color.White,
+                    fontSize = 13.sp
+                )
             }
             Spacer(Modifier.height(8.dp))
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (isLocationAvailable) "$count jobs within ${radiusKm.toInt()} km" else "$count jobs",
+                if (isLocationAvailable) stringResource(
+                    R.string.jobs_within_km,
+                    count,
+                    radiusKm.toInt()
+                ) else stringResource(R.string.jobs_count, count),
                 fontSize = 12.sp,
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Medium
@@ -869,7 +906,7 @@ private fun ResultsSummary(
                 modifier = Modifier.clickable { onOpenFilters() }
             ) {
                 Text(
-                    "Category: $selectedCategory",
+                    stringResource(R.string.category_prefix, selectedCategory),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     fontSize = 11.sp,
                     color = PrimaryBlue,
@@ -905,21 +942,21 @@ private fun FilterSheetContent(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Filters",
+                stringResource(R.string.cd_filters),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = TextDark
             )
             Spacer(Modifier.weight(1f))
             TextButton(onClick = onReset) {
-                Text("Reset", color = PrimaryBlue)
+                Text(stringResource(R.string.reset), color = PrimaryBlue)
             }
         }
 
         // Distance
-        FilterSectionLabel("Distance")
+        FilterSectionLabel(stringResource(R.string.filter_distance))
         if (!isLocationAvailable) {
             Text(
-                "Turn on location to filter jobs by distance.",
+                stringResource(R.string.filter_location_hint),
                 fontSize = 12.sp,
                 color = TextMuted
             )
@@ -930,7 +967,7 @@ private fun FilterSheetContent(
             ) {
                 Icon(Icons.Default.LocationOn, null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Enable location")
+                Text(stringResource(R.string.enable_location))
             }
         } else {
             FilterChipsRow(
@@ -942,7 +979,7 @@ private fun FilterSheetContent(
         }
 
         // Sort
-        FilterSectionLabel("Sort by")
+        FilterSectionLabel(stringResource(R.string.filter_sort_by))
         FilterChipsRow(
             options = OfferSortOption.entries.toList(),
             isSelected = { it == selectedSort },
@@ -952,7 +989,7 @@ private fun FilterSheetContent(
 
         // Category
         if (categories.size > 1) {
-            FilterSectionLabel("Category")
+            FilterSectionLabel(stringResource(R.string.filter_category))
             FilterChipsRow(
                 options = categories,
                 isSelected = { it == selectedCategory },
@@ -974,7 +1011,7 @@ private fun FilterSheetContent(
                 modifier = Modifier.size(18.dp)
             )
             Spacer(Modifier.width(8.dp))
-            Text("Create job alert for this search", color = PrimaryBlue)
+            Text(stringResource(R.string.create_job_alert), color = PrimaryBlue)
         }
 
         Spacer(Modifier.height(12.dp))
@@ -986,7 +1023,7 @@ private fun FilterSheetContent(
             contentPadding = PaddingValues(vertical = 14.dp)
         ) {
             Text(
-                "Show $resultCount results",
+                stringResource(R.string.show_results, resultCount),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp
@@ -1037,7 +1074,7 @@ private fun <T> FilterChipsRow(
 private fun NewBadge() {
     Surface(color = MatchGreen, shape = RoundedCornerShape(6.dp)) {
         Text(
-            text = "NEW",
+            text = stringResource(R.string.badge_new),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
@@ -1058,7 +1095,7 @@ private fun BossPreview(name: String, photo: String, rating: Double) {
             }&background=E8E9FF&color=5B61F4"
         AsyncImage(
             model = photo.ifBlank { placeholder },
-            contentDescription = "Poster",
+            contentDescription = stringResource(R.string.cd_poster),
             modifier = Modifier
                 .size(28.dp)
                 .clip(CircleShape),
@@ -1090,7 +1127,7 @@ private fun BossPreview(name: String, photo: String, rating: Double) {
                     )
                 }
             } else {
-                Text("Job poster", fontSize = 10.sp, color = TextMuted)
+                Text(stringResource(R.string.poster_role), fontSize = 10.sp, color = TextMuted)
             }
         }
     }
@@ -1119,7 +1156,7 @@ private fun ActiveJobsRow(
                             shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                "In progress",
+                                stringResource(R.string.status_in_progress),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
@@ -1144,7 +1181,7 @@ private fun ActiveJobsRow(
                     )
                     if (job.bossName.isNotBlank()) {
                         Text(
-                            "For ${job.bossName}",
+                            stringResource(R.string.for_boss, job.bossName),
                             fontSize = 11.sp,
                             color = TextMuted,
                             maxLines = 1,
@@ -1167,7 +1204,7 @@ private fun ActiveJobsRow(
                         )
                         Spacer(Modifier.width(6.dp))
                         Text(
-                            "Mark Complete",
+                            stringResource(R.string.mark_complete),
                             color = Color.White,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -1186,6 +1223,8 @@ private fun WorkerHeader(
     location: String,
     onNotificationClick: () -> Unit
 ) {
+    var showLanguageSheet by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1213,7 +1252,7 @@ private fun WorkerHeader(
                     if (photoUrl.isNotBlank()) {
                         AsyncImage(
                             model = photoUrl,
-                            contentDescription = "Profile photo",
+                            contentDescription = stringResource(R.string.cd_profile_photo),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(CircleShape),
@@ -1231,7 +1270,7 @@ private fun WorkerHeader(
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text(
-                        "Hello, $name!",
+                        stringResource(R.string.greeting_hello, name),
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -1245,17 +1284,57 @@ private fun WorkerHeader(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(alpha = 0.15f))
-                    .clickable { onNotificationClick() },
-                contentAlignment = Alignment.Center
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = Color.White)
+                // Notification icon with badge — positioned at the top for maximum visibility.
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.15f))
+                            .clickable { onNotificationClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = stringResource(R.string.cd_notifications),
+                            tint = Color.White
+                        )
+                    }
+
+                    // Notification Badge — red dot with a white offset border to prevent "collapsed" look.
+                    // This creates a distinct visual separation from the gradient background.
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 2.dp, y = (-2).dp)
+                            .size(12.dp)
+                            .border(
+                                2.dp,
+                                GradientStart,
+                                CircleShape
+                            ) // Background-matched border for depth
+                            .padding(1.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFE53935)) // Standard urgency red
+                            .border(1.dp, Color.White, CircleShape) // Contrast border
+                    )
+                }
+
+                // Language switcher — placed below notifications to reduce horizontal clutter.
+                LanguageIconButton(onClick = { showLanguageSheet = true })
             }
         }
+    }
+
+    if (showLanguageSheet) {
+        LanguagePickerSheet(
+            onDismiss = { showLanguageSheet = false },
+            accentColor = PrimaryBlue
+        )
     }
 }
 
@@ -1288,7 +1367,10 @@ private fun WorkerSearchBar(
                 singleLine = true,
                 textStyle = LocalTextStyle.current.copy(color = TextDark, fontSize = 16.sp),
                 decorationBox = { inner ->
-                    if (query.isEmpty()) Text("Search for work opportunities...", color = TextMuted)
+                    if (query.isEmpty()) Text(
+                        stringResource(R.string.worker_search_hint),
+                        color = TextMuted
+                    )
                     inner()
                 }
             )
@@ -1337,7 +1419,7 @@ private fun WorkOfferCard(
                     Spacer(Modifier.weight(1f))
                     Icon(
                         if (showBreakdown) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Why recommended",
+                        contentDescription = stringResource(R.string.cd_why_recommended),
                         tint = TextMuted,
                         modifier = Modifier.size(20.dp)
                     )
@@ -1373,7 +1455,9 @@ private fun WorkOfferCard(
                         )
                         Icon(
                             imageVector = if (isSaved) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = if (isSaved) "Remove from saved" else "Save job",
+                            contentDescription = if (isSaved) stringResource(R.string.cd_remove_saved) else stringResource(
+                                R.string.cd_save_job
+                            ),
                             tint = if (isSaved) Color(0xFFE53935) else TextMuted,
                             modifier = Modifier
                                 .size(22.dp)
@@ -1523,9 +1607,9 @@ private fun WorkOfferCard(
                     } else {
                         Text(
                             when {
-                                isCompleted -> "✓ Completed"
-                                isAcceptedByMe -> "Accepted"
-                                else -> "Accept Work"
+                                isCompleted -> stringResource(R.string.status_completed)
+                                isAcceptedByMe -> stringResource(R.string.status_accepted)
+                                else -> stringResource(R.string.accept_work)
                             },
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
@@ -1596,7 +1680,10 @@ private fun WorkerEmptyState(
         Icon(Icons.Default.Search, null, modifier = Modifier.size(64.dp), tint = SecondaryBlue)
         Spacer(Modifier.height(16.dp))
         Text(
-            if (query.isEmpty()) "No work offers available right now." else "No matches found for '$query'",
+            if (query.isEmpty()) stringResource(R.string.empty_no_offers) else stringResource(
+                R.string.empty_no_matches,
+                query
+            ),
             textAlign = TextAlign.Center,
             color = TextMuted
         )
@@ -1617,7 +1704,11 @@ private fun WorkerEmptyState(
                 )
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "Try ${suggestedRadius.toInt()} km — $suggestedCount jobs",
+                    stringResource(
+                        R.string.empty_try_radius,
+                        suggestedRadius.toInt(),
+                        suggestedCount
+                    ),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
@@ -1643,13 +1734,13 @@ private fun WorkerEmptyState(
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Add your skills to get 3x more matches",
+                            stringResource(R.string.empty_add_skills_title),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = TextDark
                         )
                         Text(
-                            "Set your job category in your profile.",
+                            stringResource(R.string.empty_add_skills_subtitle),
                             fontSize = 11.sp,
                             color = TextMuted
                         )
@@ -1671,11 +1762,15 @@ private fun WorkerErrorState(message: String, onRetry: () -> Unit) {
     ) {
         Icon(Icons.Default.Warning, null, modifier = Modifier.size(48.dp), tint = Color.Red.copy(alpha = 0.6f))
         Spacer(Modifier.height(16.dp))
-        Text("Oops! Something went wrong", fontWeight = FontWeight.Bold, color = TextDark)
+        Text(
+            stringResource(R.string.error_generic_title),
+            fontWeight = FontWeight.Bold,
+            color = TextDark
+        )
         Text(message, color = TextMuted, textAlign = TextAlign.Center, fontSize = 12.sp)
         Spacer(Modifier.height(24.dp))
         Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)) {
-            Text("Retry")
+            Text(stringResource(R.string.retry))
         }
     }
 }
@@ -1683,13 +1778,14 @@ private fun WorkerErrorState(message: String, onRetry: () -> Unit) {
 @Composable
 private fun WorkerBottomNav(selectedIndex: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
-        Triple(Icons.Default.Home, Icons.Outlined.Home, "Home"),
-        Triple(Icons.Filled.List, Icons.Outlined.List, "Jobs"),
-        Triple(Icons.Filled.Email, Icons.Outlined.Email, "Chat"),
-        Triple(Icons.Filled.Person, Icons.Outlined.Person, "Profile")
+        Triple(Icons.Default.Home, Icons.Outlined.Home, R.string.nav_home),
+        Triple(Icons.Filled.List, Icons.Outlined.List, R.string.nav_jobs),
+        Triple(Icons.Filled.Email, Icons.Outlined.Email, R.string.nav_chat),
+        Triple(Icons.Filled.Person, Icons.Outlined.Person, R.string.nav_profile)
     )
     NavigationBar(containerColor = CardBg, tonalElevation = 8.dp) {
-        items.forEachIndexed { index, (filled, outlined, label) ->
+        items.forEachIndexed { index, (filled, outlined, labelRes) ->
+            val label = stringResource(labelRes)
             NavigationBarItem(
                 selected = selectedIndex == index,
                 onClick = { onSelect(index) },

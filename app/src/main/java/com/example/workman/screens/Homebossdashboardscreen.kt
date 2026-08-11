@@ -109,6 +109,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -117,6 +118,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.workman.R
+import com.example.workman.components.LanguageIconButton
+import com.example.workman.components.LanguagePickerSheet
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
@@ -192,8 +195,13 @@ fun HomeBossDashboardScreen(
                 onClick = onCreateWork,
                 containerColor = Orange,
                 contentColor = Color.White,
-                icon = { Icon(Icons.Default.Add, contentDescription = "Post a Job") },
-                text = { Text("Post a Job", fontWeight = FontWeight.Bold) }
+                icon = {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = stringResource(R.string.post_a_job)
+                    )
+                },
+                text = { Text(stringResource(R.string.post_a_job), fontWeight = FontWeight.Bold) }
             )
         }
     ) { innerPadding ->
@@ -260,13 +268,13 @@ fun RatingDialog(
                 )
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Rate ${booking.workerName}",
+                    stringResource(R.string.rate_worker, booking.workerName),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = TextDark
                 )
                 Text(
-                    "How was your experience?",
+                    stringResource(R.string.rate_how_was_experience),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextMuted
                 )
@@ -295,7 +303,12 @@ fun RatingDialog(
                 OutlinedTextField(
                     value = review,
                     onValueChange = { review = it },
-                    placeholder = { Text("Write a review (optional)", color = TextMuted) },
+                    placeholder = {
+                        Text(
+                            stringResource(R.string.write_review_optional),
+                            color = TextMuted
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(120.dp),
@@ -313,12 +326,12 @@ fun RatingDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Orange),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Submit Review", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.submit_review), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Skip", color = TextMuted)
+                Text(stringResource(R.string.skip), color = TextMuted)
             }
         }
     )
@@ -380,14 +393,14 @@ private fun HomeContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Workers",
+                        text = stringResource(R.string.workers),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = TextDark
                         )
                     )
                     Text(
-                        "${uiState.filteredWorkers.size} found",
+                        stringResource(R.string.workers_found, uiState.filteredWorkers.size),
                         fontSize = 12.sp,
                         color = Orange,
                         fontWeight = FontWeight.Medium
@@ -498,7 +511,7 @@ private fun ActiveFilterBar(
             }
         }
         TextButton(onClick = onClearAll) {
-            Text("Clear all", fontSize = 12.sp, color = Orange)
+            Text(stringResource(R.string.clear_all), fontSize = 12.sp, color = Orange)
         }
     }
 }
@@ -557,13 +570,13 @@ private fun FilterBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Filter Workers",
+                            stringResource(R.string.filter_workers),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = TextDark
                         )
                         TextButton(onClick = onClearAll) {
-                            Text("Reset", color = Orange)
+                            Text(stringResource(R.string.reset), color = Orange)
                         }
                     }
 
@@ -571,7 +584,7 @@ private fun FilterBottomSheet(
 
                     // ── Distance Section
                     Text(
-                        "Distance",
+                        stringResource(R.string.distance),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         color = TextDark
@@ -596,14 +609,14 @@ private fun FilterBottomSheet(
 
                     // ── Categories label
                     Text(
-                        "Categories",
+                        stringResource(R.string.categories),
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         color = TextDark
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Select multiple to filter",
+                        stringResource(R.string.categories_select_hint),
                         fontSize = 12.sp,
                         color = TextMuted
                     )
@@ -656,8 +669,11 @@ private fun FilterBottomSheet(
                         colors = ButtonDefaults.buttonColors(containerColor = Orange)
                     ) {
                         Text(
-                            text = if (selectedCategories.isEmpty()) "Apply Filters"
-                            else "Show Results (${selectedCategories.size} selected)",
+                            text = if (selectedCategories.isEmpty()) stringResource(R.string.apply_filters)
+                            else stringResource(
+                                R.string.show_results_selected,
+                                selectedCategories.size
+                            ),
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         )
@@ -685,14 +701,14 @@ private fun ServicesContent(
         item {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
                 Text(
-                    "Find Services",
+                    stringResource(R.string.find_services),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         color = TextDark
                     )
                 )
                 Text(
-                    "Select a category to find experts",
+                    stringResource(R.string.find_services_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextMuted
                 )
@@ -704,7 +720,7 @@ private fun ServicesContent(
             DashboardSearchBar(
                 query = uiState.serviceSearchQuery,
                 onQueryChange = viewModel::onServiceSearchQueryChange,
-                placeholder = "Search for plumbing, electrical...",
+                placeholder = stringResource(R.string.search_service_hint),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
             Spacer(Modifier.height(16.dp))
@@ -713,7 +729,7 @@ private fun ServicesContent(
         // ── Popular Services (Horizontal Scroll)
         item {
             Text(
-                "Popular Services",
+                stringResource(R.string.popular_services),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
             )
@@ -731,7 +747,7 @@ private fun ServicesContent(
         // ── Categories Grid
         item {
             Text(
-                "All Categories",
+                stringResource(R.string.all_categories),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
             )
@@ -805,7 +821,7 @@ private fun CategoryGridItem(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Starts from ${category.startingRate}",
+                    stringResource(R.string.starts_from, category.startingRate),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Orange
@@ -878,6 +894,8 @@ private fun BossHeader(
     photoUrl: String,
     location: String
 ) {
+    var showLanguageSheet by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -902,7 +920,7 @@ private fun BossHeader(
                 if (photoUrl.isNotBlank()) {
                     AsyncImage(
                         model = photoUrl,
-                        contentDescription = "Profile photo",
+                        contentDescription = stringResource(R.string.cd_profile_photo),
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape),
@@ -918,9 +936,9 @@ private fun BossHeader(
                 }
             }
             Spacer(Modifier.width(16.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Hello, $name!",
+                    stringResource(R.string.greeting_hello, name),
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
@@ -932,7 +950,23 @@ private fun BossHeader(
                     Text(location, color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
                 }
             }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Language switcher — top-right of the header, the conventional home for
+                // global app settings, so it's easy to find but never in the way of content.
+                LanguageIconButton(onClick = { showLanguageSheet = true })
+            }
         }
+    }
+
+    if (showLanguageSheet) {
+        LanguagePickerSheet(
+            onDismiss = { showLanguageSheet = false },
+            accentColor = Orange
+        )
     }
 }
 
@@ -1009,7 +1043,11 @@ private fun WorkerListError(message: String, onRetry: () -> Unit) {
     ) {
         Icon(Icons.Default.Warning, contentDescription = null, tint = Orange, modifier = Modifier.size(48.dp))
         Spacer(Modifier.height(12.dp))
-        Text("Failed to load workers", fontWeight = FontWeight.SemiBold, color = TextDark)
+        Text(
+            stringResource(R.string.workers_load_failed),
+            fontWeight = FontWeight.SemiBold,
+            color = TextDark
+        )
         Spacer(Modifier.height(4.dp))
         Text(message, fontSize = 12.sp, color = TextMuted)
         Spacer(Modifier.height(20.dp))
@@ -1019,7 +1057,7 @@ private fun WorkerListError(message: String, onRetry: () -> Unit) {
         ) {
             Icon(Icons.Default.Refresh, contentDescription = null)
             Spacer(Modifier.width(6.dp))
-            Text("Retry")
+            Text(stringResource(R.string.retry))
         }
     }
 }
@@ -1037,7 +1075,10 @@ private fun WorkerListEmpty(query: String) {
         Icon(Icons.Default.Search, contentDescription = null, tint = OrangeLight, modifier = Modifier.size(48.dp))
         Spacer(Modifier.height(12.dp))
         Text(
-            text  = if (query.isBlank()) "No workers available" else "No results for \"$query\"",
+            text = if (query.isBlank()) stringResource(R.string.no_workers_available) else stringResource(
+                R.string.no_results_for,
+                query
+            ),
             color = TextMuted
         )
     }
@@ -1050,7 +1091,7 @@ private fun DashboardSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search workers or category...",
+    placeholder: String = stringResource(R.string.search_workers_hint),
     onFilterClick: (() -> Unit)? = null,
     activeFilterCount: Int = 0
 ) {
@@ -1079,7 +1120,12 @@ private fun DashboardSearchBar(
         )
         if (query.isNotEmpty()) {
             IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(24.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextMuted, modifier = Modifier.size(16.dp))
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.cd_clear),
+                    tint = TextMuted,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
         Spacer(Modifier.width(8.dp))
@@ -1092,7 +1138,10 @@ private fun DashboardSearchBar(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (activeFilterCount > 0) "Filter ($activeFilterCount)" else "Filter",
+                    if (activeFilterCount > 0) stringResource(
+                        R.string.filter_count,
+                        activeFilterCount
+                    ) else stringResource(R.string.filter_label),
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
@@ -1190,7 +1239,12 @@ private fun WorkerCard(
                         .clickable { },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = "Share", tint = TextDark, modifier = Modifier.size(14.dp))
+                    Icon(
+                        Icons.Default.Share,
+                        contentDescription = stringResource(R.string.cd_share),
+                        tint = TextDark,
+                        modifier = Modifier.size(14.dp)
+                    )
                 }
                 Box(
                     modifier = Modifier
@@ -1216,12 +1270,21 @@ private fun WorkerCard(
                     Icon(Icons.Default.Build, contentDescription = null, tint = Orange, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(worker.category, fontSize = 11.sp, color = TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Icon(Icons.Default.MoreVert, contentDescription = "Options", tint = TextMuted, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.cd_options),
+                        tint = TextMuted,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(worker.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
                 Spacer(Modifier.height(2.dp))
-                Text("${worker.yearsOfExperience} years of experience", fontSize = 12.sp, color = TextMuted)
+                Text(
+                    stringResource(R.string.worker_experience_years, worker.yearsOfExperience),
+                    fontSize = 12.sp,
+                    color = TextMuted
+                )
                 // Distance badge
                 if (worker.distanceKm >= 0) {
                     Spacer(Modifier.height(2.dp))
@@ -1260,7 +1323,12 @@ private fun WorkerCard(
                             .clickable { },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "Shortlist", tint = Orange, modifier = Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.cd_shortlist),
+                            tint = Orange,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
@@ -1340,7 +1408,11 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
                 .padding(4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            val tabs = listOf("Pending", "Active", "History")
+            val tabs = listOf(
+                stringResource(R.string.booking_tab_pending),
+                stringResource(R.string.booking_tab_active),
+                stringResource(R.string.booking_tab_history)
+            )
             tabs.forEachIndexed { index, label ->
                 val selected = uiState.selectedBookingTab == index
                 Box(
@@ -1372,16 +1444,16 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
         ) {
             Text(
                 text = when(uiState.selectedBookingTab) {
-                    0 -> "Pending Requests"
-                    1 -> "Ongoing Jobs"
-                    else -> "Past Bookings"
+                    0 -> stringResource(R.string.booking_header_pending)
+                    1 -> stringResource(R.string.booking_header_active)
+                    else -> stringResource(R.string.booking_header_history)
                 },
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
             IconButton(onClick = { isCalendarView = !isCalendarView }) {
                 Icon(
                     if (isCalendarView) Icons.Default.List else Icons.Outlined.DateRange,
-                    contentDescription = "Toggle View",
+                    contentDescription = stringResource(R.string.cd_toggle_view),
                     tint = Orange
                 )
             }
@@ -1398,13 +1470,13 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "Booking Calendar",
+                        stringResource(R.string.booking_calendar_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = TextDark
                     )
                     Text(
-                        "View and manage your schedule in a monthly view",
+                        stringResource(R.string.booking_calendar_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextMuted,
                         modifier = Modifier.padding(horizontal = 48.dp),
@@ -1416,7 +1488,7 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
                         colors = ButtonDefaults.buttonColors(containerColor = Orange),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text("Back to List View")
+                        Text(stringResource(R.string.booking_back_to_list))
                     }
                 }
             }
@@ -1444,9 +1516,9 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
                         Spacer(Modifier.height(12.dp))
                         Text(
                             text = when (uiState.selectedBookingTab) {
-                                0 -> "No pending job posts"
-                                1 -> "No ongoing jobs"
-                                else -> "No past bookings yet"
+                                0 -> stringResource(R.string.booking_empty_pending)
+                                1 -> stringResource(R.string.booking_empty_active)
+                                else -> stringResource(R.string.booking_empty_history)
                             },
                             fontWeight = FontWeight.Bold,
                             color = TextDark
@@ -1454,9 +1526,9 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = when (uiState.selectedBookingTab) {
-                                0 -> "Tap 'Post a Job' to hire a worker."
-                                1 -> "Accepted jobs in progress will appear here."
-                                else -> "Completed & cancelled jobs are kept here."
+                                0 -> stringResource(R.string.booking_empty_pending_sub)
+                                1 -> stringResource(R.string.booking_empty_active_sub)
+                                else -> stringResource(R.string.booking_empty_history_sub)
                             },
                             color = TextMuted,
                             fontSize = 13.sp,
@@ -1556,7 +1628,7 @@ private fun BookingCard(
                         maxLines = 1
                     )
                     Text(
-                        text = if (hasWorker) booking.workerName else "Waiting for a worker to accept…",
+                        text = if (hasWorker) booking.workerName else stringResource(R.string.booking_waiting_worker),
                         color = if (hasWorker) TextMuted else Orange,
                         fontSize = 13.sp
                     )
@@ -1572,7 +1644,11 @@ private fun BookingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("Agreed Rate", color = TextMuted, fontSize = 11.sp)
+                    Text(
+                        stringResource(R.string.booking_agreed_rate),
+                        color = TextMuted,
+                        fontSize = 11.sp
+                    )
                     val rateText =
                         if (booking.agreedRate.any { it.isDigit() }) "₹${booking.agreedRate}" else booking.agreedRate
                     Text(
@@ -1583,7 +1659,11 @@ private fun BookingCard(
                     )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("Scheduled For", color = TextMuted, fontSize = 11.sp)
+                    Text(
+                        stringResource(R.string.booking_scheduled_for),
+                        color = TextMuted,
+                        fontSize = 11.sp
+                    )
                     Text(dateFormatter.format(booking.date), fontWeight = FontWeight.Medium, fontSize = 13.sp)
                 }
             }
@@ -1598,7 +1678,7 @@ private fun BookingCard(
                         border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                     ) {
-                        Text("Cancel Job Post", fontSize = 13.sp)
+                        Text(stringResource(R.string.booking_cancel_post), fontSize = 13.sp)
                     }
                 }
 
@@ -1614,14 +1694,14 @@ private fun BookingCard(
                             border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.5f)),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red)
                         ) {
-                            Text("Cancel", fontSize = 12.sp)
+                            Text(stringResource(R.string.action_cancel), fontSize = 12.sp)
                         }
                         Button(
                             onClick = onComplete,
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                         ) {
-                            Text("Mark Complete", fontSize = 12.sp)
+                            Text(stringResource(R.string.mark_complete), fontSize = 12.sp)
                         }
                     }
                 }
@@ -1652,7 +1732,10 @@ private fun BookingCard(
                                 )
                                 Spacer(Modifier.width(6.dp))
                                 Text(
-                                    "You've reviewed ${booking.workerName}",
+                                    stringResource(
+                                        R.string.booking_reviewed_worker,
+                                        booking.workerName
+                                    ),
                                     color = Color(0xFF4CAF50),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
@@ -1671,11 +1754,15 @@ private fun BookingCard(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(Modifier.width(8.dp))
-                                Text("Rate Worker", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    stringResource(R.string.rate_worker_button),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                "You can leave feedback for ${booking.workerName} anytime.",
+                                stringResource(R.string.booking_leave_feedback, booking.workerName),
                                 color = TextMuted,
                                 fontSize = 11.sp,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -1692,11 +1779,11 @@ private fun BookingCard(
 @Composable
 private fun StatusBadge(status: BookingStatus) {
     val (color, text) = when (status) {
-        BookingStatus.PENDING -> Color(0xFFFFA000) to "Pending"
-        BookingStatus.ACTIVE -> Color(0xFF2196F3) to "Active"
-        BookingStatus.IN_PROGRESS -> Color(0xFF9C27B0) to "In Progress"
-        BookingStatus.COMPLETED -> Color(0xFF4CAF50) to "Completed"
-        BookingStatus.CANCELLED -> Color(0xFFF44336) to "Cancelled"
+        BookingStatus.PENDING -> Color(0xFFFFA000) to stringResource(R.string.status_pending)
+        BookingStatus.ACTIVE -> Color(0xFF2196F3) to stringResource(R.string.status_active)
+        BookingStatus.IN_PROGRESS -> Color(0xFF9C27B0) to stringResource(R.string.status_in_progress_badge)
+        BookingStatus.COMPLETED -> Color(0xFF4CAF50) to stringResource(R.string.status_completed_badge)
+        BookingStatus.CANCELLED -> Color(0xFFF44336) to stringResource(R.string.status_cancelled)
     }
 
     Box(
@@ -1721,13 +1808,14 @@ private fun StatusBadge(status: BookingStatus) {
 @Composable
 private fun HomeBossBottomNav(selectedIndex: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
-        Pair(Icons.Default.Home,       "Home"),
-        Pair(Icons.Outlined.DateRange, "Bookings"),
-        Pair(Icons.Outlined.Email,     "Chat"),
-        Pair(Icons.Outlined.Person,    "Profile")
+        Pair(Icons.Default.Home, R.string.nav_home),
+        Pair(Icons.Outlined.DateRange, R.string.nav_bookings),
+        Pair(Icons.Outlined.Email, R.string.nav_chat),
+        Pair(Icons.Outlined.Person, R.string.nav_profile)
     )
     NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
-        items.forEachIndexed { index, (icon, label) ->
+        items.forEachIndexed { index, (icon, labelRes) ->
+            val label = stringResource(labelRes)
             NavigationBarItem(
                 selected = selectedIndex == index,
                 onClick  = { onSelect(index) },

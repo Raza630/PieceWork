@@ -50,11 +50,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.workman.ChatActivity
+import com.example.workman.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -94,6 +96,7 @@ fun WorkerDetailsScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val workerFallback = stringResource(R.string.role_worker)
 
     val profile by produceState(initialValue = WorkerProfileData(), workerId) {
         value = try {
@@ -103,7 +106,7 @@ fun WorkerDetailsScreen(
                 id = workerId,
                 name = doc.getString("name")
                     ?: listOfNotNull(doc.getString("firstName"), doc.getString("lastName"))
-                        .joinToString(" ").ifBlank { "Worker" },
+                        .joinToString(" ").ifBlank { workerFallback },
                 email = doc.getString("email") ?: "",
                 dob = doc.getString("dob") ?: "",
                 gender = doc.getString("gender") ?: "",
@@ -124,7 +127,7 @@ fun WorkerDetailsScreen(
                 loaded = true
             )
         } catch (e: Exception) {
-            WorkerProfileData(id = workerId, name = "Worker", loaded = true)
+            WorkerProfileData(id = workerId, name = workerFallback, loaded = true)
         }
     }
 
@@ -134,14 +137,18 @@ fun WorkerDetailsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Worker Profile",
+                        stringResource(R.string.worker_profile),
                         color = WdTextDark,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = WdTextDark)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            stringResource(R.string.cd_back),
+                            tint = WdTextDark
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -203,7 +210,7 @@ fun WorkerDetailsScreen(
                             Spacer(Modifier.width(6.dp))
                             Icon(
                                 Icons.Default.CheckCircle,
-                                "Verified",
+                                stringResource(R.string.cd_verified),
                                 tint = Color.White,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -241,11 +248,19 @@ fun WorkerDetailsScreen(
             ) {
                 StatCard(
                     "⭐ ${"%.1f".format(profile.rating)}",
-                    "${profile.reviewCount} reviews",
+                    stringResource(R.string.reviews_count, profile.reviewCount),
                     Modifier.weight(1f)
                 )
-                StatCard("${profile.completedJobs}", "Jobs done", Modifier.weight(1f))
-                StatCard("${profile.yearsOfExperience} yr", "Experience", Modifier.weight(1f))
+                StatCard(
+                    "${profile.completedJobs}",
+                    stringResource(R.string.jobs_done),
+                    Modifier.weight(1f)
+                )
+                StatCard(
+                    stringResource(R.string.years_short, profile.yearsOfExperience),
+                    stringResource(R.string.experience),
+                    Modifier.weight(1f)
+                )
             }
 
             Spacer(Modifier.height(16.dp))
@@ -258,9 +273,13 @@ fun WorkerDetailsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Hourly Rate", color = WdTextMuted, fontSize = 14.sp)
                         Text(
-                            "₹${profile.ratePerHour}/hr",
+                            stringResource(R.string.hourly_rate),
+                            color = WdTextMuted,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            stringResource(R.string.rate_hr, profile.ratePerHour.toString()),
                             color = WdOrange,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -272,7 +291,7 @@ fun WorkerDetailsScreen(
             // ── Contact details card
             InfoCard {
                 Text(
-                    "Contact Details",
+                    stringResource(R.string.contact_details),
                     fontWeight = FontWeight.Bold,
                     color = WdTextDark,
                     fontSize = 15.sp
@@ -280,22 +299,22 @@ fun WorkerDetailsScreen(
                 Spacer(Modifier.height(12.dp))
                 if (profile.phone.isNotBlank()) DetailRow(
                     Icons.Default.Phone,
-                    "Phone",
+                    stringResource(R.string.label_phone),
                     profile.phone
                 )
                 if (profile.email.isNotBlank()) DetailRow(
                     Icons.Default.Email,
-                    "Email",
+                    stringResource(R.string.label_email),
                     profile.email
                 )
                 if (profile.location.isNotBlank()) DetailRow(
                     Icons.Default.LocationOn,
-                    "Location",
+                    stringResource(R.string.label_location),
                     profile.location
                 )
                 if (profile.gender.isNotBlank()) DetailRow(
                     Icons.Default.Build,
-                    "Gender",
+                    stringResource(R.string.label_gender),
                     profile.gender
                 )
             }
@@ -303,7 +322,7 @@ fun WorkerDetailsScreen(
             // ── Portfolio
             if (profile.portfolio.isNotEmpty()) {
                 Text(
-                    "Work Portfolio",
+                    stringResource(R.string.work_portfolio),
                     fontWeight = FontWeight.Bold,
                     color = WdTextDark,
                     fontSize = 16.sp,
@@ -316,7 +335,7 @@ fun WorkerDetailsScreen(
                     items(profile.portfolio) { url ->
                         AsyncImage(
                             model = url,
-                            contentDescription = "Portfolio",
+                            contentDescription = stringResource(R.string.cd_portfolio),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(140.dp)
@@ -335,7 +354,12 @@ fun WorkerDetailsScreen(
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ContactButton("Call", Icons.Default.Phone, Color(0xFF4CAF50), Modifier.weight(1f)) {
+                ContactButton(
+                    stringResource(R.string.contact_call),
+                    Icons.Default.Phone,
+                    Color(0xFF4CAF50),
+                    Modifier.weight(1f)
+                ) {
                     if (profile.phone.isNotBlank()) {
                         context.startActivity(
                             Intent(
@@ -346,7 +370,7 @@ fun WorkerDetailsScreen(
                     }
                 }
                 ContactButton(
-                    "WhatsApp",
+                    stringResource(R.string.contact_whatsapp),
                     Icons.Default.Email,
                     Color(0xFF25D366),
                     Modifier.weight(1f)
@@ -359,7 +383,12 @@ fun WorkerDetailsScreen(
                         )
                     }
                 }
-                ContactButton("Chat", Icons.Default.Email, WdOrange, Modifier.weight(1f)) {
+                ContactButton(
+                    stringResource(R.string.contact_chat),
+                    Icons.Default.Email,
+                    WdOrange,
+                    Modifier.weight(1f)
+                ) {
                     val me = FirebaseAuth.getInstance().currentUser?.uid ?: return@ContactButton
                     val chatId = if (me < workerId) "${me}_$workerId" else "${workerId}_$me"
                     context.startActivity(

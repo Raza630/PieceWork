@@ -58,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,6 +66,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.workman.ChatActivity
+import com.example.workman.R
 import com.example.workman.SharedPreferencesHelper
 import com.example.workman.components.MapLocationView
 import com.example.workman.components.QuickContactSection
@@ -172,19 +174,21 @@ fun WorkOfferDetailsScreen(
 
                 feedback = com.example.workman.components.FeedbackData(
                     type = com.example.workman.components.FeedbackType.SUCCESS,
-                    title = "You got the job! 🎉",
-                    message = "\"${offer?.title ?: "This job"}\" is now assigned to you. " +
-                            "You can message the client and start working from My Jobs.",
-                    confirmLabel = "Great!"
+                    title = context.getString(R.string.job_got_title),
+                    message = context.getString(
+                        R.string.job_got_message,
+                        offer?.title ?: context.getString(R.string.job_this_job)
+                    ),
+                    confirmLabel = context.getString(R.string.great)
                 )
                 fetchOfferDetails() // Refresh local state
             } catch (e: Exception) {
                 feedback = com.example.workman.components.FeedbackData(
                     type = com.example.workman.components.FeedbackType.ERROR,
-                    title = "Couldn't accept job",
+                    title = context.getString(R.string.job_accept_failed_title),
                     message = e.localizedMessage
-                        ?: "Something went wrong. Please check your connection and try again.",
-                    confirmLabel = "Try again"
+                        ?: context.getString(R.string.job_accept_failed_msg),
+                    confirmLabel = context.getString(R.string.try_again)
                 )
             } finally {
                 isAccepting = false
@@ -224,7 +228,7 @@ fun WorkOfferDetailsScreen(
 
             offer == null -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Offer not found", color = TextMuted)
+                    Text(stringResource(R.string.offer_not_found), color = TextMuted)
                 }
             }
 
@@ -297,9 +301,12 @@ fun WorkOfferDetailsScreen(
                         Spacer(Modifier.height(16.dp))
 
                         // ── Description card
-                        SectionCard(title = "Description", icon = Icons.Outlined.Info) {
+                        SectionCard(
+                            title = stringResource(R.string.section_description),
+                            icon = Icons.Outlined.Info
+                        ) {
                             Text(
-                                text = current.description.ifBlank { "No description provided." },
+                                text = current.description.ifBlank { stringResource(R.string.no_description) },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextDark.copy(alpha = 0.8f),
                                 lineHeight = 22.sp
@@ -326,7 +333,10 @@ fun WorkOfferDetailsScreen(
                         // ── Location map card
                         if (current.latitude != 0.0 && current.longitude != 0.0) {
                             Spacer(Modifier.height(16.dp))
-                            SectionCard(title = "Job Location", icon = Icons.Default.LocationOn) {
+                            SectionCard(
+                                title = stringResource(R.string.section_job_location),
+                                icon = Icons.Default.LocationOn
+                            ) {
                                 if (current.locationName.isNotBlank()) {
                                     Text(
                                         text = current.locationName,
@@ -356,9 +366,15 @@ fun WorkOfferDetailsScreen(
                                 current.bossId // Worker contacts the boss
                             }
                             val contactLabel =
-                                if (userRole == "Hiring") "Contact Worker" else "Contact Boss"
+                                if (userRole == "Hiring") stringResource(R.string.contact_worker) else stringResource(
+                                    R.string.contact_boss
+                                )
                             val contactName =
-                                if (userRole == "Hiring") "Worker" else current.bossName.ifEmpty { "Boss" }
+                                if (userRole == "Hiring") stringResource(R.string.role_worker) else current.bossName.ifEmpty {
+                                    stringResource(
+                                        R.string.role_boss
+                                    )
+                                }
 
                             QuickContactSection(
                                 userId = contactUserId,
@@ -393,7 +409,7 @@ fun WorkOfferDetailsScreen(
                                 )
                             ) {
                                 Text(
-                                    "⭐ Rate & Review Worker",
+                                    stringResource(R.string.rate_review_worker),
                                     fontWeight = FontWeight.Bold,
                                     color = TextDark
                                 )
@@ -404,7 +420,7 @@ fun WorkOfferDetailsScreen(
                             ReviewRatingDialog(
                                 jobId = current.id,
                                 workerId = current.acceptedBy!!,
-                                workerName = "Worker",
+                                workerName = stringResource(R.string.role_worker),
                                 onDismiss = { showReviewDialog = false },
                                 onSubmitted = {
                                     showReviewDialog = false
@@ -427,7 +443,7 @@ fun WorkOfferDetailsScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = "⏳ Feedback requested — we've asked the client to review your work.",
+                                        text = stringResource(R.string.feedback_requested_note),
                                         modifier = Modifier.padding(14.dp),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = Color(0xFFB26A00),
@@ -436,8 +452,7 @@ fun WorkOfferDetailsScreen(
                                 }
                             } else {
                                 Text(
-                                    text = "Job complete! A great review helps you win more work. " +
-                                            "Ask the client for feedback.",
+                                    text = stringResource(R.string.job_complete_review_prompt),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = TextMuted
                                 )
@@ -452,9 +467,11 @@ fun WorkOfferDetailsScreen(
                                             feedback = com.example.workman.components.FeedbackData(
                                                 type = if (success) com.example.workman.components.FeedbackType.SUCCESS
                                                 else com.example.workman.components.FeedbackType.ERROR,
-                                                title = if (success) "Feedback requested 🙌" else "Couldn't send request",
+                                                title = if (success) context.getString(R.string.feedback_requested_title) else context.getString(
+                                                    R.string.feedback_request_failed_title
+                                                ),
                                                 message = msg,
-                                                confirmLabel = "Done"
+                                                confirmLabel = context.getString(R.string.done)
                                             )
                                             if (success) fetchOfferDetails()
                                         }
@@ -466,7 +483,7 @@ fun WorkOfferDetailsScreen(
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                                 ) {
                                     Text(
-                                        "Request feedback from client",
+                                        stringResource(R.string.request_feedback),
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
                                     )
@@ -538,7 +555,11 @@ private fun ImageGalleryHeader(
                 .clickable { onBack() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = stringResource(R.string.cd_back),
+                tint = Color.White
+            )
         }
 
         // Image counter chip (top-right)
@@ -551,7 +572,11 @@ private fun ImageGalleryHeader(
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Text(
-                    text = "${pagerState.currentPage + 1}/${safeImages.size}",
+                    text = stringResource(
+                        R.string.image_counter,
+                        pagerState.currentPage + 1,
+                        safeImages.size
+                    ),
                     color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
@@ -590,21 +615,21 @@ private fun InfoChipsRow(offer: WorkOffer) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         InfoChip(
             icon = Icons.Default.DateRange,
-            label = "Posted",
-            value = offer.date.ifBlank { "—" },
+            label = stringResource(R.string.info_posted),
+            value = offer.date.ifBlank { stringResource(R.string.dash) },
             modifier = Modifier.weight(1f)
         )
         val statusLabel = when (offer.status) {
-            "OPEN" -> "Open"
-            "ASSIGNED" -> "Assigned"
-            "IN_PROGRESS" -> "In Progress"
-            "COMPLETED" -> "Completed"
-            "REVIEWED" -> "Reviewed"
+            "OPEN" -> stringResource(R.string.status_open)
+            "ASSIGNED" -> stringResource(R.string.status_assigned)
+            "IN_PROGRESS" -> stringResource(R.string.status_in_progress_badge)
+            "COMPLETED" -> stringResource(R.string.status_completed_badge)
+            "REVIEWED" -> stringResource(R.string.status_reviewed)
             else -> offer.status
         }
         InfoChip(
             icon = Icons.Default.CheckCircle,
-            label = "Status",
+            label = stringResource(R.string.info_status),
             value = statusLabel,
             modifier = Modifier.weight(1f)
         )
@@ -681,9 +706,9 @@ private fun PostedByCard(offer: WorkOffer) {
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("Posted by", fontSize = 11.sp, color = TextMuted)
+                Text(stringResource(R.string.posted_by), fontSize = 11.sp, color = TextMuted)
                 Text(
-                    offer.bossName.ifBlank { "WorkMan Client" },
+                    offer.bossName.ifBlank { stringResource(R.string.workman_client) },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDark
@@ -767,9 +792,9 @@ private fun BottomAcceptBar(
                 } else {
                     Text(
                         text = when {
-                            isAcceptedByMe -> "✓ Accepted by You"
-                            isAcceptedByOther -> "Already Taken"
-                            else -> "Accept this Job"
+                            isAcceptedByMe -> stringResource(R.string.accept_state_accepted)
+                            isAcceptedByOther -> stringResource(R.string.accept_state_taken)
+                            else -> stringResource(R.string.accept_this_job)
                         },
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
@@ -789,12 +814,15 @@ private fun WorkCompletionSection(
     isBoss: Boolean,
     onImageClick: (String) -> Unit
 ) {
-    SectionCard(title = "Completed Work", icon = Icons.Default.CheckCircle) {
+    SectionCard(
+        title = stringResource(R.string.section_completed_work),
+        icon = Icons.Default.CheckCircle
+    ) {
         Text(
             text = if (isBoss)
-                "The worker submitted these photos as proof of completion. Review them before rating."
+                stringResource(R.string.completed_work_boss_desc)
             else
-                "Photos you submitted when marking this job complete.",
+                stringResource(R.string.completed_work_worker_desc),
             style = MaterialTheme.typography.bodySmall,
             color = TextMuted
         )
@@ -807,7 +835,7 @@ private fun WorkCompletionSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "\u201C${offer.completionNote}\u201D",
+                    text = stringResource(R.string.completion_note_quote, offer.completionNote),
                     modifier = Modifier.padding(12.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextDark
@@ -824,7 +852,7 @@ private fun WorkCompletionSection(
                 offer.completionImages.forEach { url ->
                     AsyncImage(
                         model = url,
-                        contentDescription = "Completion photo",
+                        contentDescription = stringResource(R.string.cd_completion_photo),
                         modifier = Modifier
                             .size(128.dp)
                             .clip(RoundedCornerShape(12.dp))
@@ -835,7 +863,7 @@ private fun WorkCompletionSection(
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "Tap a photo to view full screen",
+                text = stringResource(R.string.tap_photo_fullscreen),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextMuted,
                 fontSize = 11.sp
@@ -864,7 +892,7 @@ private fun FullScreenImageDialog(
         ) {
             AsyncImage(
                 model = url,
-                contentDescription = "Completion photo",
+                contentDescription = stringResource(R.string.cd_completion_photo),
                 modifier = Modifier.fillMaxWidth(),
                 contentScale = ContentScale.Fit
             )
@@ -878,7 +906,11 @@ private fun FullScreenImageDialog(
                     .clickable { onDismiss() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.cd_close),
+                    tint = Color.White
+                )
             }
         }
     }

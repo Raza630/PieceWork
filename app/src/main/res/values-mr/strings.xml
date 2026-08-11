@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash -->
+    <string name="splash_tagline">हुशारीने कामावर घ्या. हुशारीने काम करा.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">वगळा</string>
+    <string name="onboarding_next">पुढे</string>
+    <string name="onboarding_get_started">सुरू करा</string>
+    <string name="onboarding_permission_granted">✓ परवानगी मिळाली</string>
+
+    <!-- Localization / Language picker -->
+    <string name="change_language">भाषा बदला</string>
+    <string name="select_language">भाषा निवडा</string>
+    <string name="select_language_subtitle">तुम्हाला सोयीची वाटेल ती भाषा निवडा. तुम्ही ती कधीही बदलू शकता.</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">होम</string>
+    <string name="nav_jobs">कामे</string>
+    <string name="nav_bookings">बुकिंग</string>
+    <string name="nav_chat">चॅट</string>
+    <string name="nav_profile">प्रोफाइल</string>
+
+    <!-- Common -->
+    <string name="cd_notifications">सूचना</string>
+    <string name="cd_profile_photo">प्रोफाइल फोटो</string>
+    <string name="greeting_hello">नमस्कार, %1$s!</string>
+    <string name="retry">पुन्हा प्रयत्न करा</string>
+    <string name="reset">रीसेट</string>
+    <string name="clear_all">सर्व काढा</string>
+    <string name="distance">अंतर</string>
+    <string name="enable_location">लोकेशन सुरू करा</string>
+    <string name="error_generic_title">अरेरे! काहीतरी चूक झाली</string>
+
+    <!-- Worker dashboard -->
+    <string name="worker_search_hint">कामाच्या संधी शोधा…</string>
+    <string name="cd_filters">फिल्टर</string>
+    <string name="active_jobs_title">तुमची सुरू असलेली कामे</string>
+    <string name="active_jobs_subtitle">%1$d सुरू आहेत</string>
+    <string name="recommended_title">तुमच्यासाठी शिफारस केलेले</string>
+    <string name="recommended_subtitle">%1$d सर्वोत्तम जुळणी</string>
+    <string name="other_available_work">इतर उपलब्ध कामे</string>
+    <string name="available_work">उपलब्ध कामे</string>
+    <string name="jobs_within_km">%2$d किमीच्या आत %1$d कामे</string>
+    <string name="jobs_count">%1$d कामे</string>
+    <string name="status_in_progress">सुरू आहे</string>
+    <string name="mark_complete">पूर्ण म्हणून चिन्हांकित करा</string>
+    <string name="accept_work">काम स्वीकारा</string>
+    <string name="status_accepted">स्वीकारले</string>
+    <string name="status_completed">✓ पूर्ण झाले</string>
+    <string name="cd_save_job">काम जतन करा</string>
+    <string name="cd_remove_saved">जतन केलेल्यातून काढा</string>
+    <string name="cd_why_recommended">शिफारस का</string>
+    <string name="why_recommend_title">आम्ही याची शिफारस का करतो</string>
+    <string name="breakdown_skill_match">कौशल्य जुळणी</string>
+    <string name="breakdown_distance">अंतर</string>
+    <string name="breakdown_history">तुमचा इतिहास</string>
+    <string name="breakdown_freshness">नवीनता</string>
+    <string name="match_percent">%1$d%% जुळणी</string>
+    <string name="badge_new">नवीन</string>
+    <string name="earnings_this_week">या आठवड्यात</string>
+    <string name="earnings_done">%1$d पूर्ण</string>
+    <string name="earnings_pending">%1$d बाकी</string>
+    <string name="level_max_reached">कमाल पातळी गाठली ⭐</string>
+    <string name="level_more_to_next">%2$s पर्यंत आणखी %1$d</string>
+    <string name="poster_role">काम पोस्ट करणारा</string>
+    <string name="cd_poster">पोस्ट करणारा</string>
+    <string name="for_boss">%1$s साठी</string>
+    <string name="results_sort_label">%1$s</string>
+    <string name="category_prefix">श्रेणी: %1$s</string>
+    <string name="filter_distance">अंतर</string>
+    <string name="filter_sort_by">यानुसार क्रमवारी लावा</string>
+    <string name="filter_category">श्रेणी</string>
+    <string name="filter_km">%1$d किमी</string>
+    <string name="filter_location_hint">अंतरानुसार कामे फिल्टर करण्यासाठी लोकेशन सुरू करा.</string>
+    <string name="create_job_alert">या शोधासाठी जॉब अलर्ट तयार करा</string>
+    <string name="show_results">%1$d निकाल दाखवा</string>
+    <string name="empty_no_offers">सध्या कोणतीही कामे उपलब्ध नाहीत.</string>
+    <string name="empty_no_matches">\'%1$s\' साठी कोणतीही जुळणी सापडली नाही</string>
+    <string name="empty_try_radius">%1$d किमी वापरून पहा — %2$d कामे</string>
+    <string name="empty_add_skills_title">3 पट अधिक जुळणी मिळवण्यासाठी तुमची कौशल्ये जोडा</string>
+    <string name="empty_add_skills_subtitle">तुमच्या प्रोफाइलमध्ये जॉब श्रेणी सेट करा.</string>
+
+    <!-- Boss dashboard -->
+    <string name="post_a_job">जॉब पोस्ट करा</string>
+    <string name="workers">कामगार</string>
+    <string name="workers_found">%1$d सापडले</string>
+    <string name="filter_workers">कामगार फिल्टर करा</string>
+    <string name="categories">श्रेणी</string>
+    <string name="categories_select_hint">फिल्टर करण्यासाठी एकाधिक निवडा</string>
+    <string name="apply_filters">फिल्टर लागू करा</string>
+    <string name="show_results_selected">निकाल दाखवा (%1$d निवडले)</string>
+    <string name="find_services">सेवा शोधा</string>
+    <string name="find_services_subtitle">तज्ज्ञ शोधण्यासाठी श्रेणी निवडा</string>
+    <string name="search_service_hint">प्लंबिंग, इलेक्ट्रिकल शोधा…</string>
+    <string name="popular_services">लोकप्रिय सेवा</string>
+    <string name="all_categories">सर्व श्रेणी</string>
+    <string name="rate_worker">%1$s ला रेट करा</string>
+    <string name="rate_how_was_experience">तुमचा अनुभव कसा होता?</string>
+    <string name="write_review_optional">पुनरावलोकन लिहा (पर्यायी)</string>
+    <string name="submit_review">पुनरावलोकन सबमिट करा</string>
+    <string name="skip">वगळा</string>
+
+    <!-- Common (extended) -->
+    <string name="cd_back">मागे</string>
+    <string name="cd_close">बंद करा</string>
+    <string name="cd_cancel">रद्द करा</string>
+    <string name="cd_send">पाठवा</string>
+    <string name="action_cancel">रद्द करा</string>
+    <string name="done">पूर्ण झाले</string>
+    <string name="try_again">पुन्हा प्रयत्न करा</string>
+    <string name="great">छान!</string>
+    <string name="dash">—</string>
+    <string name="check_connection">कृपया तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
+
+    <!-- Booking (boss) -->
+    <string name="booking_tab_pending">प्रलंबित</string>
+    <string name="booking_tab_active">सक्रिय</string>
+    <string name="booking_tab_history">इतिहास</string>
+    <string name="booking_header_pending">प्रलंबित विनंत्या</string>
+    <string name="booking_header_active">चालू कामे</string>
+    <string name="booking_header_history">मागील बुकिंग</string>
+    <string name="cd_toggle_view">व्ह्यू बदला</string>
+    <string name="booking_calendar_title">बुकिंग कॅलेंडर</string>
+    <string name="booking_calendar_desc">मासिक व्ह्यूमध्ये तुमचे वेळापत्रक पाहा आणि व्यवस्थापित करा</string>
+    <string name="booking_back_to_list">यादी व्ह्यूवर परत जा</string>
+    <string name="booking_empty_pending">कोणतीही प्रलंबित जॉब पोस्ट नाही</string>
+    <string name="booking_empty_active">कोणतीही चालू कामे नाहीत</string>
+    <string name="booking_empty_history">अद्याप कोणतीही मागील बुकिंग नाही</string>
+    <string name="booking_empty_pending_sub">कामगार नियुक्त करण्यासाठी \'जॉब पोस्ट करा\' वर टॅप करा.</string>
+    <string name="booking_empty_active_sub">स्वीकारलेली चालू कामे येथे दिसतील.</string>
+    <string name="booking_empty_history_sub">पूर्ण आणि रद्द झालेली कामे येथे ठेवली जातात.</string>
+    <string name="booking_waiting_worker">कामगाराने स्वीकारण्याची प्रतीक्षा…</string>
+    <string name="booking_agreed_rate">ठरलेला दर</string>
+    <string name="booking_scheduled_for">यासाठी नियोजित</string>
+    <string name="booking_cancel_post">जॉब पोस्ट रद्द करा</string>
+    <string name="booking_reviewed_worker">तुम्ही %1$s चे पुनरावलोकन केले</string>
+    <string name="rate_worker_button">कामगाराला रेट करा</string>
+    <string name="booking_leave_feedback">तुम्ही %1$s साठी कधीही अभिप्राय देऊ शकता.</string>
+    <string name="status_pending">प्रलंबित</string>
+    <string name="status_active">सक्रिय</string>
+    <string name="status_in_progress_badge">प्रगतीपथावर</string>
+    <string name="status_completed_badge">पूर्ण</string>
+    <string name="status_cancelled">रद्द</string>
+
+    <!-- Boss list -->
+    <string name="search_workers_hint">कामगार किंवा श्रेणी शोधा…</string>
+    <string name="cd_clear">साफ करा</string>
+    <string name="filter_label">फिल्टर</string>
+    <string name="filter_count">फिल्टर (%1$d)</string>
+    <string name="cd_share">शेअर करा</string>
+    <string name="cd_options">पर्याय</string>
+    <string name="cd_shortlist">शॉर्टलिस्ट</string>
+    <string name="worker_experience_years">%1$d वर्षांचा अनुभव</string>
+    <string name="worker_rate_hourly">₹%1$s/तास</string>
+    <string name="workers_load_failed">कामगार लोड करण्यात अयशस्वी</string>
+    <string name="no_workers_available">कोणतेही कामगार उपलब्ध नाहीत</string>
+    <string name="no_results_for">\"%1$s\" साठी कोणतेही परिणाम नाहीत</string>
+    <string name="starts_from">%1$s पासून सुरू</string>
+
+    <!-- Profile -->
+    <string name="profile_title">प्रोफाइल</string>
+    <string name="cd_profile_image">प्रोफाइल प्रतिमा</string>
+    <string name="cd_default_profile">डीफॉल्ट प्रोफाइल</string>
+    <string name="cd_edit_profile_image">प्रोफाइल प्रतिमा संपादित करा</string>
+    <string name="account_information">खाते माहिती</string>
+    <string name="label_first_name">पहिले नाव</string>
+    <string name="label_last_name">आडनाव</string>
+    <string name="label_dob">जन्मतारीख</string>
+    <string name="cd_select_date">तारीख निवडा</string>
+    <string name="gender_male">पुरुष</string>
+    <string name="gender_female">स्त्री</string>
+    <string name="gender_other">इतर</string>
+    <string name="label_gender">लिंग</string>
+    <string name="label_email">ईमेल</string>
+    <string name="label_phone">फोन नंबर</string>
+    <string name="label_occupation">व्यवसाय</string>
+    <string name="label_specially_abled">दिव्यांग</string>
+    <string name="label_accept_notifications">मी सूचना प्राप्त करण्यास सहमत आहे</string>
+    <string name="save_changes">बदल जतन करा</string>
+    <string name="logout">लॉगआउट</string>
+    <string name="work_portfolio">कार्य पोर्टफोलिओ</string>
+    <string name="cd_add_portfolio">पोर्टफोलिओ प्रतिमा जोडा</string>
+    <string name="no_portfolio">अद्याप कोणतीही पोर्टफोलिओ प्रतिमा जोडलेली नाही.</string>
+    <string name="cd_portfolio_image">पोर्टफोलिओ प्रतिमा</string>
+
+    <!-- Chat -->
+    <string name="chat_title">चॅट</string>
+    <string name="chat_replying_to">याला उत्तर देत आहात</string>
+    <string name="chat_type_message">संदेश टाइप करा…</string>
+    <string name="messages_title">संदेश</string>
+    <string name="no_conversations">अद्याप कोणतेही संभाषण नाही</string>
+    <string name="messages_after_acceptance">काम स्वीकारल्यानंतर संदेश दिसतील</string>
+    <string name="start_conversation">संभाषण सुरू करा</string>
+    <string name="default_user">वापरकर्ता</string>
+    <string name="time_now">आत्ता</string>
+    <string name="time_minutes">%1$dमि</string>
+    <string name="time_hours">%1$dता</string>
+    <string name="time_days">%1$dदि</string>
+    <string name="time_weeks">%1$dआ</string>
+
+    <!-- Work offer details -->
+    <string name="job_got_title">तुम्हाला काम मिळाले! 🎉</string>
+    <string name="job_got_message">\"%1$s\" आता तुम्हाला नियुक्त केले आहे. तुम्ही क्लायंटला संदेश पाठवू शकता आणि My Jobs मधून काम सुरू करू शकता.</string>
+    <string name="job_this_job">हे काम</string>
+    <string name="job_accept_failed_title">काम स्वीकारता आले नाही</string>
+    <string name="job_accept_failed_msg">काहीतरी चूक झाली. कृपया तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
+    <string name="offer_not_found">ऑफर सापडली नाही</string>
+    <string name="section_description">वर्णन</string>
+    <string name="no_description">कोणतेही वर्णन दिलेले नाही.</string>
+    <string name="section_job_location">कामाचे ठिकाण</string>
+    <string name="contact_worker">कामगाराशी संपर्क साधा</string>
+    <string name="contact_boss">बॉसशी संपर्क साधा</string>
+    <string name="role_worker">कामगार</string>
+    <string name="role_boss">बॉस</string>
+    <string name="rate_review_worker">⭐ कामगाराला रेट आणि पुनरावलोकन करा</string>
+    <string name="feedback_requested_note">⏳ अभिप्राय विनंती केली — आम्ही क्लायंटला तुमच्या कामाचे पुनरावलोकन करण्यास सांगितले आहे.</string>
+    <string name="job_complete_review_prompt">काम पूर्ण! चांगले पुनरावलोकन तुम्हाला अधिक काम मिळवण्यास मदत करते. क्लायंटकडून अभिप्राय मागा.</string>
+    <string name="feedback_requested_title">अभिप्राय विनंती केली 🙌</string>
+    <string name="feedback_request_failed_title">विनंती पाठवता आली नाही</string>
+    <string name="request_feedback">क्लायंटकडून अभिप्रायाची विनंती करा</string>
+    <string name="image_counter">%1$d/%2$d</string>
+    <string name="info_posted">पोस्ट केले</string>
+    <string name="status_open">खुले</string>
+    <string name="status_assigned">नियुक्त</string>
+    <string name="status_reviewed">पुनरावलोकन केले</string>
+    <string name="info_status">स्थिती</string>
+    <string name="posted_by">यांनी पोस्ट केले</string>
+    <string name="workman_client">WorkMan क्लायंट</string>
+    <string name="accept_state_accepted">✓ तुमच्याद्वारे स्वीकारले</string>
+    <string name="accept_state_taken">आधीच घेतले</string>
+    <string name="accept_this_job">हे काम स्वीकारा</string>
+    <string name="section_completed_work">पूर्ण झालेले काम</string>
+    <string name="completed_work_boss_desc">कामगाराने पूर्णतेचा पुरावा म्हणून हे फोटो सबमिट केले. रेटिंग देण्यापूर्वी ते पाहा.</string>
+    <string name="completed_work_worker_desc">काम पूर्ण म्हणून चिन्हांकित करताना तुम्ही सबमिट केलेले फोटो.</string>
+    <string name="completion_note_quote">\u201C%1$s\u201D</string>
+    <string name="cd_completion_photo">पूर्णता फोटो</string>
+    <string name="tap_photo_fullscreen">पूर्ण स्क्रीनवर पाहण्यासाठी फोटोवर टॅप करा</string>
+
+    <!-- Worker jobs -->
+    <string name="my_accepted_jobs">माझी स्वीकारलेली कामे</string>
+    <string name="no_jobs_accepted">अद्याप कोणतेही काम स्वीकारले नाही</string>
+    <string name="job_date">तारीख: %1$s</string>
+    <string name="job_started_title">तुमचे काम सुरू! ⏱️</string>
+    <string name="job_started_msg">तुम्ही \"%1$s\" सुरू केले आहे. पूर्ण झाल्यावर, पुरावा फोटो जोडा आणि ते पूर्ण म्हणून चिन्हांकित करा.</string>
+    <string name="lets_go">चला</string>
+    <string name="job_start_failed_title">काम सुरू करता आले नाही</string>
+    <string name="start_working">काम सुरू करा</string>
+    <string name="images_selected">%1$d प्रतिमा निवडल्या</string>
+    <string name="add_proof_photos">पुरावा फोटो जोडा</string>
+    <string name="photos_upload_failed_title">फोटो अपलोड करता आले नाहीत</string>
+    <string name="photos_upload_failed_msg">तुमचे पुरावा फोटो अपलोड होऊ शकले नाहीत. कृपया तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
+    <string name="job_completed_title">काम पूर्ण झाले! ✅</string>
+    <string name="job_completed_msg">उत्तम काम! क्लायंटला \"%1$s\" बद्दल सूचित केले आहे. आता ते तुमचे पुरावा फोटो पाहू शकतात आणि तुम्हाला रेटिंग देऊ शकतात.</string>
+    <string name="awesome">अप्रतिम</string>
+    <string name="job_complete_failed_title">काम पूर्ण करता आले नाही</string>
+    <string name="mark_completed">पूर्ण म्हणून चिन्हांकित करा</string>
+    <string name="feedback_waiting_note">अभिप्राय विनंती केली — क्लायंटच्या पुनरावलोकनाची प्रतीक्षा ⏳</string>
+    <string name="job_done_review_prompt">काम झाले! तुमच्या क्लायंटला पुनरावलोकन देण्यास सांगा — चांगली पुनरावलोकने तुम्हाला अधिक कामे मिळवून देतात.</string>
+    <string name="job_status">स्थिती: %1$s</string>
+
+    <!-- Worker details -->
+    <string name="worker_profile">कामगार प्रोफाइल</string>
+    <string name="cd_verified">सत्यापित</string>
+    <string name="reviews_count">%1$d पुनरावलोकने</string>
+    <string name="jobs_done">पूर्ण कामे</string>
+    <string name="years_short">%1$d वर्ष</string>
+    <string name="experience">अनुभव</string>
+    <string name="hourly_rate">तासाचा दर</string>
+    <string name="rate_hr">₹%1$s/तास</string>
+    <string name="contact_details">संपर्क तपशील</string>
+    <string name="label_location">स्थान</string>
+    <string name="cd_portfolio">पोर्टफोलिओ</string>
+    <string name="contact_call">कॉल</string>
+    <string name="contact_whatsapp">व्हॉट्सअॅप</string>
+    <string name="contact_chat">चॅट</string>
+
+    <!-- Create Job -->
+    <string name="create_job_title">जॉब पोस्ट करा</string>
+    <string name="images_selected_count">%1$d प्रतिमा निवडल्या</string>
+    <string name="urgency_urgent">🔴 तातडीचे</string>
+    <string name="urgency_this_week">🟡 या आठवड्यात</string>
+    <string name="urgency_flexible">🟢 लवचिक</string>
+    <string name="budget_fixed">निश्चित किंमत</string>
+    <string name="budget_hourly">प्रति तास</string>
+    <string name="budget_negotiable">वाटाघाटीयोग्य</string>
+    <string name="payment_cash">💵 रोख</string>
+    <string name="payment_online">📲 ऑनलाइन (UPI / बँक)</string>
+    <string name="error_title_required">शीर्षक आवश्यक आहे</string>
+    <string name="error_description_required">वर्णन आवश्यक आहे</string>
+    <string name="error_date_required">तारीख आवश्यक आहे</string>
+    <string name="job_posted_success">जॉब यशस्वीरित्या पोस्ट झाला!</string>
+    <string name="job_post_error">त्रुटी: %1$s</string>
+    <string name="posting">पोस्ट होत आहे…</string>
+    <string name="post_job">जॉब पोस्ट करा</string>
+</resources>
+

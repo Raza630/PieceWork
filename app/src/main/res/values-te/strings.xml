@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash -->
+    <string name="splash_tagline">స్మార్ట్‌గా నియమించండి. స్మార్ట్‌గా పని చేయండి.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">దాటవేయి</string>
+    <string name="onboarding_next">తదుపరి</string>
+    <string name="onboarding_get_started">ప్రారంభించండి</string>
+    <string name="onboarding_permission_granted">✓ అనుమతి ఇవ్వబడింది</string>
+
+    <!-- Localization / Language picker -->
+    <string name="change_language">భాషను మార్చండి</string>
+    <string name="select_language">భాషను ఎంచుకోండి</string>
+    <string name="select_language_subtitle">మీకు సౌకర్యంగా ఉన్న భాషను ఎంచుకోండి. మీరు దీన్ని ఎప్పుడైనా మార్చవచ్చు.</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">హోమ్</string>
+    <string name="nav_jobs">పనులు</string>
+    <string name="nav_bookings">బుకింగ్‌లు</string>
+    <string name="nav_chat">చాట్</string>
+    <string name="nav_profile">ప్రొఫైల్</string>
+
+    <!-- Common -->
+    <string name="cd_notifications">నోటిఫికేషన్‌లు</string>
+    <string name="cd_profile_photo">ప్రొఫైల్ ఫోటో</string>
+    <string name="greeting_hello">నమస్తే, %1$s!</string>
+    <string name="retry">మళ్లీ ప్రయత్నించండి</string>
+    <string name="reset">రీసెట్</string>
+    <string name="clear_all">అన్నీ తొలగించండి</string>
+    <string name="distance">దూరం</string>
+    <string name="enable_location">లొకేషన్ ఆన్ చేయండి</string>
+    <string name="error_generic_title">అయ్యో! ఏదో తప్పు జరిగింది</string>
+
+    <!-- Worker dashboard -->
+    <string name="worker_search_hint">పని అవకాశాల కోసం వెతకండి…</string>
+    <string name="cd_filters">ఫిల్టర్‌లు</string>
+    <string name="active_jobs_title">మీ యాక్టివ్ పనులు</string>
+    <string name="active_jobs_subtitle">%1$d కొనసాగుతున్నాయి</string>
+    <string name="recommended_title">మీ కోసం సిఫార్సు చేయబడినవి</string>
+    <string name="recommended_subtitle">%1$d ఉత్తమ మ్యాచ్‌లు</string>
+    <string name="other_available_work">ఇతర అందుబాటులో ఉన్న పనులు</string>
+    <string name="available_work">అందుబాటులో ఉన్న పనులు</string>
+    <string name="jobs_within_km">%2$d కి.మీ లోపల %1$d పనులు</string>
+    <string name="jobs_count">%1$d పనులు</string>
+    <string name="status_in_progress">కొనసాగుతోంది</string>
+    <string name="mark_complete">పూర్తయినట్లు గుర్తించండి</string>
+    <string name="accept_work">పనిని అంగీకరించండి</string>
+    <string name="status_accepted">అంగీకరించబడింది</string>
+    <string name="status_completed">✓ పూర్తయింది</string>
+    <string name="cd_save_job">పనిని సేవ్ చేయండి</string>
+    <string name="cd_remove_saved">సేవ్ నుండి తీసివేయండి</string>
+    <string name="cd_why_recommended">ఎందుకు సిఫార్సు చేయబడింది</string>
+    <string name="why_recommend_title">మేము దీన్ని ఎందుకు సిఫార్సు చేస్తాము</string>
+    <string name="breakdown_skill_match">నైపుణ్య మ్యాచ్</string>
+    <string name="breakdown_distance">దూరం</string>
+    <string name="breakdown_history">మీ చరిత్ర</string>
+    <string name="breakdown_freshness">తాజాదనం</string>
+    <string name="match_percent">%1$d%% మ్యాచ్</string>
+    <string name="badge_new">కొత్తది</string>
+    <string name="earnings_this_week">ఈ వారం</string>
+    <string name="earnings_done">%1$d పూర్తయ్యాయి</string>
+    <string name="earnings_pending">%1$d పెండింగ్</string>
+    <string name="level_max_reached">గరిష్ఠ స్థాయికి చేరుకున్నారు ⭐</string>
+    <string name="level_more_to_next">%2$s కి మరో %1$d</string>
+    <string name="poster_role">పని పోస్ట్ చేసినవారు</string>
+    <string name="cd_poster">పోస్ట్ చేసినవారు</string>
+    <string name="for_boss">%1$s కోసం</string>
+    <string name="results_sort_label">%1$s</string>
+    <string name="category_prefix">విభాగం: %1$s</string>
+    <string name="filter_distance">దూరం</string>
+    <string name="filter_sort_by">క్రమబద్ధీకరించు</string>
+    <string name="filter_category">విభాగం</string>
+    <string name="filter_km">%1$d కి.మీ</string>
+    <string name="filter_location_hint">దూరం ప్రకారం పనులను ఫిల్టర్ చేయడానికి లొకేషన్ ఆన్ చేయండి.</string>
+    <string name="create_job_alert">ఈ శోధన కోసం జాబ్ అలర్ట్‌ను సృష్టించండి</string>
+    <string name="show_results">%1$d ఫలితాలను చూపించు</string>
+    <string name="empty_no_offers">ప్రస్తుతం ఏ పనులు అందుబాటులో లేవు.</string>
+    <string name="empty_no_matches">\'%1$s\' కోసం మ్యాచ్‌లు కనుగొనబడలేదు</string>
+    <string name="empty_try_radius">%1$d కి.మీ ప్రయత్నించండి — %2$d పనులు</string>
+    <string name="empty_add_skills_title">3 రెట్లు ఎక్కువ మ్యాచ్‌ల కోసం మీ నైపుణ్యాలను జోడించండి</string>
+    <string name="empty_add_skills_subtitle">మీ ప్రొఫైల్‌లో జాబ్ విభాగాన్ని సెట్ చేయండి.</string>
+
+    <!-- Boss dashboard -->
+    <string name="post_a_job">జాబ్ పోస్ట్ చేయండి</string>
+    <string name="workers">కార్మికులు</string>
+    <string name="workers_found">%1$d కనుగొనబడ్డారు</string>
+    <string name="filter_workers">కార్మికులను ఫిల్టర్ చేయండి</string>
+    <string name="categories">విభాగాలు</string>
+    <string name="categories_select_hint">ఫిల్టర్ చేయడానికి బహుళంగా ఎంచుకోండి</string>
+    <string name="apply_filters">ఫిల్టర్‌లను వర్తించండి</string>
+    <string name="show_results_selected">ఫలితాలను చూపించు (%1$d ఎంచుకున్నారు)</string>
+    <string name="find_services">సేవలను కనుగొనండి</string>
+    <string name="find_services_subtitle">నిపుణులను కనుగొనడానికి ఒక విభాగాన్ని ఎంచుకోండి</string>
+    <string name="search_service_hint">ప్లంబింగ్, ఎలక్ట్రికల్ కోసం వెతకండి…</string>
+    <string name="popular_services">జనాదరణ పొందిన సేవలు</string>
+    <string name="all_categories">అన్ని విభాగాలు</string>
+    <string name="rate_worker">%1$s కి రేటింగ్ ఇవ్వండి</string>
+    <string name="rate_how_was_experience">మీ అనుభవం ఎలా ఉంది?</string>
+    <string name="write_review_optional">సమీక్ష రాయండి (ఐచ్ఛికం)</string>
+    <string name="submit_review">సమీక్షను సమర్పించండి</string>
+    <string name="skip">దాటవేయి</string>
+
+    <!-- Common (extended) -->
+    <string name="cd_back">వెనుకకు</string>
+    <string name="cd_close">మూసివేయి</string>
+    <string name="cd_cancel">రద్దు చేయి</string>
+    <string name="cd_send">పంపండి</string>
+    <string name="action_cancel">రద్దు చేయి</string>
+    <string name="done">పూర్తయింది</string>
+    <string name="try_again">మళ్లీ ప్రయత్నించండి</string>
+    <string name="great">బాగుంది!</string>
+    <string name="dash">—</string>
+    <string name="check_connection">దయచేసి మీ కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.</string>
+
+    <!-- Booking (boss) -->
+    <string name="booking_tab_pending">పెండింగ్</string>
+    <string name="booking_tab_active">యాక్టివ్</string>
+    <string name="booking_tab_history">చరిత్ర</string>
+    <string name="booking_header_pending">పెండింగ్ అభ్యర్థనలు</string>
+    <string name="booking_header_active">కొనసాగుతున్న పనులు</string>
+    <string name="booking_header_history">గత బుకింగ్‌లు</string>
+    <string name="cd_toggle_view">వ్యూ మార్చండి</string>
+    <string name="booking_calendar_title">బుకింగ్ క్యాలెండర్</string>
+    <string name="booking_calendar_desc">నెలవారీ వ్యూలో మీ షెడ్యూల్‌ను చూడండి, నిర్వహించండి</string>
+    <string name="booking_back_to_list">జాబితా వ్యూకి తిరిగి వెళ్లండి</string>
+    <string name="booking_empty_pending">పెండింగ్ జాబ్ పోస్ట్‌లు లేవు</string>
+    <string name="booking_empty_active">కొనసాగుతున్న పనులు లేవు</string>
+    <string name="booking_empty_history">ఇంకా గత బుకింగ్‌లు లేవు</string>
+    <string name="booking_empty_pending_sub">కార్మికుడిని నియమించడానికి \'జాబ్ పోస్ట్ చేయండి\' నొక్కండి.</string>
+    <string name="booking_empty_active_sub">అంగీకరించిన కొనసాగుతున్న పనులు ఇక్కడ కనిపిస్తాయి.</string>
+    <string name="booking_empty_history_sub">పూర్తయిన, రద్దైన పనులు ఇక్కడ ఉంచబడతాయి.</string>
+    <string name="booking_waiting_worker">కార్మికుడు అంగీకరించడానికి వేచి ఉంది…</string>
+    <string name="booking_agreed_rate">అంగీకరించిన రేటు</string>
+    <string name="booking_scheduled_for">షెడ్యూల్ చేయబడింది</string>
+    <string name="booking_cancel_post">జాబ్ పోస్ట్ రద్దు చేయండి</string>
+    <string name="booking_reviewed_worker">మీరు %1$s ను సమీక్షించారు</string>
+    <string name="rate_worker_button">కార్మికుడికి రేటింగ్ ఇవ్వండి</string>
+    <string name="booking_leave_feedback">మీరు %1$s కోసం ఎప్పుడైనా అభిప్రాయం ఇవ్వవచ్చు.</string>
+    <string name="status_pending">పెండింగ్</string>
+    <string name="status_active">యాక్టివ్</string>
+    <string name="status_in_progress_badge">కొనసాగుతోంది</string>
+    <string name="status_completed_badge">పూర్తయింది</string>
+    <string name="status_cancelled">రద్దయింది</string>
+
+    <!-- Boss list -->
+    <string name="search_workers_hint">కార్మికులు లేదా విభాగం కోసం వెతకండి…</string>
+    <string name="cd_clear">క్లియర్</string>
+    <string name="filter_label">ఫిల్టర్</string>
+    <string name="filter_count">ఫిల్టర్ (%1$d)</string>
+    <string name="cd_share">షేర్</string>
+    <string name="cd_options">ఐచ్ఛికాలు</string>
+    <string name="cd_shortlist">షార్ట్‌లిస్ట్</string>
+    <string name="worker_experience_years">%1$d సంవత్సరాల అనుభవం</string>
+    <string name="worker_rate_hourly">₹%1$s/గంట</string>
+    <string name="workers_load_failed">కార్మికులను లోడ్ చేయడం విఫలమైంది</string>
+    <string name="no_workers_available">కార్మికులు అందుబాటులో లేరు</string>
+    <string name="no_results_for">\"%1$s\" కోసం ఫలితాలు లేవు</string>
+    <string name="starts_from">%1$s నుండి ప్రారంభం</string>
+
+    <!-- Profile -->
+    <string name="profile_title">ప్రొఫైల్</string>
+    <string name="cd_profile_image">ప్రొఫైల్ చిత్రం</string>
+    <string name="cd_default_profile">డిఫాల్ట్ ప్రొఫైల్</string>
+    <string name="cd_edit_profile_image">ప్రొఫైల్ చిత్రాన్ని సవరించండి</string>
+    <string name="account_information">ఖాతా సమాచారం</string>
+    <string name="label_first_name">మొదటి పేరు</string>
+    <string name="label_last_name">చివరి పేరు</string>
+    <string name="label_dob">పుట్టిన తేదీ</string>
+    <string name="cd_select_date">తేదీని ఎంచుకోండి</string>
+    <string name="gender_male">పురుషుడు</string>
+    <string name="gender_female">స్త్రీ</string>
+    <string name="gender_other">ఇతర</string>
+    <string name="label_gender">లింగం</string>
+    <string name="label_email">ఇమెయిల్</string>
+    <string name="label_phone">ఫోన్ నంబర్</string>
+    <string name="label_occupation">వృత్తి</string>
+    <string name="label_specially_abled">ప్రత్యేక సామర్థ్యం గలవారు</string>
+    <string name="label_accept_notifications">నోటిఫికేషన్‌లు స్వీకరించడానికి నేను అంగీకరిస్తున్నాను</string>
+    <string name="save_changes">మార్పులను సేవ్ చేయండి</string>
+    <string name="logout">లాగ్ అవుట్</string>
+    <string name="work_portfolio">వర్క్ పోర్ట్‌ఫోలియో</string>
+    <string name="cd_add_portfolio">పోర్ట్‌ఫోలియో చిత్రాలను జోడించండి</string>
+    <string name="no_portfolio">ఇంకా పోర్ట్‌ఫోలియో చిత్రాలు జోడించలేదు.</string>
+    <string name="cd_portfolio_image">పోర్ట్‌ఫోలియో చిత్రం</string>
+
+    <!-- Chat -->
+    <string name="chat_title">చాట్</string>
+    <string name="chat_replying_to">దీనికి ప్రత్యుత్తరం ఇస్తున్నారు</string>
+    <string name="chat_type_message">సందేశాన్ని టైప్ చేయండి…</string>
+    <string name="messages_title">సందేశాలు</string>
+    <string name="no_conversations">ఇంకా సంభాషణలు లేవు</string>
+    <string name="messages_after_acceptance">పని అంగీకరించిన తర్వాత సందేశాలు కనిపిస్తాయి</string>
+    <string name="start_conversation">సంభాషణ ప్రారంభించండి</string>
+    <string name="default_user">వినియోగదారు</string>
+    <string name="time_now">ఇప్పుడు</string>
+    <string name="time_minutes">%1$dని</string>
+    <string name="time_hours">%1$dగం</string>
+    <string name="time_days">%1$dరో</string>
+    <string name="time_weeks">%1$dవా</string>
+
+    <!-- Work offer details -->
+    <string name="job_got_title">మీకు పని దొరికింది! 🎉</string>
+    <string name="job_got_message">\"%1$s\" ఇప్పుడు మీకు కేటాయించబడింది. మీరు క్లయింట్‌కు సందేశం పంపి My Jobs నుండి పని ప్రారంభించవచ్చు.</string>
+    <string name="job_this_job">ఈ పని</string>
+    <string name="job_accept_failed_title">పనిని అంగీకరించలేకపోయాం</string>
+    <string name="job_accept_failed_msg">ఏదో తప్పు జరిగింది. దయచేసి మీ కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="offer_not_found">ఆఫర్ కనుగొనబడలేదు</string>
+    <string name="section_description">వివరణ</string>
+    <string name="no_description">వివరణ ఇవ్వబడలేదు.</string>
+    <string name="section_job_location">పని స్థానం</string>
+    <string name="contact_worker">కార్మికుడిని సంప్రదించండి</string>
+    <string name="contact_boss">బాస్‌ను సంప్రదించండి</string>
+    <string name="role_worker">కార్మికుడు</string>
+    <string name="role_boss">బాస్</string>
+    <string name="rate_review_worker">⭐ కార్మికుడికి రేటింగ్ &amp; సమీక్ష</string>
+    <string name="feedback_requested_note">⏳ అభిప్రాయం అభ్యర్థించబడింది — మీ పనిని సమీక్షించమని క్లయింట్‌ను కోరాము.</string>
+    <string name="job_complete_review_prompt">పని పూర్తయింది! మంచి సమీక్ష మీకు మరింత పని పొందడంలో సహాయపడుతుంది. క్లయింట్‌ను అభిప్రాయం అడగండి.</string>
+    <string name="feedback_requested_title">అభిప్రాయం అభ్యర్థించబడింది 🙌</string>
+    <string name="feedback_request_failed_title">అభ్యర్థన పంపలేకపోయాం</string>
+    <string name="request_feedback">క్లయింట్ నుండి అభిప్రాయాన్ని అభ్యర్థించండి</string>
+    <string name="image_counter">%1$d/%2$d</string>
+    <string name="info_posted">పోస్ట్ చేయబడింది</string>
+    <string name="status_open">తెరిచి ఉంది</string>
+    <string name="status_assigned">కేటాయించబడింది</string>
+    <string name="status_reviewed">సమీక్షించబడింది</string>
+    <string name="info_status">స్థితి</string>
+    <string name="posted_by">పోస్ట్ చేసినవారు</string>
+    <string name="workman_client">WorkMan క్లయింట్</string>
+    <string name="accept_state_accepted">✓ మీచే అంగీకరించబడింది</string>
+    <string name="accept_state_taken">ఇప్పటికే తీసుకోబడింది</string>
+    <string name="accept_this_job">ఈ పనిని అంగీకరించండి</string>
+    <string name="section_completed_work">పూర్తయిన పని</string>
+    <string name="completed_work_boss_desc">కార్మికుడు పూర్తి రుజువుగా ఈ ఫోటోలను సమర్పించారు. రేటింగ్ ఇచ్చే ముందు వాటిని సమీక్షించండి.</string>
+    <string name="completed_work_worker_desc">పనిని పూర్తిగా గుర్తించేటప్పుడు మీరు సమర్పించిన ఫోటోలు.</string>
+    <string name="completion_note_quote">\u201C%1$s\u201D</string>
+    <string name="cd_completion_photo">పూర్తి ఫోటో</string>
+    <string name="tap_photo_fullscreen">పూర్తి స్క్రీన్‌లో చూడటానికి ఫోటోను నొక్కండి</string>
+
+    <!-- Worker jobs -->
+    <string name="my_accepted_jobs">నా అంగీకరించిన పనులు</string>
+    <string name="no_jobs_accepted">ఇంకా ఏ పనీ అంగీకరించలేదు</string>
+    <string name="job_date">తేదీ: %1$s</string>
+    <string name="job_started_title">మీ పని ప్రారంభమైంది! ⏱️</string>
+    <string name="job_started_msg">మీరు \"%1$s\" ప్రారంభించారు. పూర్తయ్యాక, రుజువు ఫోటోలను జోడించి దానిని పూర్తిగా గుర్తించండి.</string>
+    <string name="lets_go">వెళ్దాం</string>
+    <string name="job_start_failed_title">పనిని ప్రారంభించలేకపోయాం</string>
+    <string name="start_working">పని ప్రారంభించండి</string>
+    <string name="images_selected">%1$d ఫోటోలు ఎంచుకోబడ్డాయి</string>
+    <string name="add_proof_photos">రుజువు ఫోటోలను జోడించండి</string>
+    <string name="photos_upload_failed_title">ఫోటోలను అప్‌లోడ్ చేయలేకపోయాం</string>
+    <string name="photos_upload_failed_msg">మీ రుజువు ఫోటోలు అప్‌లోడ్ కాలేదు. దయచేసి మీ కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="job_completed_title">పని పూర్తయింది! ✅</string>
+    <string name="job_completed_msg">చక్కటి పని! \"%1$s\" గురించి క్లయింట్‌కు తెలియజేయబడింది. ఇప్పుడు వారు మీ రుజువు ఫోటోలను సమీక్షించి మీకు రేటింగ్ ఇవ్వవచ్చు.</string>
+    <string name="awesome">అద్భుతం</string>
+    <string name="job_complete_failed_title">పనిని పూర్తి చేయలేకపోయాం</string>
+    <string name="mark_completed">పూర్తిగా గుర్తించండి</string>
+    <string name="feedback_waiting_note">అభిప్రాయం అభ్యర్థించబడింది — క్లయింట్ సమీక్ష కోసం వేచి ఉంది ⏳</string>
+    <string name="job_done_review_prompt">పని పూర్తయింది! మీ క్లయింట్‌ను సమీక్ష ఇవ్వమని అడగండి — మంచి సమీక్షలు మీకు మరింత పని తెస్తాయి.</string>
+    <string name="job_status">స్థితి: %1$s</string>
+
+    <!-- Worker details -->
+    <string name="worker_profile">కార్మికుడి ప్రొఫైల్</string>
+    <string name="cd_verified">ధృవీకరించబడింది</string>
+    <string name="reviews_count">%1$d సమీక్షలు</string>
+    <string name="jobs_done">పూర్తయిన పనులు</string>
+    <string name="years_short">%1$d సం</string>
+    <string name="experience">అనుభవం</string>
+    <string name="hourly_rate">గంటకు రేటు</string>
+    <string name="rate_hr">₹%1$s/గంట</string>
+    <string name="contact_details">సంప్రదింపు వివరాలు</string>
+    <string name="label_location">స్థానం</string>
+    <string name="cd_portfolio">పోర్ట్‌ఫోలియో</string>
+    <string name="contact_call">కాల్</string>
+    <string name="contact_whatsapp">వాట్సాప్</string>
+    <string name="contact_chat">చాట్</string>
+
+    <!-- Create Job -->
+    <string name="create_job_title">జాబ్ పోస్ట్ చేయండి</string>
+    <string name="images_selected_count">%1$d చిత్రం(లు) ఎంచుకోబడ్డాయి</string>
+    <string name="urgency_urgent">🔴 అత్యవసరం</string>
+    <string name="urgency_this_week">🟡 ఈ వారం</string>
+    <string name="urgency_flexible">🟢 సౌకర్యవంతం</string>
+    <string name="budget_fixed">నిర్ణీత ధర</string>
+    <string name="budget_hourly">గంటకు</string>
+    <string name="budget_negotiable">చర్చించదగినది</string>
+    <string name="payment_cash">💵 నగదు</string>
+    <string name="payment_online">📲 ఆన్‌లైన్ (UPI / బ్యాంక్)</string>
+    <string name="error_title_required">శీర్షిక అవసరం</string>
+    <string name="error_description_required">వివరణ అవసరం</string>
+    <string name="error_date_required">తేదీ అవసరం</string>
+    <string name="job_posted_success">జాబ్ విజయవంతంగా పోస్ట్ చేయబడింది!</string>
+    <string name="job_post_error">లోపం: %1$s</string>
+    <string name="posting">పోస్ట్ చేస్తోంది…</string>
+    <string name="post_job">జాబ్ పోస్ట్ చేయండి</string>
+</resources>
+

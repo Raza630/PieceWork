@@ -1,5 +1,6 @@
 package com.example.workman.screens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,11 +42,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.workman.R
 import com.example.workman.ui.theme.BgColor
 import com.example.workman.ui.theme.CardBg
 import com.example.workman.ui.theme.PrimaryBlue
@@ -142,10 +146,14 @@ fun ChatListScreen(
                         tint = Color.LightGray
                     )
                     Spacer(Modifier.height(16.dp))
-                    Text("No conversations yet", color = TextMuted, fontSize = 16.sp)
+                    Text(
+                        stringResource(R.string.no_conversations),
+                        color = TextMuted,
+                        fontSize = 16.sp
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Messages will appear after job acceptance",
+                        stringResource(R.string.messages_after_acceptance),
                         color = TextMuted.copy(alpha = 0.7f),
                         fontSize = 13.sp
                     )
@@ -175,6 +183,7 @@ private fun ConversationCard(
     conversation: ChatConversation,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -228,7 +237,7 @@ private fun ConversationCard(
                     )
                     if (conversation.lastMessageTime > 0) {
                         Text(
-                            text = formatChatTime(conversation.lastMessageTime),
+                            text = formatChatTime(conversation.lastMessageTime, context),
                             fontSize = 11.sp,
                             color = TextMuted
                         )
@@ -252,7 +261,7 @@ private fun ConversationCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = conversation.lastMessage.ifEmpty { "Start a conversation" },
+                        text = conversation.lastMessage.ifEmpty { stringResource(R.string.start_conversation) },
                         fontSize = 13.sp,
                         color = TextMuted,
                         maxLines = 1,
@@ -283,18 +292,18 @@ private fun ConversationCard(
     }
 }
 
-private fun formatChatTime(timestamp: Long): String {
+private fun formatChatTime(timestamp: Long, context: Context): String {
     val diff = System.currentTimeMillis() - timestamp
     val minutes = diff / 60000
     val hours = minutes / 60
     val days = hours / 24
 
     return when {
-        minutes < 1 -> "now"
-        minutes < 60 -> "${minutes}m"
-        hours < 24 -> "${hours}h"
-        days < 7 -> "${days}d"
-        else -> "${days / 7}w"
+        minutes < 1 -> context.getString(R.string.time_now)
+        minutes < 60 -> context.getString(R.string.time_minutes, minutes.toInt())
+        hours < 24 -> context.getString(R.string.time_hours, hours.toInt())
+        days < 7 -> context.getString(R.string.time_days, days.toInt())
+        else -> context.getString(R.string.time_weeks, (days / 7).toInt())
     }
 }
 

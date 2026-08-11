@@ -45,9 +45,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.workman.R
 import com.example.workman.dataClass.ChatMessage
 import com.example.workman.ui.theme.BgColor
 import com.example.workman.ui.theme.CardBg
@@ -77,10 +79,20 @@ fun ChatScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chat", color = TextDark, fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        stringResource(R.string.chat_title),
+                        color = TextDark,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = TextDark)
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back),
+                            tint = TextDark
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = BgColor)
@@ -122,11 +134,20 @@ fun ChatScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Replying to", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                        Text(
+                            stringResource(R.string.chat_replying_to),
+                            fontSize = 10.sp,
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.Bold
+                        )
                         Text(reply.messageText ?: "", fontSize = 12.sp, maxLines = 1, color = TextDark)
                     }
                     IconButton(onClick = { viewModel.setReplyTo(null) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cancel", modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.cd_cancel),
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }
@@ -145,7 +166,7 @@ fun ChatScreen(
                     OutlinedTextField(
                         value = messageText,
                         onValueChange = { messageText = it },
-                        placeholder = { Text("Type a message...") },
+                        placeholder = { Text(stringResource(R.string.chat_type_message)) },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(24.dp),
                         maxLines = 4,
@@ -167,7 +188,10 @@ fun ChatScreen(
                         shape = CircleShape,
                         modifier = Modifier.size(48.dp)
                     ) {
-                        Icon(Icons.Default.Send, contentDescription = "Send")
+                        Icon(
+                            Icons.Default.Send,
+                            contentDescription = stringResource(R.string.cd_send)
+                        )
                     }
                 }
             }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  Declares every language the app ships translations for. Android 13+ uses this
+  for the system-level "App languages" settings screen, and AndroidX AppCompat
+  uses it for the in-app language picker + automatic persistence.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="hi" />
+    <locale android:name="bn" />
+    <locale android:name="te" />
+    <locale android:name="mr" />
+    <locale android:name="ta" />
+</locale-config>
+

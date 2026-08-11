@@ -43,8 +43,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.workman.R
 import com.example.workman.components.FeedbackData
 import com.example.workman.components.FeedbackDialog
 import com.example.workman.components.FeedbackType
@@ -103,10 +105,13 @@ fun WorkerJobsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Accepted Jobs") },
+                title = { Text(stringResource(R.string.my_accepted_jobs)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(
+                            Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
                     }
                 }
             )
@@ -118,7 +123,7 @@ fun WorkerJobsScreen(
             }
         } else if (acceptedJobs.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No jobs accepted yet", color = Color.Gray)
+                Text(stringResource(R.string.no_jobs_accepted), color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -140,7 +145,11 @@ fun WorkerJobsScreen(
                             Spacer(Modifier.height(4.dp))
                             Text(job.description, style = MaterialTheme.typography.bodySmall, maxLines = 2)
                             Spacer(Modifier.height(8.dp))
-                            Text("Date: ${job.date}", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text(
+                                stringResource(R.string.job_date, job.date),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
 
                             Spacer(Modifier.height(12.dp))
 
@@ -152,33 +161,38 @@ fun WorkerJobsScreen(
                                             .addOnSuccessListener {
                                                 feedback = FeedbackData(
                                                     type = FeedbackType.SUCCESS,
-                                                    title = "You're on the clock! ⏱️",
-                                                    message = "You've started \"${job.title}\". " +
-                                                            "When you're done, add proof photos and mark it completed.",
-                                                    confirmLabel = "Let's go"
+                                                    title = context.getString(R.string.job_started_title),
+                                                    message = context.getString(
+                                                        R.string.job_started_msg,
+                                                        job.title
+                                                    ),
+                                                    confirmLabel = context.getString(R.string.lets_go)
                                                 )
                                                 fetchJobs()
                                             }
                                             .addOnFailureListener { e ->
                                                 feedback = FeedbackData(
                                                     type = FeedbackType.ERROR,
-                                                    title = "Couldn't start job",
+                                                    title = context.getString(R.string.job_start_failed_title),
                                                     message = e.localizedMessage
-                                                        ?: "Please check your connection and try again.",
-                                                    confirmLabel = "Try again"
+                                                        ?: context.getString(R.string.check_connection),
+                                                    confirmLabel = context.getString(R.string.try_again)
                                                 )
                                             }
                                     },
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                                 ) {
-                                    Text("Start Working")
+                                    Text(stringResource(R.string.start_working))
                                 }
                             } else if (job.status == "IN_PROGRESS") {
                                 Column {
                                     if (selectedImages.isNotEmpty()) {
                                         Text(
-                                            "${selectedImages.size} images selected",
+                                            stringResource(
+                                                R.string.images_selected,
+                                                selectedImages.size
+                                            ),
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                     }
@@ -188,7 +202,7 @@ fun WorkerJobsScreen(
                                             onClick = { imagePicker.launch("image/*") },
                                             modifier = Modifier.weight(1f)
                                         ) {
-                                            Text("Add Proof Photos")
+                                            Text(stringResource(R.string.add_proof_photos))
                                         }
 
                                         Button(
@@ -210,10 +224,9 @@ fun WorkerJobsScreen(
                                                             isCompleting = false
                                                             feedback = FeedbackData(
                                                                 type = FeedbackType.ERROR,
-                                                                title = "Couldn't upload photos",
-                                                                message = "Your proof photos failed to upload. " +
-                                                                        "Please check your connection and try again.",
-                                                                confirmLabel = "Try again"
+                                                                title = context.getString(R.string.photos_upload_failed_title),
+                                                                message = context.getString(R.string.photos_upload_failed_msg),
+                                                                confirmLabel = context.getString(R.string.try_again)
                                                             )
                                                             return@launch
                                                         }
@@ -231,21 +244,26 @@ fun WorkerJobsScreen(
                                                                 selectedImages = emptyList()
                                                                 feedback = FeedbackData(
                                                                     type = FeedbackType.SUCCESS,
-                                                                    title = "Job completed! ✅",
-                                                                    message = "Great work! The client has been notified " +
-                                                                            "about \"${job.title}\". They can now review your " +
-                                                                            "proof photos and leave you a rating.",
-                                                                    confirmLabel = "Awesome"
+                                                                    title = context.getString(R.string.job_completed_title),
+                                                                    message = context.getString(
+                                                                        R.string.job_completed_msg,
+                                                                        job.title
+                                                                    ),
+                                                                    confirmLabel = context.getString(
+                                                                        R.string.awesome
+                                                                    )
                                                                 )
                                                                 fetchJobs()
                                                             }.addOnFailureListener { e ->
                                                                 isCompleting = false
                                                                 feedback = FeedbackData(
                                                                     type = FeedbackType.ERROR,
-                                                                    title = "Couldn't complete job",
+                                                                    title = context.getString(R.string.job_complete_failed_title),
                                                                     message = e.localizedMessage
-                                                                        ?: "Please check your connection and try again.",
-                                                                    confirmLabel = "Try again"
+                                                                        ?: context.getString(R.string.check_connection),
+                                                                    confirmLabel = context.getString(
+                                                                        R.string.try_again
+                                                                    )
                                                                 )
                                                             }
                                                     }
@@ -264,7 +282,7 @@ fun WorkerJobsScreen(
                                                     18.dp
                                                 ), color = Color.White, strokeWidth = 2.dp
                                             )
-                                            else Text("Mark Completed")
+                                            else Text(stringResource(R.string.mark_completed))
                                         }
                                     }
                                 }
@@ -280,12 +298,12 @@ fun WorkerJobsScreen(
 
                                         if (job.reviewRequested) {
                                             StatusNote(
-                                                text = "Feedback requested — waiting for the client to review ⏳",
+                                                text = stringResource(R.string.feedback_waiting_note),
                                                 color = Color(0xFFFF9800)
                                             )
                                         } else {
                                             Text(
-                                                "Job done! Ask your client to leave a review — great reviews win you more jobs.",
+                                                stringResource(R.string.job_done_review_prompt),
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = Color.Gray
                                             )
@@ -299,9 +317,11 @@ fun WorkerJobsScreen(
                                                     ) { success, msg ->
                                                         feedback = FeedbackData(
                                                             type = if (success) FeedbackType.SUCCESS else FeedbackType.ERROR,
-                                                            title = if (success) "Feedback requested 🙌" else "Couldn't send request",
+                                                            title = if (success) context.getString(R.string.feedback_requested_title) else context.getString(
+                                                                R.string.feedback_request_failed_title
+                                                            ),
                                                             message = msg,
-                                                            confirmLabel = "Done"
+                                                            confirmLabel = context.getString(R.string.done)
                                                         )
                                                         if (success) fetchJobs()
                                                     }
@@ -309,7 +329,7 @@ fun WorkerJobsScreen(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                                             ) {
-                                                Text("Request feedback from client")
+                                                Text(stringResource(R.string.request_feedback))
                                             }
                                         }
                                     }
@@ -325,7 +345,7 @@ fun WorkerJobsScreen(
 
                                     else -> {
                                         Text(
-                                            "Status: ${job.status}",
+                                            stringResource(R.string.job_status, job.status),
                                             color = PrimaryBlue,
                                             fontWeight = FontWeight.SemiBold
                                         )

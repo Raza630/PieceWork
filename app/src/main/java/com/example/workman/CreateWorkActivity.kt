@@ -90,7 +90,7 @@ class CreateWorkActivity : AppCompatActivity() {
             val startPos = imageUris.size
             imageUris.addAll(uris)
             imageAdapter.notifyItemRangeInserted(startPos, uris.size)
-            showToast("${imageUris.size} image(s) selected")
+            showToast(getString(R.string.images_selected_count, imageUris.size))
         }
     }
 
@@ -102,7 +102,7 @@ class CreateWorkActivity : AppCompatActivity() {
             val startPos = imageUris.size
             imageUris.addAll(uris)
             imageAdapter.notifyItemRangeInserted(startPos, uris.size)
-            showToast("${imageUris.size} image(s) selected")
+            showToast(getString(R.string.images_selected_count, imageUris.size))
         }
     }
 
@@ -177,7 +177,11 @@ class CreateWorkActivity : AppCompatActivity() {
 
         // Urgency dropdown
         actvUrgency = findViewById(R.id.actvUrgency)
-        val urgencyOptions = listOf("🔴 Urgent", "🟡 This Week", "🟢 Flexible")
+        val urgencyOptions = listOf(
+            getString(R.string.urgency_urgent),
+            getString(R.string.urgency_this_week),
+            getString(R.string.urgency_flexible)
+        )
         val urgencyValues = listOf("URGENT", "THIS_WEEK", "FLEXIBLE")
         val urgencyAdapter =
             ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, urgencyOptions)
@@ -189,7 +193,11 @@ class CreateWorkActivity : AppCompatActivity() {
         // Budget / pay
         etBudgetAmount = findViewById(R.id.etBudgetAmount)
         actvBudgetType = findViewById(R.id.actvBudgetType)
-        val budgetTypeOptions = listOf("Fixed price", "Per hour", "Negotiable")
+        val budgetTypeOptions = listOf(
+            getString(R.string.budget_fixed),
+            getString(R.string.budget_hourly),
+            getString(R.string.budget_negotiable)
+        )
         val budgetTypeValues = listOf("FIXED", "HOURLY", "NEGOTIABLE")
         val budgetTypeAdapter =
             ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, budgetTypeOptions)
@@ -200,7 +208,10 @@ class CreateWorkActivity : AppCompatActivity() {
 
         // Payment method — how the boss will pay the worker (Phase 1: no gateway)
         actvPaymentMethod = findViewById(R.id.actvPaymentMethod)
-        val paymentMethodOptions = listOf("💵 Cash", "📲 Online (UPI / Bank)")
+        val paymentMethodOptions = listOf(
+            getString(R.string.payment_cash),
+            getString(R.string.payment_online)
+        )
         val paymentMethodValues = listOf("CASH", "ONLINE")
         val paymentMethodAdapter =
             ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, paymentMethodOptions)
@@ -214,7 +225,7 @@ class CreateWorkActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(true)
-            title = "Post a Job"
+            title = getString(R.string.create_job_title)
         }
     }
 
@@ -285,15 +296,15 @@ class CreateWorkActivity : AppCompatActivity() {
 
         when {
             title.isEmpty() -> {
-                etWorkTitle.error = "Title is required"
+                etWorkTitle.error = getString(R.string.error_title_required)
                 etWorkTitle.requestFocus()
             }
             description.isEmpty() -> {
-                etWorkDescription.error = "Description is required"
+                etWorkDescription.error = getString(R.string.error_description_required)
                 etWorkDescription.requestFocus()
             }
             date.isEmpty() -> {
-                etWorkDate.error = "Date is required"
+                etWorkDate.error = getString(R.string.error_date_required)
                 etWorkDate.requestFocus()
             }
             else -> uploadAndSave(title, description, date)
@@ -309,13 +320,13 @@ class CreateWorkActivity : AppCompatActivity() {
                 saveToFirestore(title, description, date, imageUrls)
 
                 withContext(Dispatchers.Main) {
-                    showToast("Job posted successfully!")
+                    showToast(getString(R.string.job_posted_success))
                     finish()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Upload/Save failed", e)
                 withContext(Dispatchers.Main) {
-                    showToast("Error: ${e.localizedMessage}")
+                    showToast(getString(R.string.job_post_error, e.localizedMessage ?: ""))
                     setLoading(false)
                 }
             }
@@ -478,7 +489,8 @@ class CreateWorkActivity : AppCompatActivity() {
         btnSelectImages.isEnabled = !loading
         loadingOverlay?.visibility = if (loading) View.VISIBLE else View.GONE
 
-        btnSubmitWork.text = if (loading) "Posting..." else "Post Job"
+        btnSubmitWork.text =
+            if (loading) getString(R.string.posting) else getString(R.string.post_job)
     }
 
     private fun showToast(message: String) {

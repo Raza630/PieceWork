@@ -13,4 +13,289 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get Started</string>
     <string name="onboarding_permission_granted">✓ Permission Granted</string>
+
+    <!-- ══════════════════ Localization / Language picker ══════════════════ -->
+    <string name="change_language">Change language</string>
+    <string name="select_language">Select Language</string>
+    <string name="select_language_subtitle">Choose the language you\'re most comfortable with. You can change it anytime.</string>
+
+    <!-- ══════════════════ Bottom navigation ══════════════════ -->
+    <string name="nav_home">Home</string>
+    <string name="nav_jobs">Jobs</string>
+    <string name="nav_bookings">Bookings</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- ══════════════════ Common ══════════════════ -->
+    <string name="cd_notifications">Notifications</string>
+    <string name="cd_profile_photo">Profile photo</string>
+    <string name="greeting_hello">Hello, %1$s!</string>
+    <string name="retry">Retry</string>
+    <string name="reset">Reset</string>
+    <string name="clear_all">Clear all</string>
+    <string name="distance">Distance</string>
+    <string name="enable_location">Enable location</string>
+    <string name="error_generic_title">Oops! Something went wrong</string>
+
+    <!-- ══════════════════ Worker dashboard ══════════════════ -->
+    <string name="worker_search_hint">Search for work opportunities…</string>
+    <string name="cd_filters">Filters</string>
+    <string name="active_jobs_title">Your Active Jobs</string>
+    <string name="active_jobs_subtitle">%1$d in progress</string>
+    <string name="recommended_title">Recommended for You</string>
+    <string name="recommended_subtitle">%1$d best matches</string>
+    <string name="other_available_work">Other Available Work</string>
+    <string name="available_work">Available Work</string>
+    <string name="jobs_within_km">%1$d jobs within %2$d km</string>
+    <string name="jobs_count">%1$d jobs</string>
+    <string name="status_in_progress">In progress</string>
+    <string name="mark_complete">Mark Complete</string>
+    <string name="accept_work">Accept Work</string>
+    <string name="status_accepted">Accepted</string>
+    <string name="status_completed">✓ Completed</string>
+    <string name="cd_save_job">Save job</string>
+    <string name="cd_remove_saved">Remove from saved</string>
+    <string name="cd_why_recommended">Why recommended</string>
+    <string name="why_recommend_title">Why we recommend this</string>
+    <string name="breakdown_skill_match">Skill match</string>
+    <string name="breakdown_distance">Distance</string>
+    <string name="breakdown_history">Your history</string>
+    <string name="breakdown_freshness">Freshness</string>
+    <string name="match_percent">%1$d%% match</string>
+    <string name="badge_new">NEW</string>
+    <string name="earnings_this_week">This week</string>
+    <string name="earnings_done">%1$d done</string>
+    <string name="earnings_pending">%1$d pending</string>
+    <string name="level_max_reached">Max level reached ⭐</string>
+    <string name="level_more_to_next">%1$d more to %2$s</string>
+    <string name="poster_role">Job poster</string>
+    <string name="cd_poster">Poster</string>
+    <string name="for_boss">For %1$s</string>
+    <string name="results_sort_label">%1$s</string>
+    <string name="category_prefix">Category: %1$s</string>
+    <string name="filter_distance">Distance</string>
+    <string name="filter_sort_by">Sort by</string>
+    <string name="filter_category">Category</string>
+    <string name="filter_km">%1$d km</string>
+    <string name="filter_location_hint">Turn on location to filter jobs by distance.</string>
+    <string name="create_job_alert">Create job alert for this search</string>
+    <string name="show_results">Show %1$d results</string>
+    <string name="empty_no_offers">No work offers available right now.</string>
+    <string name="empty_no_matches">No matches found for \'%1$s\'</string>
+    <string name="empty_try_radius">Try %1$d km — %2$d jobs</string>
+    <string name="empty_add_skills_title">Add your skills to get 3x more matches</string>
+    <string name="empty_add_skills_subtitle">Set your job category in your profile.</string>
+
+    <!-- ══════════════════ Boss dashboard ══════════════════ -->
+    <string name="post_a_job">Post a Job</string>
+    <string name="workers">Workers</string>
+    <string name="workers_found">%1$d found</string>
+    <string name="filter_workers">Filter Workers</string>
+    <string name="categories">Categories</string>
+    <string name="categories_select_hint">Select multiple to filter</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="show_results_selected">Show Results (%1$d selected)</string>
+    <string name="find_services">Find Services</string>
+    <string name="find_services_subtitle">Select a category to find experts</string>
+    <string name="search_service_hint">Search for plumbing, electrical…</string>
+    <string name="popular_services">Popular Services</string>
+    <string name="all_categories">All Categories</string>
+    <string name="rate_worker">Rate %1$s</string>
+    <string name="rate_how_was_experience">How was your experience?</string>
+    <string name="write_review_optional">Write a review (optional)</string>
+    <string name="submit_review">Submit Review</string>
+    <string name="skip">Skip</string>
+
+    <!-- ══════════════════ Common (extended) ══════════════════ -->
+    <string name="cd_back">Back</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_cancel">Cancel</string>
+    <string name="cd_send">Send</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="done">Done</string>
+    <string name="try_again">Try again</string>
+    <string name="great">Great!</string>
+    <string name="dash">—</string>
+    <string name="check_connection">Please check your connection and try again.</string>
+
+    <!-- ══════════════════ Booking (boss) ══════════════════ -->
+    <string name="booking_tab_pending">Pending</string>
+    <string name="booking_tab_active">Active</string>
+    <string name="booking_tab_history">History</string>
+    <string name="booking_header_pending">Pending Requests</string>
+    <string name="booking_header_active">Ongoing Jobs</string>
+    <string name="booking_header_history">Past Bookings</string>
+    <string name="cd_toggle_view">Toggle View</string>
+    <string name="booking_calendar_title">Booking Calendar</string>
+    <string name="booking_calendar_desc">View and manage your schedule in a monthly view</string>
+    <string name="booking_back_to_list">Back to List View</string>
+    <string name="booking_empty_pending">No pending job posts</string>
+    <string name="booking_empty_active">No ongoing jobs</string>
+    <string name="booking_empty_history">No past bookings yet</string>
+    <string name="booking_empty_pending_sub">Tap \'Post a Job\' to hire a worker.</string>
+    <string name="booking_empty_active_sub">Accepted jobs in progress will appear here.</string>
+    <string name="booking_empty_history_sub">Completed &amp; cancelled jobs are kept here.</string>
+    <string name="booking_waiting_worker">Waiting for a worker to accept…</string>
+    <string name="booking_agreed_rate">Agreed Rate</string>
+    <string name="booking_scheduled_for">Scheduled For</string>
+    <string name="booking_cancel_post">Cancel Job Post</string>
+    <string name="booking_reviewed_worker">You\'ve reviewed %1$s</string>
+    <string name="rate_worker_button">Rate Worker</string>
+    <string name="booking_leave_feedback">You can leave feedback for %1$s anytime.</string>
+    <string name="status_pending">Pending</string>
+    <string name="status_active">Active</string>
+    <string name="status_in_progress_badge">In Progress</string>
+    <string name="status_completed_badge">Completed</string>
+    <string name="status_cancelled">Cancelled</string>
+
+    <!-- ══════════════════ Boss list (search / worker card / states) ══════════════════ -->
+    <string name="search_workers_hint">Search workers or category…</string>
+    <string name="cd_clear">Clear</string>
+    <string name="filter_label">Filter</string>
+    <string name="filter_count">Filter (%1$d)</string>
+    <string name="cd_share">Share</string>
+    <string name="cd_options">Options</string>
+    <string name="cd_shortlist">Shortlist</string>
+    <string name="worker_experience_years">%1$d years of experience</string>
+    <string name="worker_rate_hourly">₹%1$s/hrs</string>
+    <string name="workers_load_failed">Failed to load workers</string>
+    <string name="no_workers_available">No workers available</string>
+    <string name="no_results_for">No results for \"%1$s\"</string>
+    <string name="starts_from">Starts from %1$s</string>
+
+    <!-- ══════════════════ Profile ══════════════════ -->
+    <string name="profile_title">Profile</string>
+    <string name="cd_profile_image">Profile Image</string>
+    <string name="cd_default_profile">Default Profile</string>
+    <string name="cd_edit_profile_image">Edit Profile Image</string>
+    <string name="account_information">Account Information</string>
+    <string name="label_first_name">First Name</string>
+    <string name="label_last_name">Last Name</string>
+    <string name="label_dob">Date of Birth</string>
+    <string name="cd_select_date">Select Date</string>
+    <string name="gender_male">Male</string>
+    <string name="gender_female">Female</string>
+    <string name="gender_other">Other</string>
+    <string name="label_gender">Gender</string>
+    <string name="label_email">Email</string>
+    <string name="label_phone">Phone Number</string>
+    <string name="label_occupation">Occupation</string>
+    <string name="label_specially_abled">Specially abled</string>
+    <string name="label_accept_notifications">I accept to receive Notifications</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="logout">Logout</string>
+    <string name="work_portfolio">Work Portfolio</string>
+    <string name="cd_add_portfolio">Add Portfolio Images</string>
+    <string name="no_portfolio">No portfolio images added yet.</string>
+    <string name="cd_portfolio_image">Portfolio Image</string>
+
+    <!-- ══════════════════ Chat ══════════════════ -->
+    <string name="chat_title">Chat</string>
+    <string name="chat_replying_to">Replying to</string>
+    <string name="chat_type_message">Type a message…</string>
+    <string name="messages_title">Messages</string>
+    <string name="no_conversations">No conversations yet</string>
+    <string name="messages_after_acceptance">Messages will appear after job acceptance</string>
+    <string name="start_conversation">Start a conversation</string>
+    <string name="default_user">User</string>
+    <string name="time_now">now</string>
+    <string name="time_minutes">%1$dm</string>
+    <string name="time_hours">%1$dh</string>
+    <string name="time_days">%1$dd</string>
+    <string name="time_weeks">%1$dw</string>
+
+    <!-- ══════════════════ Work offer details (worker work details) ══════════════════ -->
+    <string name="job_got_title">You got the job! 🎉</string>
+    <string name="job_got_message">\"%1$s\" is now assigned to you. You can message the client and start working from My Jobs.</string>
+    <string name="job_this_job">This job</string>
+    <string name="job_accept_failed_title">Couldn\'t accept job</string>
+    <string name="job_accept_failed_msg">Something went wrong. Please check your connection and try again.</string>
+    <string name="offer_not_found">Offer not found</string>
+    <string name="section_description">Description</string>
+    <string name="no_description">No description provided.</string>
+    <string name="section_job_location">Job Location</string>
+    <string name="contact_worker">Contact Worker</string>
+    <string name="contact_boss">Contact Boss</string>
+    <string name="role_worker">Worker</string>
+    <string name="role_boss">Boss</string>
+    <string name="rate_review_worker">⭐ Rate &amp; Review Worker</string>
+    <string name="feedback_requested_note">⏳ Feedback requested — we\'ve asked the client to review your work.</string>
+    <string name="job_complete_review_prompt">Job complete! A great review helps you win more work. Ask the client for feedback.</string>
+    <string name="feedback_requested_title">Feedback requested 🙌</string>
+    <string name="feedback_request_failed_title">Couldn\'t send request</string>
+    <string name="request_feedback">Request feedback from client</string>
+    <string name="image_counter">%1$d/%2$d</string>
+    <string name="info_posted">Posted</string>
+    <string name="status_open">Open</string>
+    <string name="status_assigned">Assigned</string>
+    <string name="status_reviewed">Reviewed</string>
+    <string name="info_status">Status</string>
+    <string name="posted_by">Posted by</string>
+    <string name="workman_client">WorkMan Client</string>
+    <string name="accept_state_accepted">✓ Accepted by You</string>
+    <string name="accept_state_taken">Already Taken</string>
+    <string name="accept_this_job">Accept this Job</string>
+    <string name="section_completed_work">Completed Work</string>
+    <string name="completed_work_boss_desc">The worker submitted these photos as proof of completion. Review them before rating.</string>
+    <string name="completed_work_worker_desc">Photos you submitted when marking this job complete.</string>
+    <string name="completion_note_quote">\u201C%1$s\u201D</string>
+    <string name="cd_completion_photo">Completion photo</string>
+    <string name="tap_photo_fullscreen">Tap a photo to view full screen</string>
+
+    <!-- ══════════════════ Worker jobs (My Jobs) ══════════════════ -->
+    <string name="my_accepted_jobs">My Accepted Jobs</string>
+    <string name="no_jobs_accepted">No jobs accepted yet</string>
+    <string name="job_date">Date: %1$s</string>
+    <string name="job_started_title">You\'re on the clock! ⏱️</string>
+    <string name="job_started_msg">You\'ve started \"%1$s\". When you\'re done, add proof photos and mark it completed.</string>
+    <string name="lets_go">Let\'s go</string>
+    <string name="job_start_failed_title">Couldn\'t start job</string>
+    <string name="start_working">Start Working</string>
+    <string name="images_selected">%1$d images selected</string>
+    <string name="add_proof_photos">Add Proof Photos</string>
+    <string name="photos_upload_failed_title">Couldn\'t upload photos</string>
+    <string name="photos_upload_failed_msg">Your proof photos failed to upload. Please check your connection and try again.</string>
+    <string name="job_completed_title">Job completed! ✅</string>
+    <string name="job_completed_msg">Great work! The client has been notified about \"%1$s\". They can now review your proof photos and leave you a rating.</string>
+    <string name="awesome">Awesome</string>
+    <string name="job_complete_failed_title">Couldn\'t complete job</string>
+    <string name="mark_completed">Mark Completed</string>
+    <string name="feedback_waiting_note">Feedback requested — waiting for the client to review ⏳</string>
+    <string name="job_done_review_prompt">Job done! Ask your client to leave a review — great reviews win you more jobs.</string>
+    <string name="job_status">Status: %1$s</string>
+
+    <!-- ══════════════════ Worker details (public profile) ══════════════════ -->
+    <string name="worker_profile">Worker Profile</string>
+    <string name="cd_verified">Verified</string>
+    <string name="reviews_count">%1$d reviews</string>
+    <string name="jobs_done">Jobs done</string>
+    <string name="years_short">%1$d yr</string>
+    <string name="experience">Experience</string>
+    <string name="hourly_rate">Hourly Rate</string>
+    <string name="rate_hr">₹%1$s/hr</string>
+    <string name="contact_details">Contact Details</string>
+    <string name="label_location">Location</string>
+    <string name="cd_portfolio">Portfolio</string>
+    <string name="contact_call">Call</string>
+    <string name="contact_whatsapp">WhatsApp</string>
+    <string name="contact_chat">Chat</string>
+
+    <!-- ══════════════════ Create Job ══════════════════ -->
+    <string name="create_job_title">Post a Job</string>
+    <string name="images_selected_count">%1$d image(s) selected</string>
+    <string name="urgency_urgent">🔴 Urgent</string>
+    <string name="urgency_this_week">🟡 This Week</string>
+    <string name="urgency_flexible">🟢 Flexible</string>
+    <string name="budget_fixed">Fixed price</string>
+    <string name="budget_hourly">Per hour</string>
+    <string name="budget_negotiable">Negotiable</string>
+    <string name="payment_cash">💵 Cash</string>
+    <string name="payment_online">📲 Online (UPI / Bank)</string>
+    <string name="error_title_required">Title is required</string>
+    <string name="error_description_required">Description is required</string>
+    <string name="error_date_required">Date is required</string>
+    <string name="job_posted_success">Job posted successfully!</string>
+    <string name="job_post_error">Error: %1$s</string>
+    <string name="posting">Posting…</string>
+    <string name="post_job">Post Job</string>
 </resources>
