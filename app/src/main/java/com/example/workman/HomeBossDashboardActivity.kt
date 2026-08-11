@@ -1,7 +1,8 @@
 package com.example.workman
 
-import android.os.Bundle
 import android.Manifest
+import android.content.Intent
+import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.workman.screens.HomeBossDashboardScreen
-import android.content.Intent
 import com.example.workman.utils.NavigationUtils
 import com.example.workman.viewModels.HomeBossDashboardViewModel
 
@@ -62,6 +62,9 @@ class HomeBossDashboardActivity : AppCompatActivity() {
                     },
                     onNavChat = {
                         NavigationUtils.navigateToChat(this)
+                    },
+                    onNotificationClick = {
+                        startActivity(Intent(this, NotificationsActivity::class.java))
                     }
                 )
             }

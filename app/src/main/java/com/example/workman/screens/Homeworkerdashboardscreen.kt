@@ -1224,6 +1224,7 @@ private fun WorkerHeader(
     onNotificationClick: () -> Unit
 ) {
     var showLanguageSheet by remember { mutableStateOf(false) }
+    val unreadCount = rememberUnreadNotificationCount()
 
     Box(
         modifier = Modifier
@@ -1305,23 +1306,29 @@ private fun WorkerHeader(
                         )
                     }
 
-                    // Notification Badge — red dot with a white offset border to prevent "collapsed" look.
-                    // This creates a distinct visual separation from the gradient background.
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 2.dp, y = (-2).dp)
-                            .size(12.dp)
-                            .border(
-                                2.dp,
-                                GradientStart,
-                                CircleShape
-                            ) // Background-matched border for depth
-                            .padding(1.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFE53935)) // Standard urgency red
-                            .border(1.dp, Color.White, CircleShape) // Contrast border
-                    )
+                    // Unread badge — only shown when there's actually something to
+                    // read. It previously rendered unconditionally, so the user always
+                    // saw a "you have notifications" dot even with an empty inbox.
+                    if (unreadCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 4.dp, y = (-4).dp)
+                                .size(18.dp)
+                                .border(2.dp, GradientStart, CircleShape)
+                                .padding(1.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE53935)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
 
                 // Language switcher — placed below notifications to reduce horizontal clutter.

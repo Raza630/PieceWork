@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -171,7 +172,8 @@ fun HomeBossDashboardScreen(
     onViewOffers: () -> Unit = {},
     onCreateWork: () -> Unit = {},
     onNavProfile: () -> Unit = {},
-    onNavChat: () -> Unit = {}
+    onNavChat: () -> Unit = {},
+    onNotificationClick: () -> Unit = {}
 ) {
     var selectedNavItem by remember { mutableStateOf(0) }
 
@@ -211,9 +213,9 @@ fun HomeBossDashboardScreen(
             label = "screen_fade"
         ) { page ->
             when (page) {
-                0 -> HomeContent(viewModel, onWorkerClick)
+                0 -> HomeContent(viewModel, onWorkerClick, onNotificationClick)
                 1 -> BookingContent(viewModel)
-                else -> HomeContent(viewModel, onWorkerClick)
+                else -> HomeContent(viewModel, onWorkerClick, onNotificationClick)
             }
         }
 
@@ -341,7 +343,8 @@ fun RatingDialog(
 @Composable
 private fun HomeContent(
     viewModel: HomeBossDashboardViewModel,
-    onWorkerClick: (WorkerUiModel) -> Unit
+    onWorkerClick: (WorkerUiModel) -> Unit,
+    onNotificationClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -355,7 +358,8 @@ private fun HomeContent(
                 BossHeader(
                     name = uiState.userName,
                     photoUrl = uiState.userPhotoUrl,
-                    location = uiState.userLocation
+                    location = uiState.userLocation,
+                    onNotificationClick = onNotificationClick
                 )
             }
 
@@ -892,9 +896,11 @@ private fun PopularServiceCard(
 private fun BossHeader(
     name: String,
     photoUrl: String,
-    location: String
+    location: String,
+    onNotificationClick: () -> Unit = {}
 ) {
     var showLanguageSheet by remember { mutableStateOf(false) }
+    val unreadCount = rememberUnreadNotificationCount()
 
     Box(
         modifier = Modifier
@@ -951,10 +957,48 @@ private fun BossHeader(
                 }
             }
 
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Notification bell with unread badge. The boss previously had NO
+                // way to reach the Notifications screen at all — job accepted /
+                // completed alerts were unreachable.
+                Box {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.2f))
+                            .clickable { onNotificationClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = stringResource(R.string.cd_notifications),
+                            tint = Color.White
+                        )
+                    }
+                    if (unreadCount > 0) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(2.dp)
+                                .size(18.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE53935)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (unreadCount > 9) "9+" else unreadCount.toString(),
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
                 // Language switcher — top-right of the header, the conventional home for
                 // global app settings, so it's easy to find but never in the way of content.
                 LanguageIconButton(onClick = { showLanguageSheet = true })

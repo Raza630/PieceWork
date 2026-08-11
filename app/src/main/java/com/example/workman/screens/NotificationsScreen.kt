@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -74,6 +75,40 @@ data class NotificationItem(
 )
 
 private const val TAG = "NotificationsScreen"
+
+/**
+ * Live unread-notification count for the signed-in user.
+ *
+ * Counts client-side from the same `recipientId` query the list uses, so it
+ * needs no extra Firestore index. Returns 0 when signed out or on error.
+ */
+@Composable
+fun rememberUnreadNotificationCount(): Int {
+    var count by remember { mutableIntStateOf(0) }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+    DisposableEffect(userId) {
+        if (userId == null) {
+            count = 0
+            return@DisposableEffect onDispose { }
+        }
+        val registration = FirebaseFirestore.getInstance()
+            .collection("notifications")
+            .whereEqualTo("recipientId", userId)
+            .limit(50)
+            .addSnapshotListener { snapshot, error ->
+                count = if (error != null) {
+                    Log.w(TAG, "Unread count listener failed", error)
+                    0
+                } else {
+                    snapshot?.documents?.count { it.getBoolean("isRead") != true } ?: 0
+                }
+            }
+        onDispose { registration.remove() }
+    }
+
+    return count
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
