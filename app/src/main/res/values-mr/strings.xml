@@ -157,6 +157,14 @@
     <string name="no_workers_available">कोणतेही कामगार उपलब्ध नाहीत</string>
     <string name="no_results_for">\"%1$s\" साठी कोणतेही परिणाम नाहीत</string>
     <string name="starts_from">%1$s पासून सुरू</string>
+    <string name="worker_rate_hourly_int">₹%1$d/तास</string>
+    <string name="action_view_profile">प्रोफाइल पहा</string>
+    <string name="action_report">तक्रार करा</string>
+    <string name="added_to_favorites">शॉर्टलिस्टमध्ये जोडले</string>
+    <string name="removed_from_favorites">शॉर्टलिस्टमधून काढले</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, WorkMan वर ₹%4$d/तास</string>
+    <string name="no_phone_available">फोन नंबर उपलब्ध नाही</string>
+    <string name="report_submitted_toast">तक्रार सबमिट केली. धन्यवाद.</string>
 
     <!-- Profile -->
     <string name="profile_title">प्रोफाइल</string>
@@ -306,5 +314,15 @@
     <string name="time_hours_ago">%1$d तासांपूर्वी</string>
     <string name="time_days_ago">%1$d दिवसांपूर्वी</string>
     <string name="time_weeks_ago">%1$d आठवड्यांपूर्वी</string>
+
+    <!-- Booking calendar -->
+    <string name="calendar_prev_month">मागील महिना</string>
+    <string name="calendar_next_month">पुढील महिना</string>
+    <string name="calendar_today">आज</string>
+    <string name="calendar_jobs_this_month">या महिन्यात %1$d कामे</string>
+    <string name="calendar_overdue_count">%1$d प्रलंबित</string>
+    <string name="calendar_overdue_note">तारीख उलटून गेली — लक्ष द्या</string>
+    <string name="calendar_no_jobs_on_day">या दिवशी कोणतेही काम नियोजित नाही.</string>
+    <string name="calendar_post_job_this_day">या तारखेसाठी काम पोस्ट करा</string>
 </resources>
 

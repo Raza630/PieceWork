@@ -1,5 +1,8 @@
 package com.example.workman.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateColorAsState
@@ -43,6 +46,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
@@ -75,6 +79,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -96,6 +102,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -121,10 +128,12 @@ import coil.request.ImageRequest
 import com.example.workman.R
 import com.example.workman.components.LanguageIconButton
 import com.example.workman.components.LanguagePickerSheet
+import com.example.workman.components.ReportDialog
 import com.example.workman.dataClass.BookingStatus
 import com.example.workman.dataClass.BookingUiModel
 import com.example.workman.dataClass.WorkerUiModel
 import com.example.workman.utils.LocationHelper
+import com.example.workman.viewModels.FavoritesViewModel
 import com.example.workman.viewModels.HomeBossDashboardViewModel
 import com.example.workman.viewModels.WorkerListState
 import java.text.SimpleDateFormat
@@ -171,6 +180,8 @@ fun HomeBossDashboardScreen(
     onWorkerClick: (WorkerUiModel) -> Unit = {},
     onViewOffers: () -> Unit = {},
     onCreateWork: () -> Unit = {},
+    /** Post a job with the date pre-filled (millis), launched from the calendar. */
+    onCreateWorkOnDate: (Long) -> Unit = {},
     onNavProfile: () -> Unit = {},
     onNavChat: () -> Unit = {},
     onNotificationClick: () -> Unit = {}
@@ -214,7 +225,7 @@ fun HomeBossDashboardScreen(
         ) { page ->
             when (page) {
                 0 -> HomeContent(viewModel, onWorkerClick, onNotificationClick)
-                1 -> BookingContent(viewModel)
+                1 -> BookingContent(viewModel, onCreateWorkOnDate)
                 else -> HomeContent(viewModel, onWorkerClick, onNotificationClick)
             }
         }
@@ -344,9 +355,24 @@ fun RatingDialog(
 private fun HomeContent(
     viewModel: HomeBossDashboardViewModel,
     onWorkerClick: (WorkerUiModel) -> Unit,
-    onNotificationClick: () -> Unit = {}
+    onNotificationClick: () -> Unit = {},
+    favoritesViewModel: FavoritesViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val favState by favoritesViewModel.uiState.collectAsState()
+    val context = LocalContext.current
+
+    // Worker currently being reported (null = dialog hidden). Reuses the shared
+    // ReportDialog + the boss ViewModel's submitReport (Play-compliance flow).
+    var reportWorker by remember { mutableStateOf<WorkerUiModel?>(null) }
+
+    // Surface favorite add/remove feedback as a lightweight toast.
+    LaunchedEffect(favState.message) {
+        favState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            favoritesViewModel.clearMessage()
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
@@ -435,7 +461,12 @@ private fun HomeContent(
                         items(uiState.filteredWorkers, key = { it.id }) { worker ->
                             WorkerCard(
                                 worker = worker,
+                                isFavorite = favState.favoriteIds.contains(worker.id),
                                 onClick = { onWorkerClick(worker) },
+                                onToggleFavorite = { favoritesViewModel.toggleFavorite(worker) },
+                                onShare = { shareWorker(context, worker) },
+                                onCall = { callWorker(context, worker) },
+                                onReport = { reportWorker = worker },
                                 modifier = Modifier
                                     .padding(horizontal = 16.dp, vertical = 6.dp)
                             )
@@ -457,7 +488,60 @@ private fun HomeContent(
                 onDismiss = { viewModel.toggleFilterSheet() }
             )
         }
+
+        // ── Report worker dialog (opened from a card's overflow menu)
+        reportWorker?.let { w ->
+            ReportDialog(
+                entityId = w.id,
+                entityType = "USER",
+                onSubmit = { id, type, reason ->
+                    viewModel.submitReport(id, type, reason)
+                    reportWorker = null
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.report_submitted_toast),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+                onDismiss = { reportWorker = null }
+            )
+        }
     }
+}
+
+// ─── Worker card action helpers ────────────────────────────────────────────────
+
+/** Opens the system share sheet with a short text summary of the worker. */
+private fun shareWorker(context: android.content.Context, worker: WorkerUiModel) {
+    val text = context.getString(
+        R.string.share_worker_text,
+        worker.name,
+        worker.category,
+        String.format(Locale.getDefault(), "%.1f", worker.rating),
+        worker.ratePerHour
+    )
+    context.startActivity(
+        Intent.createChooser(
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            },
+            null
+        )
+    )
+}
+
+/** Opens the dialer pre-filled with the worker's number, or toasts if absent. */
+private fun callWorker(context: android.content.Context, worker: WorkerUiModel) {
+    if (worker.phone.isBlank()) {
+        Toast.makeText(
+            context,
+            context.getString(R.string.no_phone_available),
+            Toast.LENGTH_SHORT
+        ).show()
+        return
+    }
+    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${worker.phone}")))
 }
 
 // ─── Active Filter Bar ─────────────────────────────────────────────────────────
@@ -1239,9 +1323,16 @@ private fun CategoryChipRow(
 @Composable
 private fun WorkerCard(
     worker: WorkerUiModel,
+    isFavorite: Boolean,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onShare: () -> Unit,
+    onCall: () -> Unit,
+    onReport: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
+
     Card(
         onClick   = onClick,
         modifier  = modifier.fillMaxWidth(),
@@ -1280,7 +1371,7 @@ private fun WorkerCard(
                         .size(28.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.9f))
-                        .clickable { },
+                        .clickable { onShare() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -1301,7 +1392,14 @@ private fun WorkerCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Star, contentDescription = null, tint = Orange, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.width(2.dp))
-                        Text("${worker.rating} (${worker.reviewCount})", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                        // Round the rating so we never render "4.0909090909".
+                        val ratingText = String.format(Locale.getDefault(), "%.1f", worker.rating)
+                        Text(
+                            "$ratingText (${worker.reviewCount})",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextDark
+                        )
                     }
                 }
             }
@@ -1314,12 +1412,50 @@ private fun WorkerCard(
                     Icon(Icons.Default.Build, contentDescription = null, tint = Orange, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
                     Text(worker.category, fontSize = 11.sp, color = TextMuted, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = stringResource(R.string.cd_options),
-                        tint = TextMuted,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    // ── Overflow menu: View profile / Call / Favorite / Report
+                    Box {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.cd_options),
+                            tint = TextMuted,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clickable { menuOpen = true }
+                        )
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_view_profile)) },
+                                onClick = { menuOpen = false; onClick() }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.contact_call)) },
+                                onClick = { menuOpen = false; onCall() }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(
+                                            if (isFavorite) R.string.removed_from_favorites
+                                            else R.string.cd_shortlist
+                                        )
+                                    )
+                                },
+                                onClick = { menuOpen = false; onToggleFavorite() }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(R.string.action_report),
+                                        color = Color(0xFFE53935)
+                                    )
+                                },
+                                onClick = { menuOpen = false; onReport() }
+                            )
+                        }
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(worker.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
@@ -1356,21 +1492,30 @@ private fun WorkerCard(
                             .background(Orange)
                             .padding(horizontal = 14.dp, vertical = 7.dp)
                     ) {
-                        Text("₹${worker.ratePerHour}/hrs", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        // Guard against "₹0/hr" when no rate is set — show Negotiable.
+                        Text(
+                            if (worker.ratePerHour > 0)
+                                stringResource(R.string.worker_rate_hourly_int, worker.ratePerHour)
+                            else stringResource(R.string.budget_negotiable),
+                            color = Color.White,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     Spacer(Modifier.width(10.dp))
+                    // ── Shortlist / favorite toggle (backed by FavoritesViewModel)
                     Box(
                         modifier = Modifier
                             .size(34.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(OrangeLight)
-                            .clickable { },
+                            .background(if (isFavorite) Orange else OrangeLight)
+                            .clickable { onToggleFavorite() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Default.Add,
+                            if (isFavorite) Icons.Default.Check else Icons.Default.Add,
                             contentDescription = stringResource(R.string.cd_shortlist),
-                            tint = Orange,
+                            tint = if (isFavorite) Color.White else Orange,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1438,7 +1583,10 @@ private fun FabSubItem(
 // ─── Bottom Navigation ─────────────────────────────────────────────────────────
 
 @Composable
-private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
+private fun BookingContent(
+    viewModel: HomeBossDashboardViewModel,
+    onCreateWorkOnDate: (Long) -> Unit = {}
+) {
     val uiState by viewModel.uiState.collectAsState()
     var isCalendarView by remember { mutableStateOf(false) }
 
@@ -1504,38 +1652,29 @@ private fun BookingContent(viewModel: HomeBossDashboardViewModel) {
         }
 
         if (isCalendarView) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Outlined.DateRange,
-                        contentDescription = null,
-                        modifier = Modifier.size(80.dp),
-                        tint = OrangeLight
+            // The calendar intentionally shows ALL bookings, not just the selected
+            // tab's — the whole point is a single schedule-wide view.
+            com.example.workman.components.BookingCalendarView(
+                bookings = uiState.bookings,
+                accentColor = Orange,
+                accentLight = OrangeLight,
+                textDark = TextDark,
+                textMuted = TextMuted,
+                cardColor = CreamCard,
+                onBookingClick = { booking ->
+                    // Jump to the tab that contains this booking so its actions
+                    // (cancel / complete / rate) are reachable.
+                    viewModel.onBookingTabSelected(
+                        when (booking.status) {
+                            BookingStatus.PENDING -> 0
+                            BookingStatus.ACTIVE, BookingStatus.IN_PROGRESS -> 1
+                            else -> 2
+                        }
                     )
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        stringResource(R.string.booking_calendar_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = TextDark
-                    )
-                    Text(
-                        stringResource(R.string.booking_calendar_desc),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextMuted,
-                        modifier = Modifier.padding(horizontal = 48.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(Modifier.height(24.dp))
-                    Button(
-                        onClick = { isCalendarView = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = Orange),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(stringResource(R.string.booking_back_to_list))
-                    }
-                }
-            }
+                    isCalendarView = false
+                },
+                onCreateWorkOnDate = onCreateWorkOnDate
+            )
         } else {
             val filteredBookings = uiState.bookings.filter {
                 when (uiState.selectedBookingTab) {

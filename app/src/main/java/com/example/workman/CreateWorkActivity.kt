@@ -138,6 +138,19 @@ class CreateWorkActivity : AppCompatActivity() {
         setupRecyclerView()
         setupClickListeners()
         loadBossLocation()
+        applyPrefilledDate()
+    }
+
+    /**
+     * When launched from the booking calendar the boss already picked a day, so
+     * seed the date field instead of making them choose it twice.
+     */
+    private fun applyPrefilledDate() {
+        val millis = intent.getLongExtra(EXTRA_PREFILL_DATE, 0L)
+        if (millis > 0L) {
+            calendar.timeInMillis = millis
+            etWorkDate.setText(dateFormat.format(calendar.time))
+        }
     }
 
     /** Pre-load the boss's saved location so the map picker can center on it. */
@@ -499,5 +512,8 @@ class CreateWorkActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "CreateWorkActivity"
+
+        /** Optional Long extra (epoch millis) used to pre-fill the work date. */
+        const val EXTRA_PREFILL_DATE = "prefill_date_millis"
     }
 }

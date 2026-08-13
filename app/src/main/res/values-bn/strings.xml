@@ -157,6 +157,14 @@
     <string name="no_workers_available">কোনো কর্মী উপলব্ধ নেই</string>
     <string name="no_results_for">\"%1$s\" এর জন্য কোনো ফলাফল নেই</string>
     <string name="starts_from">%1$s থেকে শুরু</string>
+    <string name="worker_rate_hourly_int">₹%1$d/ঘণ্টা</string>
+    <string name="action_view_profile">প্রোফাইল দেখুন</string>
+    <string name="action_report">রিপোর্ট করুন</string>
+    <string name="added_to_favorites">শর্টলিস্টে যোগ করা হয়েছে</string>
+    <string name="removed_from_favorites">শর্টলিস্ট থেকে সরানো হয়েছে</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, WorkMan-এ ₹%4$d/ঘণ্টা</string>
+    <string name="no_phone_available">কোনো ফোন নম্বর উপলব্ধ নেই</string>
+    <string name="report_submitted_toast">রিপোর্ট জমা দেওয়া হয়েছে। ধন্যবাদ।</string>
 
     <!-- Profile -->
     <string name="profile_title">প্রোফাইল</string>
@@ -306,5 +314,15 @@
     <string name="time_hours_ago">%1$d ঘণ্টা আগে</string>
     <string name="time_days_ago">%1$d দিন আগে</string>
     <string name="time_weeks_ago">%1$d সপ্তাহ আগে</string>
+
+    <!-- Booking calendar -->
+    <string name="calendar_prev_month">আগের মাস</string>
+    <string name="calendar_next_month">পরের মাস</string>
+    <string name="calendar_today">আজ</string>
+    <string name="calendar_jobs_this_month">এই মাসে %1$d টি কাজ</string>
+    <string name="calendar_overdue_count">%1$d টি বকেয়া</string>
+    <string name="calendar_overdue_note">তারিখ পেরিয়ে গেছে — মনোযোগ দিন</string>
+    <string name="calendar_no_jobs_on_day">এই দিনে কোনো কাজ নির্ধারিত নেই।</string>
+    <string name="calendar_post_job_this_day">এই তারিখের জন্য কাজ পোস্ট করুন</string>
 </resources>
 

@@ -158,10 +158,19 @@
     <string name="cd_shortlist">Shortlist</string>
     <string name="worker_experience_years">%1$d years of experience</string>
     <string name="worker_rate_hourly">₹%1$s/hrs</string>
+    <string name="worker_rate_hourly_int">₹%1$d/hr</string>
     <string name="workers_load_failed">Failed to load workers</string>
     <string name="no_workers_available">No workers available</string>
     <string name="no_results_for">No results for \"%1$s\"</string>
     <string name="starts_from">Starts from %1$s</string>
+    <!-- Worker card actions -->
+    <string name="action_view_profile">View profile</string>
+    <string name="action_report">Report</string>
+    <string name="added_to_favorites">Added to shortlist</string>
+    <string name="removed_from_favorites">Removed from shortlist</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, ₹%4$d/hr on WorkMan</string>
+    <string name="no_phone_available">No phone number available</string>
+    <string name="report_submitted_toast">Report submitted. Thank you.</string>
 
     <!-- ══════════════════ Profile ══════════════════ -->
     <string name="profile_title">Profile</string>
@@ -311,4 +320,14 @@
     <string name="time_hours_ago">%1$dh ago</string>
     <string name="time_days_ago">%1$dd ago</string>
     <string name="time_weeks_ago">%1$dw ago</string>
+
+    <!-- Booking calendar -->
+    <string name="calendar_prev_month">Previous month</string>
+    <string name="calendar_next_month">Next month</string>
+    <string name="calendar_today">Today</string>
+    <string name="calendar_jobs_this_month">%1$d jobs this month</string>
+    <string name="calendar_overdue_count">%1$d overdue</string>
+    <string name="calendar_overdue_note">Date passed — needs attention</string>
+    <string name="calendar_no_jobs_on_day">No jobs scheduled for this day.</string>
+    <string name="calendar_post_job_this_day">Post a job for this date</string>
 </resources>

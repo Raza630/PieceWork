@@ -157,6 +157,14 @@
     <string name="no_workers_available">కార్మికులు అందుబాటులో లేరు</string>
     <string name="no_results_for">\"%1$s\" కోసం ఫలితాలు లేవు</string>
     <string name="starts_from">%1$s నుండి ప్రారంభం</string>
+    <string name="worker_rate_hourly_int">₹%1$d/గంట</string>
+    <string name="action_view_profile">ప్రొఫైల్ చూడండి</string>
+    <string name="action_report">ఫిర్యాదు చేయండి</string>
+    <string name="added_to_favorites">షార్ట్‌లిస్ట్‌కు జోడించబడింది</string>
+    <string name="removed_from_favorites">షార్ట్‌లిస్ట్ నుండి తీసివేయబడింది</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, WorkManలో ₹%4$d/గంట</string>
+    <string name="no_phone_available">ఫోన్ నంబర్ అందుబాటులో లేదు</string>
+    <string name="report_submitted_toast">ఫిర్యాదు సమర్పించబడింది. ధన్యవాదాలు.</string>
 
     <!-- Profile -->
     <string name="profile_title">ప్రొఫైల్</string>
@@ -306,5 +314,15 @@
     <string name="time_hours_ago">%1$d గంటల క్రితం</string>
     <string name="time_days_ago">%1$d రోజుల క్రితం</string>
     <string name="time_weeks_ago">%1$d వారాల క్రితం</string>
+
+    <!-- Booking calendar -->
+    <string name="calendar_prev_month">మునుపటి నెల</string>
+    <string name="calendar_next_month">తదుపరి నెల</string>
+    <string name="calendar_today">ఈరోజు</string>
+    <string name="calendar_jobs_this_month">ఈ నెలలో %1$d పనులు</string>
+    <string name="calendar_overdue_count">%1$d పెండింగ్</string>
+    <string name="calendar_overdue_note">తేదీ దాటిపోయింది — దృష్టి పెట్టండి</string>
+    <string name="calendar_no_jobs_on_day">ఈ రోజు ఎలాంటి పనులు షెడ్యూల్ చేయలేదు.</string>
+    <string name="calendar_post_job_this_day">ఈ తేదీకి పని పోస్ట్ చేయండి</string>
 </resources>
 

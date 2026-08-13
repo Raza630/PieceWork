@@ -57,6 +57,12 @@ class HomeBossDashboardActivity : AppCompatActivity() {
                     onCreateWork = {
                         startActivity(Intent(this, CreateWorkActivity::class.java))
                     },
+                    onCreateWorkOnDate = { millis ->
+                        startActivity(
+                            Intent(this, CreateWorkActivity::class.java)
+                                .putExtra(CreateWorkActivity.EXTRA_PREFILL_DATE, millis)
+                        )
+                    },
                     onNavProfile = {
                         NavigationUtils.navigateToProfile(this)
                     },

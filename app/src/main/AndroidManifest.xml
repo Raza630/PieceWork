@@ -90,9 +90,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".RewardWebViewActivity"
-            android:exported="false" />
-        <activity
             android:name=".HomeWorkerDashboardActivity"
             android:exported="false" />
         <activity

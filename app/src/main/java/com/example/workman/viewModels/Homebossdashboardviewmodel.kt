@@ -536,7 +536,7 @@ class HomeBossDashboardViewModel : ViewModel() {
                         reviewCount = (doc.getLong("totalRatings")?.toString())
                             ?: raw.reviewCount,
                         ratePerHour      = raw.ratePerHour,
-                        photoUrl = raw.photoUrl,
+                        photoUrl = doc.getString("photoUrl") ?: raw.photoUrl,
                         isVerified = raw.verified,
                         latitude = workerLat,
                         longitude = workerLng,
