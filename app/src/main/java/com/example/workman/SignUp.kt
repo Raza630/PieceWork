@@ -3,14 +3,14 @@ package com.example.workman
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import com.example.workman.screens.SignUpScreen
+import com.example.workman.ui.theme.WorkManTheme
 import com.example.workman.viewModels.AuthViewModel
-
-import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
@@ -44,29 +44,31 @@ class SignUp : ComponentActivity() {
         val userRole = sharedPreferencesHelper.getUserChoice() ?: "Worker"
 
         setContent {
-            SignUpScreen(
-                viewModel = viewModel,
-                userRole = userRole,
-                onNavigateToSignIn = {
-                    startActivity(Intent(this, SignInActivity::class.java))
-                    finish()
-                },
-                onGoogleSignUp = {
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                },
-                onSignUpSuccess = { role ->
-                    sharedPreferencesHelper.setLoggedIn(true)
-                    sharedPreferencesHelper.saveUserChoice(role)
+            WorkManTheme(dynamicColor = false) {
+                SignUpScreen(
+                    viewModel = viewModel,
+                    userRole = userRole,
+                    onNavigateToSignIn = {
+                        startActivity(Intent(this, SignInActivity::class.java))
+                        finish()
+                    },
+                    onGoogleSignUp = {
+                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                    },
+                    onSignUpSuccess = { role ->
+                        sharedPreferencesHelper.setLoggedIn(true)
+                        sharedPreferencesHelper.saveUserChoice(role)
 
-                    val intent = if (role == "Hiring") {
-                        Intent(this, HomeBossDashboardActivity::class.java)
-                    } else {
-                        Intent(this, HomeWorkerDashboardActivity::class.java)
+                        val intent = if (role == "Hiring") {
+                            Intent(this, HomeBossDashboardActivity::class.java)
+                        } else {
+                            Intent(this, HomeWorkerDashboardActivity::class.java)
+                        }
+                        startActivity(intent)
+                        finish()
                     }
-                    startActivity(intent)
-                    finish()
-                }
-            )
+                )
+            }
         }
     }
 }

@@ -6,11 +6,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import com.example.workman.screens.SignInScreen
+import com.example.workman.ui.theme.WorkManTheme
 import com.example.workman.viewModels.AuthViewModel
-
-import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
@@ -41,28 +41,30 @@ class SignInActivity : ComponentActivity() {
         val googleSignInClient = GoogleSignIn.getClient(this, gso)
 
         setContent {
-            SignInScreen(
-                viewModel = viewModel,
-                onNavigateToSignUp = {
-                    startActivity(Intent(this, SignUp::class.java))
-                    finish()
-                },
-                onGoogleSignIn = {
-                    googleSignInLauncher.launch(googleSignInClient.signInIntent)
-                },
-                onLoginSuccess = { role ->
-                    sharedPreferencesHelper.setLoggedIn(true)
-                    sharedPreferencesHelper.saveUserChoice(role)
-                    
-                    val intent = if (role == "Hiring") {
-                        Intent(this, HomeBossDashboardActivity::class.java)
-                    } else {
-                        Intent(this, HomeWorkerDashboardActivity::class.java)
+            WorkManTheme(dynamicColor = false) {
+                SignInScreen(
+                    viewModel = viewModel,
+                    onNavigateToSignUp = {
+                        startActivity(Intent(this, SignUp::class.java))
+                        finish()
+                    },
+                    onGoogleSignIn = {
+                        googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                    },
+                    onLoginSuccess = { role ->
+                        sharedPreferencesHelper.setLoggedIn(true)
+                        sharedPreferencesHelper.saveUserChoice(role)
+
+                        val intent = if (role == "Hiring") {
+                            Intent(this, HomeBossDashboardActivity::class.java)
+                        } else {
+                            Intent(this, HomeWorkerDashboardActivity::class.java)
+                        }
+                        startActivity(intent)
+                        finish()
                     }
-                    startActivity(intent)
-                    finish()
-                }
-            )
+                )
+            }
         }
     }
 }

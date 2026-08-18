@@ -48,9 +48,23 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         db.collection("users").document(currentUser.uid).get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    // Names are stored per-field (firstName/lastName) once the
+                    // full profile is saved. For a fresh sign-up we only have the
+                    // combined "name" field, so split it as a sensible pre-fill.
+                    var firstName = document.getString("firstName") ?: ""
+                    var lastName = document.getString("lastName") ?: ""
+                    if (firstName.isEmpty() && lastName.isEmpty()) {
+                        val fullName = document.getString("name")?.trim().orEmpty()
+                        if (fullName.isNotEmpty()) {
+                            val parts = fullName.split(" ", limit = 2)
+                            firstName = parts.getOrNull(0) ?: ""
+                            lastName = parts.getOrNull(1) ?: ""
+                        }
+                    }
+
                     _uiState.value = _uiState.value.copy(
-                        firstName = document.getString("firstName") ?: "",
-                        lastName = document.getString("lastName") ?: "",
+                        firstName = firstName,
+                        lastName = lastName,
                         dob = document.getString("dob") ?: "",
                         gender = document.getString("gender") ?: "Male",
                         phone = document.getString("phone") ?: "",
