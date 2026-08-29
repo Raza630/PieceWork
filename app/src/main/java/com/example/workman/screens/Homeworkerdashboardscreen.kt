@@ -133,6 +133,19 @@ private val GradientEnd   = Color(0xFF3F46D0)
 private val MatchGold = Color(0xFFFF9800)
 private val MatchGreen = Color(0xFF4CAF50)
 
+/**
+ * Cleans a stored boss name for display. Older jobs saved placeholders like
+ * "User" before names were resolved at write time; show a friendly fallback
+ * instead of leaking the placeholder to workers.
+ */
+private fun cleanBossName(name: String): String {
+    val trimmed = name.trim()
+    return if (trimmed.isBlank() ||
+        trimmed.equals("User", ignoreCase = true) ||
+        trimmed.equals("WorkMan Client", ignoreCase = true)
+    ) "WorkMan Client" else trimmed
+}
+
 // ─── Root Screen ───────────────────────────────────────────────────────────────
 
 @Composable
@@ -1181,7 +1194,7 @@ private fun ActiveJobsRow(
                     )
                     if (job.bossName.isNotBlank()) {
                         Text(
-                            stringResource(R.string.for_boss, job.bossName),
+                            stringResource(R.string.for_boss, cleanBossName(job.bossName)),
                             fontSize = 11.sp,
                             color = TextMuted,
                             maxLines = 1,
@@ -1520,14 +1533,12 @@ private fun WorkOfferCard(
             Spacer(Modifier.height(12.dp))
 
             // Boss preview
-            if (offer.bossName.isNotBlank()) {
-                BossPreview(
-                    name = offer.bossName,
-                    photo = offer.bossPhoto,
-                    rating = offer.bossRating
-                )
-                Spacer(Modifier.height(12.dp))
-            }
+            BossPreview(
+                name = cleanBossName(offer.bossName),
+                photo = offer.bossPhoto,
+                rating = offer.bossRating
+            )
+            Spacer(Modifier.height(12.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

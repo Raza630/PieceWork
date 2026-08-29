@@ -89,12 +89,27 @@ data class WorkerDashboardUiState(
     val suggestedRadiusCount: Int = 0
 )
 
+/** Stored boss names that mean "we don't really know it" and should be
+ *  backfilled from the boss's profile. */
+private val BOSS_NAME_PLACEHOLDERS = setOf("", "user", "workman client")
+
 class HomeWorkerDashboardViewModel : ViewModel() {
 
     private val db = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
     private var allOffers: List<WorkOffer> = emptyList()
+
+    /**
+     * Cache of bossId → resolved display name, used to backfill the poster name
+     * on offers whose stored `bossName` is missing or a placeholder ("User" /
+     * "WorkMan Client") — e.g. jobs created before names were resolved at write
+     * time. Populated lazily from each boss's Firestore profile.
+     */
+    private val bossNameCache = mutableMapOf<String, String>()
+
+    /** bossIds we've already kicked off a name-resolution fetch for. */
+    private val bossNameFetchInFlight = mutableSetOf<String>()
 
     /** Confirmed/pending payment records where this user is the worker. */
     private var myPayments: List<com.example.workman.dataClass.PaymentRecord> = emptyList()
@@ -439,9 +454,26 @@ class HomeWorkerDashboardViewModel : ViewModel() {
             }
         }
 
+        // Backfill poster names for offers whose stored bossName is blank or a
+        // placeholder, and schedule fetches for any we don't have cached yet.
+        allOffers = allOffers.map { it.withResolvedBossName() }
+        scheduleBossNameResolution(allOffers)
+
         val state = _uiState.value
+
+        // Only offers that are still OPEN for acceptance may appear in the
+        // discovery feed. Exclude anything already taken (has an acceptedBy) or
+        // that has moved past OPEN (ASSIGNED/IN_PROGRESS/COMPLETED/REVIEWED/
+        // CANCELLED). Jobs accepted by ME stay in `allOffers` for the "Active
+        // Jobs" section and earnings, but must not be re-offered here — this is
+        // what previously let a completed/accepted job still show up as
+        // acceptable to another worker.
+        val openOffers = allOffers.filter { offer ->
+            offer.acceptedBy.isNullOrBlank() && offer.status == "OPEN"
+        }
+
         val filtered = applyFilters(
-            allOffers,
+            openOffers,
             state.searchQuery,
             state.searchRadiusKm,
             state.selectedCategory
@@ -497,6 +529,65 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 suggestedRadius = suggestedRadius,
                 suggestedRadiusCount = suggestedCount
             )
+        }
+    }
+
+    /**
+     * Returns a copy of this offer with the poster name backfilled from
+     * [bossNameCache] when the stored [WorkOffer.bossName] is blank or a known
+     * placeholder. Leaves real names untouched.
+     */
+    private fun WorkOffer.withResolvedBossName(): WorkOffer {
+        val current = bossName.trim()
+        val isPlaceholder = current.lowercase() in BOSS_NAME_PLACEHOLDERS
+        if (!isPlaceholder) return this
+        val cached = bossNameCache[bossId]?.takeIf { it.isNotBlank() } ?: return this
+        return copy(bossName = cached)
+    }
+
+    /**
+     * For any offers whose poster name is still a placeholder and not yet
+     * cached, fetch the boss profile once, cache the resolved name and re-run
+     * the filter so the UI updates. De-duplicated via [bossNameFetchInFlight].
+     */
+    private fun scheduleBossNameResolution(offers: List<WorkOffer>) {
+        val idsToFetch = offers.asSequence()
+            .filter { it.bossName.trim().lowercase() in BOSS_NAME_PLACEHOLDERS }
+            .map { it.bossId }
+            .filter { it.isNotBlank() && !bossNameCache.containsKey(it) && it !in bossNameFetchInFlight }
+            .distinct()
+            .toList()
+
+        if (idsToFetch.isEmpty()) return
+        bossNameFetchInFlight.addAll(idsToFetch)
+
+        viewModelScope.launch {
+            var anyResolved = false
+            for (bossId in idsToFetch) {
+                try {
+                    val doc = db.collection("users").document(bossId).get().await()
+                    val storedName = doc.getString("name")?.trim().orEmpty()
+                    val composed = listOfNotNull(
+                        doc.getString("firstName")?.trim(),
+                        doc.getString("lastName")?.trim()
+                    ).filter { it.isNotBlank() }.joinToString(" ")
+                    val resolved = when {
+                        storedName.isNotBlank() -> storedName
+                        composed.isNotBlank() -> composed
+                        else -> ""
+                    }
+                    if (resolved.isNotBlank()) {
+                        bossNameCache[bossId] = resolved
+                        anyResolved = true
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not resolve boss name for $bossId: ${e.message}")
+                } finally {
+                    bossNameFetchInFlight.remove(bossId)
+                }
+            }
+            // Re-run the filter so the newly resolved names flow into the UI.
+            if (anyResolved) refilterOffers()
         }
     }
 
@@ -745,9 +836,26 @@ class HomeWorkerDashboardViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(acceptingOfferIds = it.acceptingOfferIds + workOffer.id) }
             try {
-                db.collection("workOffers")
-                    .document(workOffer.id)
-                    .update(
+                val docRef = db.collection("workOffers").document(workOffer.id)
+
+                // Atomically claim the job. The transaction re-reads the latest
+                // server state and refuses to accept if another worker already
+                // took it, or if it is no longer OPEN (e.g. cancelled/completed).
+                // This closes the race where two workers accept the same offer.
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val existingAcceptedBy = snapshot.getString("acceptedBy")
+                    val currentStatus = snapshot.getString("status") ?: "OPEN"
+
+                    if (!existingAcceptedBy.isNullOrBlank() && existingAcceptedBy != userId) {
+                        throw IllegalStateException("This job has already been taken by another worker.")
+                    }
+                    if (currentStatus != "OPEN") {
+                        throw IllegalStateException("This job is no longer available.")
+                    }
+
+                    transaction.update(
+                        docRef,
                         mapOf(
                             "acceptedBy" to userId,
                             "acceptedByName" to userName,
@@ -756,7 +864,8 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                             "isAccepted" to true
                         )
                     )
-                    .await()
+                    null
+                }.await()
 
                 // Update local list instead of full refresh
                 allOffers = allOffers.map {
@@ -774,7 +883,11 @@ class HomeWorkerDashboardViewModel : ViewModel() {
                 onResult(true, "Work accepted successfully!")
             } catch (e: Exception) {
                 _uiState.update { it.copy(acceptingOfferIds = it.acceptingOfferIds - workOffer.id) }
-                onResult(false, "Error: ${e.message}")
+                // Surface a clean message for the "already taken" case; fall back
+                // to the raw error otherwise.
+                val message = (e as? IllegalStateException)?.message
+                    ?: "Error: ${e.message}"
+                onResult(false, message)
             }
         }
     }

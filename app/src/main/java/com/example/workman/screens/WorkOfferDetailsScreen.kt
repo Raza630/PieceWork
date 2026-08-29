@@ -81,6 +81,7 @@ import com.example.workman.ui.theme.TextDark
 import com.example.workman.ui.theme.TextMuted
 import com.example.workman.utils.ReviewRequestHelper
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -104,8 +105,12 @@ fun WorkOfferDetailsScreen(
     var offer by remember { mutableStateOf<WorkOffer?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isAccepting by remember { mutableStateOf(false) }
+    var isStartingWork by remember { mutableStateOf(false) }
+    var isCancelling by remember { mutableStateOf(false) }
+    var showCancelDialog by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf<com.example.workman.components.FeedbackData?>(null) }
     var fullScreenImage by remember { mutableStateOf<String?>(null) }
+    var resolvedBossName by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
@@ -141,21 +146,63 @@ fun WorkOfferDetailsScreen(
         fetchOfferDetails()
     }
 
+    // Resolve the real boss name from their profile so the "Posted by" card is
+    // correct even for older jobs that stored a placeholder like "User".
+    LaunchedEffect(offer?.bossId) {
+        val bossId = offer?.bossId
+        if (bossId.isNullOrBlank()) return@LaunchedEffect
+        try {
+            val doc = db.collection("users").document(bossId).get().await()
+            val storedName = doc.getString("name")?.trim().orEmpty()
+            val composed = listOfNotNull(
+                doc.getString("firstName")?.trim(),
+                doc.getString("lastName")?.trim()
+            ).filter { it.isNotBlank() }.joinToString(" ")
+            resolvedBossName = when {
+                storedName.isNotBlank() -> storedName
+                composed.isNotBlank() -> composed
+                else -> ""
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not resolve boss name: ${e.message}")
+        }
+    }
+
     fun handleAcceptJob() {
         val user = auth.currentUser ?: return
 
         isAccepting = true
         scope.launch {
             try {
-                db.collection("workOffers").document(offerId).update(
-                    mapOf(
-                        "acceptedBy" to user.uid,
-                        "acceptedByName" to (user.displayName ?: "Worker"),
-                        "acceptedByPhoto" to (user.photoUrl?.toString() ?: ""),
-                        "status" to "ASSIGNED",
-                        "isAccepted" to true
+                val docRef = db.collection("workOffers").document(offerId)
+
+                // Atomically claim the job so two workers can't accept the same
+                // offer. Refuses if it was already taken or is no longer OPEN
+                // (e.g. cancelled/completed by the boss in the meantime).
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val existingAcceptedBy = snapshot.getString("acceptedBy")
+                    val currentStatus = snapshot.getString("status") ?: "OPEN"
+
+                    if (!existingAcceptedBy.isNullOrBlank() && existingAcceptedBy != user.uid) {
+                        throw IllegalStateException("This job has already been taken by another worker.")
+                    }
+                    if (currentStatus != "OPEN") {
+                        throw IllegalStateException("This job is no longer available.")
+                    }
+
+                    transaction.update(
+                        docRef,
+                        mapOf(
+                            "acceptedBy" to user.uid,
+                            "acceptedByName" to (user.displayName ?: "Worker"),
+                            "acceptedByPhoto" to (user.photoUrl?.toString() ?: ""),
+                            "status" to "ASSIGNED",
+                            "isAccepted" to true
+                        )
                     )
-                ).await()
+                    null
+                }.await()
 
                 // Best-effort: move the linked booking to ACTIVE so the boss's
                 // Bookings tab updates immediately (works without Cloud Functions).
@@ -196,6 +243,150 @@ fun WorkOfferDetailsScreen(
         }
     }
 
+    fun handleStartWork() {
+        val user = auth.currentUser ?: return
+
+        isStartingWork = true
+        scope.launch {
+            try {
+                val docRef = db.collection("workOffers").document(offerId)
+
+                // Only the assigned worker may start the job, and only while it
+                // is still ASSIGNED. Guards against stale UI / double taps.
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val acceptedBy = snapshot.getString("acceptedBy")
+                    val currentStatus = snapshot.getString("status") ?: "OPEN"
+
+                    if (acceptedBy != user.uid) {
+                        throw IllegalStateException("You are not assigned to this job.")
+                    }
+                    if (currentStatus != "ASSIGNED") {
+                        throw IllegalStateException("This job can no longer be started.")
+                    }
+
+                    transaction.update(docRef, mapOf("status" to "IN_PROGRESS"))
+                    null
+                }.await()
+
+                // Best-effort: keep the linked booking in sync for the boss.
+                try {
+                    db.collection("bookings").document(offerId)
+                        .update("status", "IN_PROGRESS").await()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not update booking to IN_PROGRESS: ${e.message}")
+                }
+
+                feedback = com.example.workman.components.FeedbackData(
+                    type = com.example.workman.components.FeedbackType.SUCCESS,
+                    title = context.getString(R.string.work_started_title),
+                    message = context.getString(
+                        R.string.work_started_msg,
+                        offer?.title ?: context.getString(R.string.job_this_job)
+                    ),
+                    confirmLabel = context.getString(R.string.lets_go)
+                )
+                fetchOfferDetails()
+            } catch (e: Exception) {
+                feedback = com.example.workman.components.FeedbackData(
+                    type = com.example.workman.components.FeedbackType.ERROR,
+                    title = context.getString(R.string.start_work_failed_title),
+                    message = e.localizedMessage
+                        ?: context.getString(R.string.check_connection),
+                    confirmLabel = context.getString(R.string.try_again)
+                )
+            } finally {
+                isStartingWork = false
+            }
+        }
+    }
+
+    fun handleCancelJob() {
+        val user = auth.currentUser ?: return
+
+        isCancelling = true
+        scope.launch {
+            try {
+                val docRef = db.collection("workOffers").document(offerId)
+
+                // Release the assignment and reopen the job for other workers.
+                // Only the assigned worker may cancel, and only before it is
+                // completed/reviewed.
+                db.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    val acceptedBy = snapshot.getString("acceptedBy")
+                    val currentStatus = snapshot.getString("status") ?: "OPEN"
+
+                    if (acceptedBy != user.uid) {
+                        throw IllegalStateException("You are not assigned to this job.")
+                    }
+                    if (currentStatus != "ASSIGNED" && currentStatus != "IN_PROGRESS") {
+                        throw IllegalStateException("This job can no longer be cancelled.")
+                    }
+
+                    transaction.update(
+                        docRef,
+                        mapOf(
+                            "acceptedBy" to FieldValue.delete(),
+                            "acceptedByName" to FieldValue.delete(),
+                            "acceptedByPhoto" to FieldValue.delete(),
+                            "status" to "OPEN",
+                            "isAccepted" to false
+                        )
+                    )
+                    null
+                }.await()
+
+                // Best-effort: return the linked booking to PENDING for the boss.
+                try {
+                    db.collection("bookings").document(offerId).update(
+                        mapOf(
+                            "workerId" to FieldValue.delete(),
+                            "workerName" to FieldValue.delete(),
+                            "workerPhotoUrl" to FieldValue.delete(),
+                            "status" to "PENDING"
+                        )
+                    ).await()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not reset booking after cancel: ${e.message}")
+                }
+
+                feedback = com.example.workman.components.FeedbackData(
+                    type = com.example.workman.components.FeedbackType.SUCCESS,
+                    title = context.getString(R.string.job_cancelled_title),
+                    message = context.getString(
+                        R.string.job_cancelled_msg,
+                        offer?.title ?: context.getString(R.string.job_this_job)
+                    ),
+                    confirmLabel = context.getString(R.string.done)
+                )
+                fetchOfferDetails()
+            } catch (e: Exception) {
+                feedback = com.example.workman.components.FeedbackData(
+                    type = com.example.workman.components.FeedbackType.ERROR,
+                    title = context.getString(R.string.cancel_job_failed_title),
+                    message = e.localizedMessage
+                        ?: context.getString(R.string.check_connection),
+                    confirmLabel = context.getString(R.string.try_again)
+                )
+            } finally {
+                isCancelling = false
+            }
+        }
+    }
+
+    // Confirmation before releasing an accepted job.
+    if (showCancelDialog) {
+        CancelJobDialog(
+            jobTitle = offer?.title ?: "",
+            onConfirm = {
+                showCancelDialog = false
+                handleCancelJob()
+            },
+            onDismiss = { showCancelDialog = false }
+        )
+    }
+
     Scaffold(
         containerColor = BgColor,
         bottomBar = {
@@ -207,13 +398,18 @@ fun WorkOfferDetailsScreen(
                 val isAcceptedByOther = isJobTaken && !isAcceptedByMe
                 val userRole = SharedPreferencesHelper(context).getUserChoice()
 
-                // Boss never sees an "Accept" button on their own posting.
+                // Boss never sees worker action buttons on their own posting.
                 if (userRole != "Hiring") {
-                    BottomAcceptBar(
-                        isAccepting = isAccepting,
+                    BottomWorkerActionBar(
+                        status = current.status,
                         isAcceptedByMe = isAcceptedByMe,
                         isAcceptedByOther = isAcceptedByOther,
-                        onAccept = { if (!isJobTaken && !isAccepting) handleAcceptJob() }
+                        isAccepting = isAccepting,
+                        isStartingWork = isStartingWork,
+                        isCancelling = isCancelling,
+                        onAccept = { if (!isJobTaken && !isAccepting) handleAcceptJob() },
+                        onStartWork = { if (!isStartingWork) handleStartWork() },
+                        onCancel = { if (!isCancelling) showCancelDialog = true }
                     )
                 }
             }
@@ -296,7 +492,7 @@ fun WorkOfferDetailsScreen(
                         Spacer(Modifier.height(16.dp))
 
                         // ── Posted by card
-                        PostedByCard(current)
+                        PostedByCard(current, resolvedBossName)
 
                         Spacer(Modifier.height(16.dp))
 
@@ -370,10 +566,9 @@ fun WorkOfferDetailsScreen(
                                     R.string.contact_boss
                                 )
                             val contactName =
-                                if (userRole == "Hiring") stringResource(R.string.role_worker) else current.bossName.ifEmpty {
-                                    stringResource(
-                                        R.string.role_boss
-                                    )
+                                if (userRole == "Hiring") stringResource(R.string.role_worker)
+                                else resolvedBossName.ifBlank {
+                                    current.bossName.ifBlank { stringResource(R.string.role_boss) }
                                 }
 
                             QuickContactSection(
@@ -679,7 +874,14 @@ private fun InfoChip(
 // ─── Posted By Card ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun PostedByCard(offer: WorkOffer) {
+private fun PostedByCard(offer: WorkOffer, resolvedName: String = "") {
+    // Prefer the freshly-resolved profile name; fall back to the stored
+    // bossName, ignoring known placeholders ("User"/"WorkMan Client").
+    val storedName = offer.bossName.takeIf {
+        it.isNotBlank() && !it.equals("User", ignoreCase = true) &&
+                !it.equals("WorkMan Client", ignoreCase = true)
+    }
+    val displayName = resolvedName.ifBlank { storedName ?: stringResource(R.string.workman_client) }
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -708,7 +910,7 @@ private fun PostedByCard(offer: WorkOffer) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.posted_by), fontSize = 11.sp, color = TextMuted)
                 Text(
-                    offer.bossName.ifBlank { stringResource(R.string.workman_client) },
+                    displayName,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextDark
@@ -749,61 +951,237 @@ private fun SectionCard(
     }
 }
 
-// ─── Bottom Accept Bar ──────────────────────────────────────────────────────────
+// ─── Bottom Worker Action Bar ───────────────────────────────────────────────────
 
+/**
+ * Status-aware action bar for the worker:
+ *  • OPEN            → Accept this Job
+ *  • ASSIGNED (mine) → Start Work  +  Cancel Job
+ *  • IN_PROGRESS     → Work in Progress (info)  +  Cancel Job
+ *  • taken by other  → Already Taken (disabled)
+ *  • completed/etc.  → status pill (no actions)
+ */
 @Composable
-private fun BottomAcceptBar(
-    isAccepting: Boolean,
+private fun BottomWorkerActionBar(
+    status: String,
     isAcceptedByMe: Boolean,
     isAcceptedByOther: Boolean,
-    onAccept: () -> Unit
+    isAccepting: Boolean,
+    isStartingWork: Boolean,
+    isCancelling: Boolean,
+    onAccept: () -> Unit,
+    onStartWork: () -> Unit,
+    onCancel: () -> Unit
 ) {
-    Surface(
-        color = Color.White,
-        shadowElevation = 12.dp
-    ) {
-        Box(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
-            Button(
-                onClick = onAccept,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                enabled = !isAcceptedByMe && !isAcceptedByOther && !isAccepting,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = when {
-                        isAcceptedByMe -> Color(0xFF4CAF50)
-                        isAcceptedByOther -> Color(0xFFFF9800)
-                        else -> PrimaryBlue
-                    },
-                    disabledContainerColor = when {
-                        isAcceptedByMe -> Color(0xFF4CAF50)
-                        isAcceptedByOther -> Color(0xFFFF9800)
-                        else -> Color.Gray.copy(alpha = 0.5f)
-                    }
-                )
-            ) {
-                if (isAccepting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
+    Surface(color = Color.White, shadowElevation = 12.dp) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)) {
+            when {
+                // ── Assigned to me and not yet started → Start Work + Cancel
+                isAcceptedByMe && status == "ASSIGNED" -> {
+                    PrimaryBar(
+                        text = stringResource(R.string.start_work),
+                        loading = isStartingWork,
+                        enabled = !isStartingWork && !isCancelling,
+                        containerColor = Color(0xFF4CAF50),
+                        onClick = onStartWork
                     )
-                } else {
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedCancelButton(
+                        loading = isCancelling,
+                        enabled = !isStartingWork && !isCancelling,
+                        onClick = onCancel
+                    )
+                }
+
+                // ── In progress → info state + Cancel
+                isAcceptedByMe && status == "IN_PROGRESS" -> {
+                    StatusPill(
+                        text = stringResource(R.string.work_in_progress_state),
+                        color = Color(0xFF2196F3)
+                    )
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        text = when {
-                            isAcceptedByMe -> stringResource(R.string.accept_state_accepted)
-                            isAcceptedByOther -> stringResource(R.string.accept_state_taken)
-                            else -> stringResource(R.string.accept_this_job)
-                        },
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color.White
+                        text = stringResource(R.string.complete_from_my_jobs),
+                        fontSize = 12.sp,
+                        color = TextMuted,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedCancelButton(
+                        loading = isCancelling,
+                        enabled = !isCancelling,
+                        onClick = onCancel
+                    )
+                }
+
+                // ── Completed / reviewed by me → status pill, no actions
+                isAcceptedByMe && (status == "COMPLETED" || status == "REVIEWED") -> {
+                    StatusPill(
+                        text = stringResource(R.string.accept_state_accepted),
+                        color = Color(0xFF4CAF50)
+                    )
+                }
+
+                // ── Taken by another worker → disabled
+                isAcceptedByOther -> {
+                    PrimaryBar(
+                        text = stringResource(R.string.accept_state_taken),
+                        loading = false,
+                        enabled = false,
+                        containerColor = Color(0xFFFF9800),
+                        onClick = {}
+                    )
+                }
+
+                // ── Open → Accept
+                else -> {
+                    PrimaryBar(
+                        text = stringResource(R.string.accept_this_job),
+                        loading = isAccepting,
+                        enabled = !isAccepting,
+                        containerColor = PrimaryBlue,
+                        onClick = onAccept
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun PrimaryBar(
+    text: String,
+    loading: Boolean,
+    enabled: Boolean,
+    containerColor: Color,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(54.dp),
+        shape = RoundedCornerShape(16.dp),
+        enabled = enabled,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor.copy(alpha = 0.6f)
+        )
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = Color.White,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(text, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun OutlinedCancelButton(
+    loading: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val red = Color(0xFFE53935)
+    androidx.compose.material3.OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        shape = RoundedCornerShape(16.dp),
+        enabled = enabled,
+        border = androidx.compose.foundation.BorderStroke(
+            1.5.dp,
+            red.copy(alpha = if (enabled) 1f else 0.4f)
+        ),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = red)
+    ) {
+        if (loading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = red,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(
+                stringResource(R.string.cancel_job),
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatusPill(text: String, color: Color) {
+    Surface(
+        color = color.copy(alpha = 0.12f),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 14.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(text, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = color)
+        }
+    }
+}
+
+// ─── Cancel Job Confirmation Dialog ─────────────────────────────────────────────
+
+@Composable
+private fun CancelJobDialog(
+    jobTitle: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                Icons.Outlined.Info,
+                contentDescription = null,
+                tint = Color(0xFFE53935)
+            )
+        },
+        title = {
+            Text(
+                stringResource(R.string.cancel_job_title),
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Text(stringResource(R.string.cancel_job_message, jobTitle))
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
+            ) {
+                Text(stringResource(R.string.cancel_job_confirm), color = Color.White)
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel_job_dismiss), color = TextMuted)
+            }
+        }
+    )
 }
 
 // ─── Work Completion Proof (After photos + note) ─────────────────────────────────

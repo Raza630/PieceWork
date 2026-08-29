@@ -244,6 +244,22 @@
     <string name="accept_state_accepted">✓ Accepted by You</string>
     <string name="accept_state_taken">Already Taken</string>
     <string name="accept_this_job">Accept this Job</string>
+
+    <!-- Worker job actions on the details screen -->
+    <string name="start_work">Start Work</string>
+    <string name="work_in_progress_state">Work in Progress</string>
+    <string name="start_work_failed_title">Couldn\'t start work</string>
+    <string name="work_started_title">Work started ⏱️</string>
+    <string name="work_started_msg">You\'ve started \"%1$s\". Add your proof photos and mark it complete from My Jobs when you\'re done.</string>
+    <string name="cancel_job">Cancel Job</string>
+    <string name="cancel_job_title">Cancel this job?</string>
+    <string name="cancel_job_message">Are you sure you want to cancel \"%1$s\"? It will be reopened for other workers and you\'ll lose this assignment.</string>
+    <string name="cancel_job_confirm">Yes, cancel</string>
+    <string name="cancel_job_dismiss">Keep job</string>
+    <string name="job_cancelled_title">Job cancelled</string>
+    <string name="job_cancelled_msg">You\'ve cancelled \"%1$s\". It\'s now available for other workers.</string>
+    <string name="cancel_job_failed_title">Couldn\'t cancel job</string>
+    <string name="complete_from_my_jobs">To finish, open My Jobs and submit your proof photos.</string>
     <string name="section_completed_work">Completed Work</string>
     <string name="completed_work_boss_desc">The worker submitted these photos as proof of completion. Review them before rating.</string>
     <string name="completed_work_worker_desc">Photos you submitted when marking this job complete.</string>

@@ -8,7 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import com.example.workman.screens.SignUpScreen
+import com.example.workman.screens.AuthScreen
 import com.example.workman.ui.theme.WorkManTheme
 import com.example.workman.viewModels.AuthViewModel
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -20,6 +20,18 @@ class SignUp : ComponentActivity() {
     private lateinit var sharedPreferencesHelper: SharedPreferencesHelper
 
     private val googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)!!
+            viewModel.signInWithGoogle(account.idToken!!)
+        } catch (e: ApiException) {
+            Toast.makeText(this, "Google sign in failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            Log.d("Google", "Google sign in failed: ${e.message}")
+        }
+    }
+
+    private val googleSignUpLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)!!
@@ -45,17 +57,17 @@ class SignUp : ComponentActivity() {
 
         setContent {
             WorkManTheme(dynamicColor = false) {
-                SignUpScreen(
+                AuthScreen(
                     viewModel = viewModel,
                     userRole = userRole,
-                    onNavigateToSignIn = {
-                        startActivity(Intent(this, SignInActivity::class.java))
-                        finish()
-                    },
-                    onGoogleSignUp = {
+                    initialTab = 1, // Sign In selected by default
+                    onGoogleSignIn = {
                         googleSignInLauncher.launch(googleSignInClient.signInIntent)
                     },
-                    onSignUpSuccess = { role ->
+                    onGoogleSignUp = {
+                        googleSignUpLauncher.launch(googleSignInClient.signInIntent)
+                    },
+                    onAuthSuccess = { role ->
                         sharedPreferencesHelper.setLoggedIn(true)
                         sharedPreferencesHelper.saveUserChoice(role)
 

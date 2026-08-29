@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -68,7 +67,6 @@ import com.example.workman.R
 import com.example.workman.ui.theme.GradientEnd
 import com.example.workman.ui.theme.GradientStart
 import com.example.workman.ui.theme.PrimaryBlue
-import com.example.workman.ui.theme.TextDark
 import com.example.workman.ui.theme.TextMuted
 import com.example.workman.viewModels.AuthEvent
 import com.example.workman.viewModels.AuthState
@@ -218,34 +216,76 @@ fun SocialIcon(resId: Int, onClick: () -> Unit) {
     }
 }
 
+/**
+ * Segmented tab control used at the top of the auth card to switch between the
+ * Sign Up and Sign In flows. The [selectedIndex] highlights the active tab
+ * (0 = Sign Up, 1 = Sign In) and [onTabSelected] fires only when a *different*
+ * tab is tapped so hosts can navigate to the matching screen.
+ */
+@Composable
+private fun AuthTabs(selectedIndex: Int, onTabSelected: (Int) -> Unit) {
+    val tabs = listOf("Sign Up", "Sign In")
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFF0F1F7), shape = RoundedCornerShape(14.dp))
+            .padding(4.dp)
+    ) {
+        tabs.forEachIndexed { index, title ->
+            val selected = index == selectedIndex
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(
+                        color = if (selected) Color.White else Color.Transparent,
+                        shape = RoundedCornerShape(11.dp)
+                    )
+                    .clickable(enabled = !selected) { onTabSelected(index) }
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 15.sp,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                    color = if (selected) PrimaryBlue else TextMuted
+                )
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
-// Sign In
+// Combined Auth host (tabs swap the form in-place, no screen navigation)
 // ---------------------------------------------------------------------------
 
+/**
+ * Single auth surface hosting both the Sign In and Sign Up forms. Switching the
+ * top tab only swaps the inner form + header text (no activity transition).
+ *
+ * @param initialTab 0 = Sign Up, 1 = Sign In (default).
+ */
 @Composable
-fun SignInScreen(
+fun AuthScreen(
     viewModel: AuthViewModel,
-    onNavigateToSignUp: () -> Unit,
+    userRole: String,
+    initialTab: Int = 1,
     onGoogleSignIn: () -> Unit,
-    onLoginSuccess: (String) -> Unit
+    onGoogleSignUp: () -> Unit,
+    onAuthSuccess: (String) -> Unit
 ) {
     val context = LocalContext.current
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var passwordVisible by remember { mutableStateOf(false) }
-    var submitted by remember { mutableStateOf(false) }
+    var selectedTab by remember { mutableStateOf(initialTab) }
 
     val authState by viewModel.authState.collectAsState()
     val authEvent by viewModel.authEvent.collectAsState()
 
-    val emailError = submitted && !isValidEmail(email)
-    val passwordError = submitted && password.isBlank()
-
     LaunchedEffect(authState) {
         when (val state = authState) {
             is AuthState.Success -> {
-                Toast.makeText(context, "Login Successful!", Toast.LENGTH_SHORT).show()
-                onLoginSuccess(state.role)
+                val msg = if (selectedTab == 1) "Login Successful!" else "Registration Successful!"
+                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                onAuthSuccess(state.role)
                 viewModel.resetState()
             }
 
@@ -262,7 +302,11 @@ fun SignInScreen(
     }
 
     AuthBackground {
-        BrandHeader(subtitle = "Welcome back, sign in to continue")
+        val subtitle = if (selectedTab == 1)
+            "Welcome back, sign in to continue"
+        else
+            "Create your account as $userRole"
+        BrandHeader(subtitle = subtitle)
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -274,104 +318,118 @@ fun SignInScreen(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Sign In", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                AuthTabs(selectedIndex = selectedTab) { index -> selectedTab = index }
                 Spacer(modifier = Modifier.height(24.dp))
 
-                AuthTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = "Email",
-                    leadingIcon = Icons.Filled.Email,
-                    keyboardType = KeyboardType.Email,
-                    isError = emailError,
-                    errorText = if (email.isBlank()) "Email is required" else "Enter a valid email"
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                AuthTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = "Password",
-                    leadingIcon = Icons.Filled.Lock,
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                    isPassword = true,
-                    passwordVisible = passwordVisible,
-                    onTogglePassword = { passwordVisible = !passwordVisible },
-                    isError = passwordError,
-                    errorText = "Password is required"
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Forgot Password?",
-                    color = PrimaryBlue,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .clickable { viewModel.sendPasswordReset(email.trim()) }
-                        .padding(vertical = 4.dp)
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-                PrimaryActionButton(text = "Sign In", loading = authState is AuthState.Loading) {
-                    submitted = true
-                    if (isValidEmail(email) && password.isNotBlank()) {
-                        viewModel.signIn(email.trim(), password.trim())
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Please fix the highlighted fields",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-                DividerWithText("Or continue with")
-                Spacer(modifier = Modifier.height(20.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    SocialIcon(R.drawable.google_login_ic, onClick = onGoogleSignIn)
-//                    Spacer(modifier = Modifier.width(20.dp))
-//                    SocialIcon(R.drawable.icons8_facebook, onClick = {
-//                        Toast.makeText(context, "Coming soon", Toast.LENGTH_SHORT).show()
-//                    })
-//                    Spacer(modifier = Modifier.width(20.dp))
-//                    SocialIcon(R.drawable.login, onClick = {
-//                        Toast.makeText(context, "Coming soon", Toast.LENGTH_SHORT).show()
-//                    })
+                // Only the inner form swaps — the shell, header and tabs persist.
+                if (selectedTab == 1) {
+                    SignInForm(
+                        viewModel = viewModel,
+                        loading = authState is AuthState.Loading,
+                        onGoogleSignIn = onGoogleSignIn
+                    )
+                } else {
+                    SignUpForm(
+                        viewModel = viewModel,
+                        userRole = userRole,
+                        loading = authState is AuthState.Loading,
+                        onGoogleSignUp = onGoogleSignUp
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-        Row {
-            Text("Don't have an account? ", color = Color.White.copy(alpha = 0.9f))
-            Text(
-                text = "Sign Up",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { onNavigateToSignUp() }
-            )
-        }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Sign Up
+// Sign In form
 // ---------------------------------------------------------------------------
 
 @Composable
-fun SignUpScreen(
+private fun ColumnScope.SignInForm(
+    viewModel: AuthViewModel,
+    loading: Boolean,
+    onGoogleSignIn: () -> Unit
+) {
+    val context = LocalContext.current
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var submitted by remember { mutableStateOf(false) }
+
+    val emailError = submitted && !isValidEmail(email)
+    val passwordError = submitted && password.isBlank()
+
+    AuthTextField(
+        value = email,
+        onValueChange = { email = it },
+        label = "Email",
+        leadingIcon = Icons.Filled.Email,
+        keyboardType = KeyboardType.Email,
+        isError = emailError,
+        errorText = if (email.isBlank()) "Email is required" else "Enter a valid email"
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+
+    AuthTextField(
+        value = password,
+        onValueChange = { password = it },
+        label = "Password",
+        leadingIcon = Icons.Filled.Lock,
+        keyboardType = KeyboardType.Password,
+        imeAction = ImeAction.Done,
+        isPassword = true,
+        passwordVisible = passwordVisible,
+        onTogglePassword = { passwordVisible = !passwordVisible },
+        isError = passwordError,
+        errorText = "Password is required"
+    )
+
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        text = "Forgot Password?",
+        color = PrimaryBlue,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.Medium,
+        modifier = Modifier
+            .align(Alignment.End)
+            .clickable { viewModel.sendPasswordReset(email.trim()) }
+            .padding(vertical = 4.dp)
+    )
+
+    Spacer(modifier = Modifier.height(20.dp))
+    PrimaryActionButton(text = "Sign In", loading = loading) {
+        submitted = true
+        if (isValidEmail(email) && password.isNotBlank()) {
+            viewModel.signIn(email.trim(), password.trim())
+        } else {
+            Toast.makeText(context, "Please fix the highlighted fields", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Spacer(modifier = Modifier.height(20.dp))
+    DividerWithText("Or continue with")
+    Spacer(modifier = Modifier.height(20.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        SocialIcon(R.drawable.google_login_ic, onClick = onGoogleSignIn)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Sign Up form
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun SignUpForm(
     viewModel: AuthViewModel,
     userRole: String,
-    onNavigateToSignIn: () -> Unit,
-    onGoogleSignUp: () -> Unit,
-    onSignUpSuccess: (String) -> Unit
+    loading: Boolean,
+    onGoogleSignUp: () -> Unit
 ) {
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
@@ -384,183 +442,118 @@ fun SignUpScreen(
     var acceptedTerms by remember { mutableStateOf(false) }
     var submitted by remember { mutableStateOf(false) }
 
-    val authState by viewModel.authState.collectAsState()
-
     val nameError = submitted && name.isBlank()
     val emailError = submitted && !isValidEmail(email)
     val phoneError = submitted && phone.length < 10
     val passwordError = submitted && !isStrongEnough(password)
     val confirmError = submitted && confirmPassword != password
 
-    LaunchedEffect(authState) {
-        when (val state = authState) {
-            is AuthState.Success -> {
-                Toast.makeText(context, "Registration Successful!", Toast.LENGTH_SHORT).show()
-                onSignUpSuccess(state.role)
-                viewModel.resetState()
-            }
+    AuthTextField(
+        value = name,
+        onValueChange = { name = it },
+        label = "Full Name",
+        leadingIcon = Icons.Filled.Person,
+        isError = nameError,
+        errorText = "Name is required"
+    )
+    Spacer(modifier = Modifier.height(4.dp))
 
-            is AuthState.Error -> Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
-            else -> {}
+    AuthTextField(
+        value = email,
+        onValueChange = { email = it },
+        label = "Email",
+        leadingIcon = Icons.Filled.Email,
+        keyboardType = KeyboardType.Email,
+        isError = emailError,
+        errorText = if (email.isBlank()) "Email is required" else "Enter a valid email"
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+
+    AuthTextField(
+        value = phone,
+        onValueChange = {
+            if (it.length <= 10 && it.all { c -> c.isDigit() }) phone = it
+        },
+        label = "Phone Number",
+        leadingIcon = Icons.Filled.Phone,
+        keyboardType = KeyboardType.Phone,
+        isError = phoneError,
+        errorText = if (phone.isBlank()) "Phone number is required" else "Enter a valid 10-digit number"
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+
+    AuthTextField(
+        value = password,
+        onValueChange = { password = it },
+        label = "Password",
+        leadingIcon = Icons.Filled.Lock,
+        keyboardType = KeyboardType.Password,
+        isPassword = true,
+        passwordVisible = passwordVisible,
+        onTogglePassword = { passwordVisible = !passwordVisible },
+        isError = passwordError,
+        errorText = "Use at least 6 characters"
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+
+    AuthTextField(
+        value = confirmPassword,
+        onValueChange = { confirmPassword = it },
+        label = "Confirm Password",
+        leadingIcon = Icons.Filled.CheckCircle,
+        keyboardType = KeyboardType.Password,
+        imeAction = ImeAction.Done,
+        isPassword = true,
+        passwordVisible = confirmVisible,
+        onTogglePassword = { confirmVisible = !confirmVisible },
+        isError = confirmError,
+        errorText = "Passwords do not match"
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(
+            checked = acceptedTerms,
+            onCheckedChange = { acceptedTerms = it },
+            colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
+        )
+        Text("I agree to the Terms & Privacy Policy", fontSize = 13.sp, color = TextMuted)
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+    PrimaryActionButton(text = "Sign Up", loading = loading) {
+        submitted = true
+        when {
+            name.isBlank() || !isValidEmail(email) || phone.length < 10 ||
+                    !isStrongEnough(password) || confirmPassword != password ->
+                Toast.makeText(context, "Please fix the highlighted fields", Toast.LENGTH_SHORT)
+                    .show()
+
+            !acceptedTerms ->
+                Toast.makeText(
+                    context,
+                    "Please accept the Terms & Privacy Policy",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+            else ->
+                viewModel.signUp(
+                    email.trim(),
+                    password.trim(),
+                    userRole,
+                    name.trim(),
+                    phone.trim()
+                )
         }
     }
 
-    AuthBackground {
-        BrandHeader(subtitle = "Create your account as $userRole")
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "Create Account",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextDark
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-
-                AuthTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Full Name",
-                    leadingIcon = Icons.Filled.Person,
-                    isError = nameError,
-                    errorText = "Name is required"
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                AuthTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = "Email",
-                    leadingIcon = Icons.Filled.Email,
-                    keyboardType = KeyboardType.Email,
-                    isError = emailError,
-                    errorText = if (email.isBlank()) "Email is required" else "Enter a valid email"
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                AuthTextField(
-                    value = phone,
-                    onValueChange = {
-                        if (it.length <= 10 && it.all { c -> c.isDigit() }) phone = it
-                    },
-                    label = "Phone Number",
-                    leadingIcon = Icons.Filled.Phone,
-                    keyboardType = KeyboardType.Phone,
-                    isError = phoneError,
-                    errorText = if (phone.isBlank()) "Phone number is required" else "Enter a valid 10-digit number"
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                AuthTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = "Password",
-                    leadingIcon = Icons.Filled.Lock,
-                    keyboardType = KeyboardType.Password,
-                    isPassword = true,
-                    passwordVisible = passwordVisible,
-                    onTogglePassword = { passwordVisible = !passwordVisible },
-                    isError = passwordError,
-                    errorText = "Use at least 6 characters"
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                AuthTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = "Confirm Password",
-                    leadingIcon = Icons.Filled.CheckCircle,
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                    isPassword = true,
-                    passwordVisible = confirmVisible,
-                    onTogglePassword = { confirmVisible = !confirmVisible },
-                    isError = confirmError,
-                    errorText = "Passwords do not match"
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = acceptedTerms,
-                        onCheckedChange = { acceptedTerms = it },
-                        colors = CheckboxDefaults.colors(checkedColor = PrimaryBlue)
-                    )
-                    Text(
-                        "I agree to the Terms & Privacy Policy",
-                        fontSize = 13.sp,
-                        color = TextMuted
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                PrimaryActionButton(text = "Sign Up", loading = authState is AuthState.Loading) {
-                    submitted = true
-                    when {
-                        name.isBlank() || !isValidEmail(email) || phone.length < 10 ||
-                                !isStrongEnough(password) || confirmPassword != password ->
-                            Toast.makeText(
-                                context,
-                                "Please fix the highlighted fields",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                        !acceptedTerms ->
-                            Toast.makeText(
-                                context,
-                                "Please accept the Terms & Privacy Policy",
-                                Toast.LENGTH_SHORT
-                            ).show()
-
-                        else ->
-                            viewModel.signUp(
-                                email.trim(),
-                                password.trim(),
-                                userRole,
-                                name.trim(),
-                                phone.trim()
-                            )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-                DividerWithText("Or sign up with")
-                Spacer(modifier = Modifier.height(20.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    SocialIcon(R.drawable.google_login_ic, onClick = onGoogleSignUp)
-                    Spacer(modifier = Modifier.width(20.dp))
-                    SocialIcon(R.drawable.icons8_facebook, onClick = {
-                        Toast.makeText(context, "Coming soon", Toast.LENGTH_SHORT).show()
-                    })
-                    Spacer(modifier = Modifier.width(20.dp))
-                    SocialIcon(R.drawable.login, onClick = {
-                        Toast.makeText(context, "Coming soon", Toast.LENGTH_SHORT).show()
-                    })
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-        Row {
-            Text("Already have an account? ", color = Color.White.copy(alpha = 0.9f))
-            Text(
-                text = "Login",
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { onNavigateToSignIn() }
-            )
-        }
+    Spacer(modifier = Modifier.height(20.dp))
+    DividerWithText("Or sign up with")
+    Spacer(modifier = Modifier.height(20.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center
+    ) {
+        SocialIcon(R.drawable.google_login_ic, onClick = onGoogleSignUp)
     }
 }

@@ -424,15 +424,33 @@ class CreateWorkActivity : AppCompatActivity() {
         // job cards show the correct poster image. FirebaseAuth.photoUrl is not
         // populated by our profile flow, so it is only used as a fallback.
         var bossPhotoUrl = currentUser?.photoUrl?.toString() ?: ""
+        // Likewise, the display name lives in the Firestore profile (our sign-up
+        // saves `name`, the profile screen saves `firstName`/`lastName`).
+        // FirebaseAuth.displayName is usually null, so pull the real name from
+        // Firestore and only fall back to auth/"User" when nothing is stored.
+        var bossName = currentUser?.displayName?.takeIf { it.isNotBlank() } ?: ""
         try {
             currentUser?.uid?.let { uid ->
                 val profileDoc = db.collection("users").document(uid).get().await()
                 val storedPhoto = profileDoc.getString("photoUrl") ?: ""
                 if (storedPhoto.isNotBlank()) bossPhotoUrl = storedPhoto
+
+                val storedName = profileDoc.getString("name")?.trim().orEmpty()
+                val composedName = listOfNotNull(
+                    profileDoc.getString("firstName")?.trim(),
+                    profileDoc.getString("lastName")?.trim()
+                ).filter { it.isNotBlank() }.joinToString(" ")
+                val resolvedName = when {
+                    storedName.isNotBlank() -> storedName
+                    composedName.isNotBlank() -> composedName
+                    else -> ""
+                }
+                if (resolvedName.isNotBlank()) bossName = resolvedName
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Could not fetch boss photo for job", e)
+            Log.w(TAG, "Could not fetch boss profile for job", e)
         }
+        if (bossName.isBlank()) bossName = "WorkMan Client"
 
         val workData = hashMapOf(
             "jobId" to jobId,
@@ -441,7 +459,7 @@ class CreateWorkActivity : AppCompatActivity() {
             "date" to date,
             "images" to imageUrls,
             "bossId" to (currentUser?.uid ?: "unknown"),
-            "bossName" to (currentUser?.displayName ?: "User"),
+            "bossName" to bossName,
             "bossPhoto" to bossPhotoUrl,
             "status" to "OPEN",
             "isAccepted" to false,
@@ -476,7 +494,7 @@ class CreateWorkActivity : AppCompatActivity() {
             val bookingData = hashMapOf(
                 "jobId" to jobId,
                 "bossId" to (currentUser?.uid ?: "unknown"),
-                "bossName" to (currentUser?.displayName ?: "User"),
+                "bossName" to bossName,
                 "workerId" to "",
                 "workerName" to "",
                 "workerPhotoUrl" to "",
