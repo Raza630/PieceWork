@@ -105,14 +105,14 @@ private fun AuthBackground(content: @Composable ColumnScope.() -> Unit) {
 private fun BrandHeader(subtitle: String) {
     Image(
         painter = painterResource(id = R.drawable.ic_workman_logo),
-        contentDescription = "WorkMan logo",
+        contentDescription = "PieceWork logo",
         modifier = Modifier
             .size(84.dp)
             .background(Color.White, shape = RoundedCornerShape(24.dp))
             .padding(14.dp)
     )
     Spacer(modifier = Modifier.height(16.dp))
-    Text("WorkMan", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+    Text("PieceWork", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
     Spacer(modifier = Modifier.height(6.dp))
     Text(subtitle, fontSize = 15.sp, color = Color.White.copy(alpha = 0.85f))
     Spacer(modifier = Modifier.height(28.dp))

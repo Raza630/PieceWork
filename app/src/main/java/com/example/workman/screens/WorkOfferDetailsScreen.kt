@@ -876,10 +876,12 @@ private fun InfoChip(
 @Composable
 private fun PostedByCard(offer: WorkOffer, resolvedName: String = "") {
     // Prefer the freshly-resolved profile name; fall back to the stored
-    // bossName, ignoring known placeholders ("User"/"WorkMan Client").
+    // bossName, ignoring known placeholders ("User" / "PieceWork Client" and
+    // the legacy "WorkMan Client").
     val storedName = offer.bossName.takeIf {
         it.isNotBlank() && !it.equals("User", ignoreCase = true) &&
-                !it.equals("WorkMan Client", ignoreCase = true)
+                !it.equals("WorkMan Client", ignoreCase = true) &&
+                !it.equals("PieceWork Client", ignoreCase = true)
     }
     val displayName = resolvedName.ifBlank { storedName ?: stringResource(R.string.workman_client) }
     Card(

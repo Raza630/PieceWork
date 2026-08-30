@@ -24,7 +24,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Extract notification data — Cloud Function sends both notification + data payloads
-        val title = remoteMessage.data["title"] ?: remoteMessage.notification?.title ?: "WorkMan"
+        val title = remoteMessage.data["title"] ?: remoteMessage.notification?.title ?: "PieceWork"
         val body = remoteMessage.data["body"] ?: remoteMessage.notification?.body ?: ""
         val type = remoteMessage.data["type"] ?: ""
         val jobId = remoteMessage.data["jobId"] ?: ""

@@ -450,7 +450,7 @@ class CreateWorkActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.w(TAG, "Could not fetch boss profile for job", e)
         }
-        if (bossName.isBlank()) bossName = "WorkMan Client"
+        if (bossName.isBlank()) bossName = "PieceWork Client"
 
         val workData = hashMapOf(
             "jobId" to jobId,

@@ -90,8 +90,8 @@ data class WorkerDashboardUiState(
 )
 
 /** Stored boss names that mean "we don't really know it" and should be
- *  backfilled from the boss's profile. */
-private val BOSS_NAME_PLACEHOLDERS = setOf("", "user", "workman client")
+ *  backfilled from the boss's profile. Includes the legacy "WorkMan Client". */
+private val BOSS_NAME_PLACEHOLDERS = setOf("", "user", "workman client", "piecework client")
 
 class HomeWorkerDashboardViewModel : ViewModel() {
 

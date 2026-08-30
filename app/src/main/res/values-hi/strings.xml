@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- App name (brand — intentionally not translated) -->
+    <string name="app_name">PieceWork</string>
+    <string name="open_drawer">ड्रॉअर खोलें</string>
+    <string name="close_drawer">ड्रॉअर बंद करें</string>
+    <string name="search_icon">खोज आइकन</string>
+
     <!-- Splash -->
     <string name="splash_tagline">स्मार्ट काम पर रखें। स्मार्ट काम करें।</string>
 
@@ -162,7 +168,7 @@
     <string name="action_report">रिपोर्ट करें</string>
     <string name="added_to_favorites">शॉर्टलिस्ट में जोड़ा गया</string>
     <string name="removed_from_favorites">शॉर्टलिस्ट से हटाया गया</string>
-    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, WorkMan पर ₹%4$d/घंटा</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, PieceWork पर ₹%4$d/घंटा</string>
     <string name="no_phone_available">कोई फ़ोन नंबर उपलब्ध नहीं</string>
     <string name="report_submitted_toast">रिपोर्ट सबमिट की गई। धन्यवाद।</string>
 
@@ -234,10 +240,26 @@
     <string name="status_reviewed">समीक्षित</string>
     <string name="info_status">स्थिति</string>
     <string name="posted_by">द्वारा पोस्ट किया गया</string>
-    <string name="workman_client">WorkMan क्लाइंट</string>
+    <string name="workman_client">PieceWork क्लाइंट</string>
     <string name="accept_state_accepted">✓ आपके द्वारा स्वीकृत</string>
     <string name="accept_state_taken">पहले ही लिया गया</string>
     <string name="accept_this_job">यह काम स्वीकार करें</string>
+
+    <!-- Worker job actions on the details screen -->
+    <string name="start_work">काम शुरू करें</string>
+    <string name="work_in_progress_state">काम जारी है</string>
+    <string name="start_work_failed_title">काम शुरू नहीं हो सका</string>
+    <string name="work_started_title">काम शुरू हुआ ⏱️</string>
+    <string name="work_started_msg">आपने \"%1$s\" शुरू कर दिया है। अपनी प्रमाण तस्वीरें जोड़ें और काम पूरा होने पर My Jobs से इसे पूर्ण चिह्नित करें।</string>
+    <string name="cancel_job">काम रद्द करें</string>
+    <string name="cancel_job_title">यह काम रद्द करें?</string>
+    <string name="cancel_job_message">क्या आप वाकई \"%1$s\" रद्द करना चाहते हैं? इसे अन्य कामगारों के लिए फिर से खोल दिया जाएगा और आप यह आवंटन खो देंगे।</string>
+    <string name="cancel_job_confirm">हाँ, रद्द करें</string>
+    <string name="cancel_job_dismiss">काम रखें</string>
+    <string name="job_cancelled_title">काम रद्द कर दिया गया</string>
+    <string name="job_cancelled_msg">आपने \"%1$s\" रद्द कर दिया है। यह अब अन्य कामगारों के लिए उपलब्ध है।</string>
+    <string name="cancel_job_failed_title">काम रद्द नहीं हो सका</string>
+    <string name="complete_from_my_jobs">समाप्त करने के लिए, My Jobs खोलें और अपनी प्रमाण तस्वीरें सबमिट करें।</string>
     <string name="section_completed_work">पूर्ण किया गया काम</string>
     <string name="completed_work_boss_desc">कामगार ने पूर्णता के प्रमाण के रूप में ये तस्वीरें सबमिट कीं। रेटिंग से पहले इन्हें देखें।</string>
     <string name="completed_work_worker_desc">काम पूरा चिह्नित करते समय आपके द्वारा सबमिट की गई तस्वीरें।</string>

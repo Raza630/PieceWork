@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">PieceWork</string>
+    <string name="open_drawer">டிராயரைத் திற</string>
+    <string name="close_drawer">டிராயரை மூடு</string>
+    <string name="search_icon">தேடல் ஐகான்</string>
     <!-- Splash -->
     <string name="splash_tagline">திறமையாக பணியமர்த்துங்கள். திறமையாக வேலை செய்யுங்கள்.</string>
 
@@ -162,7 +166,7 @@
     <string name="action_report">புகார் அளிக்கவும்</string>
     <string name="added_to_favorites">குறுக்கப்பட்டியலில் சேர்க்கப்பட்டது</string>
     <string name="removed_from_favorites">குறுக்கப்பட்டியலில் இருந்து அகற்றப்பட்டது</string>
-    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, WorkMan-இல் ₹%4$d/மணி</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, PieceWork-இல் ₹%4$d/மணி</string>
     <string name="no_phone_available">தொலைபேசி எண் கிடைக்கவில்லை</string>
     <string name="report_submitted_toast">புகார் சமர்ப்பிக்கப்பட்டது. நன்றி.</string>
 
@@ -234,10 +238,26 @@
     <string name="status_reviewed">மதிப்பாய்வு செய்யப்பட்டது</string>
     <string name="info_status">நிலை</string>
     <string name="posted_by">இட்டவர்</string>
-    <string name="workman_client">WorkMan வாடிக்கையாளர்</string>
+    <string name="workman_client">PieceWork வாடிக்கையாளர்</string>
     <string name="accept_state_accepted">✓ உங்களால் ஏற்கப்பட்டது</string>
     <string name="accept_state_taken">ஏற்கனவே எடுக்கப்பட்டது</string>
     <string name="accept_this_job">இந்த வேலையை ஏற்றுக்கொள்</string>
+
+    <!-- Worker job actions on the details screen -->
+    <string name="start_work">வேலையைத் தொடங்கு</string>
+    <string name="work_in_progress_state">வேலை நடந்து கொண்டிருக்கிறது</string>
+    <string name="start_work_failed_title">வேலையைத் தொடங்க முடியவில்லை</string>
+    <string name="work_started_title">வேலை தொடங்கியது ⏱️</string>
+    <string name="work_started_msg">நீங்கள் \"%1$s\" தொடங்கிவிட்டீர்கள். உங்கள் ஆதாரப் புகைப்படங்களைச் சேர்த்து, முடிந்ததும் My Jobs இலிருந்து அதை முடிந்ததாகக் குறியிடுங்கள்.</string>
+    <string name="cancel_job">வேலையை ரத்து செய்</string>
+    <string name="cancel_job_title">இந்த வேலையை ரத்து செய்யவா?</string>
+    <string name="cancel_job_message">\"%1$s\" ஐ நிச்சயமாக ரத்து செய்ய விரும்புகிறீர்களா? இது பிற பணியாளர்களுக்கு மீண்டும் திறக்கப்படும், இந்த ஒதுக்கீட்டை நீங்கள் இழப்பீர்கள்.</string>
+    <string name="cancel_job_confirm">ஆம், ரத்து செய்</string>
+    <string name="cancel_job_dismiss">வேலையை வைத் திரு</string>
+    <string name="job_cancelled_title">வேலை ரத்து செய்யப்பட்டது</string>
+    <string name="job_cancelled_msg">நீங்கள் \"%1$s\" ஐ ரத்து செய்துவிட்டீர்கள். இது இப்போது பிற பணியாளர்களுக்குக் கிடைக்கும்.</string>
+    <string name="cancel_job_failed_title">வேலையை ரத்து செய்ய முடியவில்லை</string>
+    <string name="complete_from_my_jobs">முடிக்க, My Jobs ஐத் திறந்து உங்கள் ஆதாரப் புகைப்படங்களைச் சமர்ப்பிக்கவும்.</string>
     <string name="section_completed_work">முடிக்கப்பட்ட வேலை</string>
     <string name="completed_work_boss_desc">பணியாளர் முடிவின் ஆதாரமாக இந்தப் புகைப்படங்களைச் சமர்ப்பித்தார். மதிப்பிடும் முன் அவற்றை மதிப்பாய்வு செய்யுங்கள்.</string>
     <string name="completed_work_worker_desc">வேலையை முடிந்ததாகக் குறிக்கும்போது நீங்கள் சமர்ப்பித்த புகைப்படங்கள்.</string>

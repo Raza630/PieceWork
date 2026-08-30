@@ -132,7 +132,7 @@ class OnboardingActivity : AppCompatActivity() {
             OnboardingPage(
                 imageRes = R.drawable.ic_onboarding_ready,
                 title = "You're All Set!",
-                description = "Whether you're hiring or looking for work — WorkMan connects you with the right people. Let's get started!"
+                description = "Whether you're hiring or looking for work — PieceWork connects you with the right people. Let's get started!"
             )
         )
     }

@@ -97,7 +97,7 @@ fun ReportDialog(
                 Spacer(Modifier.height(4.dp))
 
                 Text(
-                    text = "Help us keep WorkMan safe. Select a reason:",
+                    text = "Help us keep PieceWork safe. Select a reason:",
                     fontSize = 13.sp,
                     color = TextMuted
                 )

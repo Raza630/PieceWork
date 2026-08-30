@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WorkMan"
+rootProject.name = "PieceWork"
 include(":app")

@@ -23,7 +23,7 @@
             android:id="@+id/imgSplashLogo"
             android:layout_width="140dp"
             android:layout_height="140dp"
-            android:contentDescription="WorkMan Logo"
+            android:contentDescription="PieceWork Logo"
             android:src="@drawable/ic_workman_logo" />
 
         <!-- App Name -->
@@ -34,7 +34,7 @@
             android:layout_marginTop="20dp"
             android:fontFamily="sans-serif-black"
             android:letterSpacing="0.08"
-            android:text="WORKMAN"
+            android:text="PIECEWORK"
             android:textColor="#1A1A1A"
             android:textSize="32sp" />
 

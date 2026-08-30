@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">PieceWork</string>
+    <string name="open_drawer">డ్రాయర్‌ను తెరవండి</string>
+    <string name="close_drawer">డ్రాయర్‌ను మూసివేయండి</string>
+    <string name="search_icon">శోధన ఐకాన్</string>
     <!-- Splash -->
     <string name="splash_tagline">స్మార్ట్‌గా నియమించండి. స్మార్ట్‌గా పని చేయండి.</string>
 
@@ -162,7 +166,7 @@
     <string name="action_report">ఫిర్యాదు చేయండి</string>
     <string name="added_to_favorites">షార్ట్‌లిస్ట్‌కు జోడించబడింది</string>
     <string name="removed_from_favorites">షార్ట్‌లిస్ట్ నుండి తీసివేయబడింది</string>
-    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, WorkManలో ₹%4$d/గంట</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, PieceWorkలో ₹%4$d/గంట</string>
     <string name="no_phone_available">ఫోన్ నంబర్ అందుబాటులో లేదు</string>
     <string name="report_submitted_toast">ఫిర్యాదు సమర్పించబడింది. ధన్యవాదాలు.</string>
 
@@ -234,10 +238,26 @@
     <string name="status_reviewed">సమీక్షించబడింది</string>
     <string name="info_status">స్థితి</string>
     <string name="posted_by">పోస్ట్ చేసినవారు</string>
-    <string name="workman_client">WorkMan క్లయింట్</string>
+    <string name="workman_client">PieceWork క్లయింట్</string>
     <string name="accept_state_accepted">✓ మీచే అంగీకరించబడింది</string>
     <string name="accept_state_taken">ఇప్పటికే తీసుకోబడింది</string>
     <string name="accept_this_job">ఈ పనిని అంగీకరించండి</string>
+
+    <!-- Worker job actions on the details screen -->
+    <string name="start_work">పని ప్రారంభించండి</string>
+    <string name="work_in_progress_state">పని కొనసాగుతోంది</string>
+    <string name="start_work_failed_title">పనిని ప్రారంభించలేకపోయాం</string>
+    <string name="work_started_title">పని ప్రారంభమైంది ⏱️</string>
+    <string name="work_started_msg">మీరు \"%1$s\" ప్రారంభించారు. పూర్తయ్యాక మీ రుజువు ఫోటోలను జోడించి My Jobs నుండి దానిని పూర్తిగా గుర్తించండి.</string>
+    <string name="cancel_job">పనిని రద్దు చేయండి</string>
+    <string name="cancel_job_title">ఈ పనిని రద్దు చేయాలా?</string>
+    <string name="cancel_job_message">మీరు ఖచ్చితంగా \"%1$s\" రద్దు చేయాలనుకుంటున్నారా? ఇది ఇతర కార్మికులకు మళ్లీ తెరవబడుతుంది మరియు మీరు ఈ కేటాయింపును కోల్పోతారు.</string>
+    <string name="cancel_job_confirm">అవును, రద్దు చేయండి</string>
+    <string name="cancel_job_dismiss">పని ఉంచండి</string>
+    <string name="job_cancelled_title">పని రద్దయింది</string>
+    <string name="job_cancelled_msg">మీరు \"%1$s\" రద్దు చేశారు. ఇది ఇప్పుడు ఇతర కార్మికులకు అందుబాటులో ఉంది.</string>
+    <string name="cancel_job_failed_title">పనిని రద్దు చేయలేకపోయాం</string>
+    <string name="complete_from_my_jobs">పూర్తి చేయడానికి, My Jobs తెరచి మీ రుజువు ఫోటోలను సమర్పించండి.</string>
     <string name="section_completed_work">పూర్తయిన పని</string>
     <string name="completed_work_boss_desc">కార్మికుడు పూర్తి రుజువుగా ఈ ఫోటోలను సమర్పించారు. రేటింగ్ ఇచ్చే ముందు వాటిని సమీక్షించండి.</string>
     <string name="completed_work_worker_desc">పనిని పూర్తిగా గుర్తించేటప్పుడు మీరు సమర్పించిన ఫోటోలు.</string>

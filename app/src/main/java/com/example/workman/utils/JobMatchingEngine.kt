@@ -8,7 +8,7 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
- * Smart Job Matching Engine for WorkMan.
+ * Smart Job Matching Engine for PieceWork.
  *
  * Scores each work offer for a specific worker based on 4 signals:
  *

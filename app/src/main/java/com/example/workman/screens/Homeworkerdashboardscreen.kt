@@ -135,15 +135,16 @@ private val MatchGreen = Color(0xFF4CAF50)
 
 /**
  * Cleans a stored boss name for display. Older jobs saved placeholders like
- * "User" before names were resolved at write time; show a friendly fallback
- * instead of leaking the placeholder to workers.
+ * "User" (or the legacy "WorkMan Client") before names were resolved at write
+ * time; show a friendly fallback instead of leaking the placeholder to workers.
  */
 private fun cleanBossName(name: String): String {
     val trimmed = name.trim()
     return if (trimmed.isBlank() ||
         trimmed.equals("User", ignoreCase = true) ||
-        trimmed.equals("WorkMan Client", ignoreCase = true)
-    ) "WorkMan Client" else trimmed
+        trimmed.equals("WorkMan Client", ignoreCase = true) ||
+        trimmed.equals("PieceWork Client", ignoreCase = true)
+    ) "PieceWork Client" else trimmed
 }
 
 // ─── Root Screen ───────────────────────────────────────────────────────────────
@@ -226,7 +227,7 @@ fun HomeWorkerDashboardScreen(
             feedback = com.example.workman.components.FeedbackData(
                 type = com.example.workman.components.FeedbackType.SUCCESS,
                 title = "Report submitted",
-                message = "Thanks for helping keep WorkMan safe. Our team will review this shortly.",
+                message = "Thanks for helping keep PieceWork safe. Our team will review this shortly.",
                 confirmLabel = "Done"
             )
         },

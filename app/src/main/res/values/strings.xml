@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WorkMan</string>
+    <string name="app_name">PieceWork</string>
     <string name="open_drawer">Open Drawer</string>
     <string name="close_drawer">Close Drawer</string>
     <string name="search_icon">search icon</string>
@@ -168,7 +168,7 @@
     <string name="action_report">Report</string>
     <string name="added_to_favorites">Added to shortlist</string>
     <string name="removed_from_favorites">Removed from shortlist</string>
-    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, ₹%4$d/hr on WorkMan</string>
+    <string name="share_worker_text">%1$s — %2$s, ⭐%3$s, ₹%4$d/hr on PieceWork</string>
     <string name="no_phone_available">No phone number available</string>
     <string name="report_submitted_toast">Report submitted. Thank you.</string>
 
@@ -240,7 +240,7 @@
     <string name="status_reviewed">Reviewed</string>
     <string name="info_status">Status</string>
     <string name="posted_by">Posted by</string>
-    <string name="workman_client">WorkMan Client</string>
+    <string name="workman_client">PieceWork Client</string>
     <string name="accept_state_accepted">✓ Accepted by You</string>
     <string name="accept_state_taken">Already Taken</string>
     <string name="accept_this_job">Accept this Job</string>
