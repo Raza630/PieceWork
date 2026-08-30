@@ -1,21 +1,51 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ── General Optimization & Crash Reporting ─────────────────
+-keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod,*Annotation*
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve BuildConfig fields
+-keep class com.example.workman.BuildConfig { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# ── Keep Project Data Models & Serialized Fields ───────────
+-keep class com.example.workman.models.** { *; }
+-keep class com.example.workman.model.** { *; }
+-keep class com.example.workman.notificationsModel.** { *; }
+-keepclassmembers class * {
+    @com.google.gson.annotations.SerializedName <fields>;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# ── Gson ───────────────────────────────────────────────────
+-keepattributes *Annotation*
+-keep class com.google.gson.** { *; }
+
+# ── Retrofit 2 ─────────────────────────────────────────────
+-keep class retrofit2.** { *; }
+-keepclasseswithmembers class * {
+    @retrofit2.http.* <methods>;
+}
+
+# ── OkHttp 3 ───────────────────────────────────────────────
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
+
+# ── Firebase ───────────────────────────────────────────────
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# ── Google Play Services ───────────────────────────────────
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# ── Mappls (MapmyIndia) SDK ────────────────────────────────
+-keep class com.mappls.sdk.** { *; }
+-dontwarn com.mappls.sdk.**
+
+# ── Coil & Glide Image Loaders ─────────────────────────────
+-keep class io.coilkt.** { *; }
+-dontwarn io.coilkt.**
+
+-keep class com.github.bumptech.glide.** { *; }
+-dontwarn com.github.bumptech.glide.**
+
+# ── Jetpack Compose ────────────────────────────────────────
+-keep class androidx.compose.** { *; }
+-dontwarn androidx.compose.**

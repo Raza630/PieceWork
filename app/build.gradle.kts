@@ -18,6 +18,14 @@ val localProperties = Properties().apply {
 }
 val fcmApiKey: String = localProperties.getProperty("FCM_API_KEY", "")
 
+// Load signing credentials from keystore.properties (NOT committed to git)
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
 // Mappls (MapmyIndia) credentials — from https://apis.mappls.com/console/
 val mapplsMapSdkKey: String = localProperties.getProperty("MAPPLS_MAP_SDK_KEY", "")
 val mapplsRestApiKey: String = localProperties.getProperty("MAPPLS_REST_API_KEY", "")
@@ -47,12 +55,30 @@ android {
         buildConfigField("String", "MAPPLS_ATLAS_CLIENT_SECRET", "\"$mapplsAtlasClientSecret\"")
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                val storeFilePath = keystoreProperties.getProperty("storeFile", "")
+                if (storeFilePath.isNotEmpty()) {
+                    storeFile = rootProject.file(storeFilePath)
+                }
+                storePassword = keystoreProperties.getProperty("storePassword", "")
+                keyAlias = keystoreProperties.getProperty("keyAlias", "")
+                keyPassword = keystoreProperties.getProperty("keyPassword", "")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "FCM_API_KEY", "\"$fcmApiKey\"")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
